@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Onboarding Showcase</title>
+    <!-- Google Fonts for Modern Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- RemixIcon for Icons (same style as Flutter's Material icons) -->
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Bar corresponding to onboarding_top_bar.dart -->
+        <header class="top-bar">
+            <button class="icon-button back-btn" aria-label="Go back">
+                <i class="ri-arrow-left-line"></i>
+            </button>
+            <span class="step-indicator">STEP 1 OF 3</span>
+            <div class="spacer"></div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Hero Illustration corresponding to hero_illustration.dart -->
+            <div class="hero-illustration">
+                <!-- Abstract 3D geometric illustration as the background image -->
+                <div class="hero-image"></div>
+                <!-- Overlay gradient/blur for styling -->
+                <div class="hero-overlay"></div>
+                <!-- The central icon container with Backdrop Filter (Glassmorphism) -->
+                <div class="center-icon-container">
+                    <i class="ri-rocket-2-fill"></i>
+                </div>
+            </div>
+
+            <!-- Header corresponding to onboarding_header.dart -->
+            <div class="onboarding-header">
+                <h1 class="title">
+                    Discover a <span class="highlight">New</span> World
+                </h1>
+                <p class="subtitle">
+                    Experience seamless functionality and a premium stunning design adapted for the web.
+                </p>
+            </div>
+        </main>
+
+        <!-- Footer corresponding to onboarding_footer.dart -->
+        <footer class="onboarding-footer">
+            <button class="primary-button" onclick="nextStep()">
+                <div class="btn-content">
+                    <span class="btn-text">Get Started</span>
+                    <i class="ri-arrow-right-line btn-icon"></i>
+                </div>
+            </button>
+            <p class="terms-text">By continuing, you agree to our Terms of Service</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html>
