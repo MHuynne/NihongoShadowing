@@ -3,3 +3,7 @@ uvicorn
 sqlalchemy
 pymysql
 pydantic
+google-generativeai
+python-dotenv
+python-multipart
+openai
