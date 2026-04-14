@@ -12,6 +12,11 @@ router = APIRouter(
     tags=["Roleplay Contextual"]
 )
 
+@router.post("/scenarios", response_model=schemas_roleplay.RoleplayScenarioResp)
+def create_scenario(scenario_req: schemas_roleplay.RoleplayScenarioBase, db: Session = Depends(get_db)):
+    """Tạo một kịch bản mới (dùng cho bối cảnh người dùng tự nhập)"""
+    return crud_roleplay.create_scenario(db, scenario_req)
+
 @router.get("/scenarios", response_model=List[schemas_roleplay.RoleplayScenarioResp])
 def get_scenarios(db: Session = Depends(get_db)):
     """Lấy danh sách các kịch bản roleplay có sẵn"""

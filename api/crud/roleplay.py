@@ -1,10 +1,22 @@
 from sqlalchemy.orm import Session
 from models.roleplay import RoleplayScenario, RoleplaySession, RoleplayMessage
-from schemas.roleplay import SessionCreateReq
+from schemas.roleplay import SessionCreateReq, RoleplayScenarioBase
 
 def get_scenarios(db: Session):
     """Lấy danh sách kịch bản roleplay"""
     return db.query(RoleplayScenario).all()
+
+def create_scenario(db: Session, scenario_req: RoleplayScenarioBase):
+    """Tạo một kịch bản mới (dành cho bối cảnh tự chọn)"""
+    db_scenario = RoleplayScenario(
+        title=scenario_req.title,
+        description=scenario_req.description,
+        icon_url=scenario_req.icon_url
+    )
+    db.add(db_scenario)
+    db.commit()
+    db.refresh(db_scenario)
+    return db_scenario
 
 def create_session(db: Session, session_req: SessionCreateReq):
     """Tạo một phiên trò chuyện mới"""
