@@ -17,14 +17,14 @@ class LeaderboardList extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.bar_chart_rounded, color: AppColors.progressTeal),
+              Icon(Icons.bar_chart_rounded, color: AppColors.toriiRed),
               SizedBox(width: 8),
               Text(
                 'Bảng xếp hạng',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: AppColors.slate800,
                 ),
               ),
             ],
@@ -32,11 +32,11 @@ class LeaderboardList extends StatelessWidget {
           const SizedBox(height: 16),
           Container(
             decoration: BoxDecoration(
-              color: AppColors.itemBackground,
+              color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.02),
+                  color: AppColors.toriiRed.withValues(alpha: 0.05),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -47,7 +47,7 @@ class LeaderboardList extends StatelessWidget {
               physics: const NeverScrollableScrollPhysics(),
               itemCount: users.length,
               padding: const EdgeInsets.symmetric(vertical: 8),
-              separatorBuilder: (context, index) => Divider(
+              separatorBuilder: (context, index) => const Divider(
                 color: AppColors.slate100,
                 height: 1,
                 indent: 64, // roughly align with name text
@@ -91,7 +91,7 @@ class LeaderboardList extends StatelessWidget {
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,
-                                color: AppColors.textDark,
+                                color: AppColors.slate800,
                               ),
                             ),
                             Text(
@@ -106,7 +106,7 @@ class LeaderboardList extends StatelessWidget {
                       ),
                       // Badges
                       if (user.rank == 1)
-                        const Icon(Icons.workspace_premium, color: AppColors.buttonYellow, size: 24),
+                        const Icon(Icons.workspace_premium, color: AppColors.goldAccent, size: 24),
                     ],
                   ),
                 );
@@ -121,7 +121,7 @@ class LeaderboardList extends StatelessWidget {
   Color _getRankColor(int rank) {
     switch (rank) {
       case 1:
-        return AppColors.buttonYellow; // Gold/Yellow
+        return AppColors.goldAccent; // Gold/Yellow
       case 2:
         return AppColors.slate400; // Silver/Grey
       case 3:

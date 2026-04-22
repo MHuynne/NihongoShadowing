@@ -25,13 +25,19 @@ class ShadowingHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-               Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: AppColors.lightPinkBackground,
-                  shape: BoxShape.circle,
+               GestureDetector(
+                onTap: () {
+                  // Hiển thị dialog xác nhận nếu muốn hoặc back về luồng trước / thoát thẳng về home
+                  Navigator.popUntil(context, (route) => route.isFirst);
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightPinkBackground,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.arrow_back, color: AppColors.sunRed, size: 20),
                 ),
-                child: const Icon(Icons.arrow_back, color: AppColors.sunRed, size: 20),
               ),
               const SizedBox(width: 16),
               Column(
@@ -64,9 +70,9 @@ class ShadowingHeader extends StatelessWidget {
           // Toggle Switch Design
           Container(
              decoration: BoxDecoration(
-               color: AppColors.slate50,
+               color: Colors.white.withOpacity(0.85),
                borderRadius: BorderRadius.circular(20),
-               border: Border.all(color: AppColors.slate200),
+               border: Border.all(color: AppColors.sunRed.withOpacity(0.2)),
              ),
              child: isBlindMode ? _buildBlindSwitch() : _buildNormalToggle(),
           )
@@ -84,7 +90,7 @@ class ShadowingHeader extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-               color: !isBlindMode ? Colors.white : Colors.transparent,
+               color: !isBlindMode ? Colors.white.withOpacity(0.9) : Colors.transparent,
                borderRadius: BorderRadius.circular(20),
                boxShadow: !isBlindMode ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
             ),
@@ -103,7 +109,7 @@ class ShadowingHeader extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             decoration: BoxDecoration(
-               color: isBlindMode ? Colors.white : Colors.transparent,
+               color: isBlindMode ? Colors.white.withOpacity(0.9) : Colors.transparent,
                borderRadius: BorderRadius.circular(20),
                boxShadow: isBlindMode ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
             ),

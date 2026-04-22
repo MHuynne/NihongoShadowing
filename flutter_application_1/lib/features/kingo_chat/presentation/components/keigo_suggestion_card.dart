@@ -16,10 +16,10 @@ class KeigoSuggestionCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.progressTeal.withOpacity(0.2)),
+        border: Border.all(color: AppColors.progressTeal.withValues(alpha: 0.2)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.progressTeal.withOpacity(0.05),
+            color: AppColors.progressTeal.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -46,7 +46,7 @@ class KeigoSuggestionCard extends StatelessWidget {
                  width: 32,
                  height: 32,
                  decoration: BoxDecoration(
-                   color: AppColors.progressTeal.withOpacity(0.1),
+                   color: AppColors.progressTeal.withValues(alpha: 0.1),
                    shape: BoxShape.circle,
                  ),
                  child: const Icon(Icons.auto_awesome, color: AppColors.progressTeal, size: 16),

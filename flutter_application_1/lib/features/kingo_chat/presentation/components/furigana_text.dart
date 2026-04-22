@@ -42,7 +42,7 @@ class FuriganaText extends StatelessWidget {
                 w.furigana!,
                 style: TextStyle(
                   fontSize: 10,
-                  color: textColor.withOpacity(0.8),
+                  color: textColor.withValues(alpha: 0.8),
                   height: 1.0,
                 ),
               ),

@@ -48,7 +48,7 @@ class OnboardingFooter extends StatelessWidget {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.white,
               elevation: 4,
-              shadowColor: AppColors.primary.withOpacity(0.5),
+              shadowColor: AppColors.primary.withValues(alpha: 0.5),
               minimumSize: const Size(double.infinity, 56),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),

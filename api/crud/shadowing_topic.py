@@ -27,8 +27,17 @@ def create_topic(db: Session, topic: ShadowingTopicCreate):
         for seg in topic.segments:
             db_seg = ShadowingSegment(**seg.model_dump(), topic_id=db_topic.id)
             db.add(db_seg)
-        db.commit()
-        db.refresh(db_topic)
+            
+    # Tạo Từ vựng (Vocabulary) nếu có
+    if topic.vocabularies:
+        from models.vocabulary import Vocabulary
+        for vocab in topic.vocabularies:
+            db_vocab = Vocabulary(**vocab.model_dump(), topic_id=db_topic.id)
+            db.add(db_vocab)
+            
+    # Chỉ commit 1 lần sau khi gán tất cả
+    db.commit()
+    db.refresh(db_topic)
         
     return db_topic
 

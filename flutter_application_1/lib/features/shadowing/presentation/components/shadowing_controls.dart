@@ -3,15 +3,23 @@ import 'package:flutter_application_1/core/theme/app_colors.dart';
 
 class ShadowingControls extends StatelessWidget {
   final bool isRecording;
+  final bool isPlayingSample;   // THÊM: đang phát audio mẫu hay không
   final VoidCallback onRecordPressed;
   final VoidCallback onPlaySample;
+  final VoidCallback onSpeedToggle;  // THÊM: thay đổi tốc độ
+  final double currentSpeed;
 
   const ShadowingControls({
     super.key,
     required this.isRecording,
     required this.onRecordPressed,
     required this.onPlaySample,
+    this.isPlayingSample = false,
+    required this.onSpeedToggle,
+    this.currentSpeed = 1.0,
   });
+
+  static void _noop() {}
 
   @override
   Widget build(BuildContext context) {
@@ -20,51 +28,50 @@ class ShadowingControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Play Sample Button
-          _buildSideButton(
-            icon: Icons.play_arrow_rounded,
-            label: 'SAMPLE',
-            color: AppColors.sunRed,
+          // ── Play Sample Button ──────────────────────────────────────
+          _SampleButton(
+            isPlaying: isPlayingSample,
             onPressed: onPlaySample,
           ),
-          
-          // Main Record Button
+
+          // ── Main Record Button ──────────────────────────────────────
           GestureDetector(
-             onTap: onRecordPressed,
-             child: Container(
-               width: 80,
-               height: 80,
-               decoration: BoxDecoration(
-                 color: AppColors.sunRed,
-                 shape: BoxShape.circle,
-                 boxShadow: [
-                   if (isRecording)
-                     BoxShadow(
-                       color: AppColors.sunRed.withOpacity(0.4),
-                       blurRadius: 20,
-                       spreadRadius: 10,
-                     ),
-                   BoxShadow(
-                     color: AppColors.sunRed.withOpacity(0.2),
-                     blurRadius: 10,
-                     offset: const Offset(0, 4),
-                   ),
-                 ],
-               ),
-               child: Icon(
-                 isRecording ? Icons.mic : Icons.mic_none,
-                 color: Colors.white,
-                 size: 32,
-               ),
-             ),
+            onTap: onRecordPressed,
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: AppColors.sunRed,
+                shape: BoxShape.circle,
+                boxShadow: [
+                  if (isRecording)
+                    BoxShadow(
+                      color: AppColors.sunRed.withValues(alpha: 0.4),
+                      blurRadius: 20,
+                      spreadRadius: 10,
+                    ),
+                  BoxShadow(
+                    color: AppColors.sunRed.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Icon(
+                isRecording ? Icons.mic : Icons.mic_none,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
           ),
-          
-          // Slowmo Button
+
+          // ── Speed Toggle Button ────────────────────────────────────
           _buildSideButton(
-            icon: Icons.play_circle_outline_rounded,
-            label: 'X0.5',
+            icon: Icons.speed_rounded,
+            label: '×${currentSpeed == 1.0 ? "1.0" : currentSpeed.toString()}',
             color: AppColors.sunRed,
-            onPressed: () {}, // Future implementation
+            onPressed: onSpeedToggle,
           ),
         ],
       ),
@@ -97,6 +104,58 @@ class ShadowingControls extends StatelessWidget {
               fontSize: 10,
               fontWeight: FontWeight.bold,
               color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Sample Button với animation loading ──────────────────────────────────────
+class _SampleButton extends StatelessWidget {
+  final bool isPlaying;
+  final VoidCallback onPressed;
+
+  const _SampleButton({required this.isPlaying, required this.onPressed});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onPressed,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isPlaying
+                  ? AppColors.sunRed.withValues(alpha: 0.15)
+                  : AppColors.lightPinkBackground,
+              shape: BoxShape.circle,
+              border: isPlaying
+                  ? Border.all(color: AppColors.sunRed, width: 2)
+                  : null,
+            ),
+            child: isPlaying
+                ? SizedBox(
+                    width: 24,
+                    height: 24,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2.5,
+                      color: AppColors.sunRed,
+                    ),
+                  )
+                : Icon(Icons.play_arrow_rounded, color: AppColors.sunRed, size: 24),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            isPlaying ? 'ĐANG PHÁT' : 'SAMPLE',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.bold,
+              color: AppColors.sunRed,
             ),
           ),
         ],

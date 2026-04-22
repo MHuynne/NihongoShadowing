@@ -1,8 +1,14 @@
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_theme.dart';
-import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
+import 'package:flutter_application_1/features/auth/presentation/screens/auth_gate.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -12,12 +18,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Japanese Learning App',
+      title: 'TokyoNihongo',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Will switch based on system dark/light mode
-      home: const MainScreen(),
+      home: const AuthGate(), // ← Auth Gate thay thế MainScreen trực tiếp
     );
   }
 }

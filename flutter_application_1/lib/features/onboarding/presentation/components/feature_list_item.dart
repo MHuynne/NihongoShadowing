@@ -17,7 +17,7 @@ class FeatureListItem extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: isDark ? AppColors.slate900.withOpacity(0.5) : Colors.white,
+        color: isDark ? AppColors.slate900.withValues(alpha: 0.5) : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: isDark ? AppColors.slate800 : AppColors.slate200,
@@ -29,7 +29,7 @@ class FeatureListItem extends StatelessWidget {
             width: 56,
             height: 56,
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(

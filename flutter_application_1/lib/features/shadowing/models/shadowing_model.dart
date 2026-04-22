@@ -14,14 +14,36 @@ class ShadowingSentenceModel {
   });
 }
 
+class WordAnalysisModel {
+  final String text;
+  final bool isCorrect;
+
+  WordAnalysisModel({required this.text, required this.isCorrect});
+
+  factory WordAnalysisModel.fromJson(Map<String, dynamic> json) {
+    return WordAnalysisModel(
+      text: json['text'] ?? '',
+      isCorrect: json['is_correct'] ?? false,
+    );
+  }
+}
+
 class ShadowingFeedbackModel {
   final int accuracy;
-  final String feedbackHtml; // e.g. "Kyou wa <span style='color:red'>tenki</span> ga ii desu ne"
+  final int fluency;
+  final int prosody;
+  final int rhythm;       // điểm nhịp ngắt (Shadowing mode)
+  final String feedbackHtml;
   final String tip;
+  final List<WordAnalysisModel> wordsAnalysis;
 
   ShadowingFeedbackModel({
     required this.accuracy,
+    this.fluency = 0,
+    this.prosody = 0,
+    this.rhythm = 0,
     required this.feedbackHtml,
     required this.tip,
+    this.wordsAnalysis = const [],
   });
 }

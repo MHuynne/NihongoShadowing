@@ -15,47 +15,43 @@ class MainBottomNavBar extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.itemBackground,
+        color: Colors.white,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
-            offset: const Offset(0, -2),
+            offset: const Offset(0, -5),
           ),
         ],
       ),
       child: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 8.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
+              _buildNavItem(icon: Icons.home_rounded, label: 'HOME', index: 0),
               _buildNavItem(
-                icon: Icons.home_rounded,
-                label: 'Trang chủ',
-                index: 0,
-              ),
-              _buildNavItem(
-                icon: Icons.map_outlined,
-                label: 'Lộ trình',
+                icon: Icons.school_outlined,
+                label: 'COURSES',
                 index: 1,
               ),
               _buildNavItem(
                 icon: Icons.graphic_eq,
-                label: 'Shadowing',
+                label: 'PRACTICE',
                 index: 2,
               ),
               _buildNavItem(
-                icon: Icons.chat_bubble_rounded,
-                label: 'Kingo Chat',
+                icon: Icons.assignment_outlined,
+                label: 'TESTS',
                 index: 3,
-                badgeValue: '1',
               ),
-              _buildNavItem(
-                icon: Icons.person_outline_rounded,
-                label: 'Tài khoản',
-                index: 4,
-              ),
+              // _buildNavItem(
+              //   icon: Icons.person_outline_rounded,
+              //   label: 'PROFILE',
+              //   index: 4,
+              // ),
             ],
           ),
         ),
@@ -67,52 +63,37 @@ class MainBottomNavBar extends StatelessWidget {
     required IconData icon,
     required String label,
     required int index,
-    String? badgeValue,
   }) {
     final isSelected = currentIndex == index;
-    final color = isSelected ? AppColors.progressTeal : AppColors.slate500;
 
-    return InkWell(
+    return GestureDetector(
       onTap: () => onTap(index),
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOut,
+        padding: isSelected
+            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 8)
+            : const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.toriiRed : Colors.transparent,
+          borderRadius: BorderRadius.circular(24),
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Icon(icon, color: color, size: 24),
-                if (badgeValue != null)
-                  Positioned(
-                    right: -8,
-                    top: -4,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: AppColors.buttonYellow,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Text(
-                        badgeValue,
-                        style: const TextStyle(
-                          color: AppColors.textDark,
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-              ],
+            Icon(
+              icon,
+              color: isSelected ? Colors.white : AppColors.slate400,
+              size: 24,
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: TextStyle(
-                color: color,
-                fontSize: 10,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                color: isSelected ? Colors.white : AppColors.slate400,
+                fontSize: 9,
+                fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                letterSpacing: 0.5,
               ),
             ),
           ],

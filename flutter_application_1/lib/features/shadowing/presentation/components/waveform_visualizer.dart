@@ -88,7 +88,7 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with SingleTick
                       width: widget.isUser ? 8 : 6,
                       height: height,
                       decoration: BoxDecoration(
-                        color: widget.isUser && widget.isRecording ? color : color.withOpacity(0.5),
+                        color: widget.isUser && widget.isRecording ? color : color.withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     );

@@ -3,3 +3,15 @@ uvicorn
 sqlalchemy
 pymysql
 pydantic
+python-dotenv
+httpx
+gtts
+python-multipart
+# Optional (uncomment nếu dùng Azure):
+# azure-cognitiveservices-speech
+selenium
+webdriver-manager
+beautifulsoup4
+janome
+pykakasi
+google-generativeai
