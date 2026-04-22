@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class RoleplayService {
   // Đối với Android Emulator, 10.0.2.2 trỏ về localhost của máy tính
-  static const String baseUrl = 'http://10.0.2.2:8000/roleplay';
+  static const String baseUrl = 'http://127.0.0.1:8000/roleplay';
 
   // 1. Tạo hoặc lấy Scenario
   Future<int> getOrCreateScenario(String title, String description) async {

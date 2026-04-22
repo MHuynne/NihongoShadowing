@@ -25,9 +25,10 @@ class MyApp extends StatelessWidget {
       theme: AppTheme.lightTheme,
       home: const AuthGate(), // ← Auth Gate thay thế MainScreen trực tiếp
       darkTheme: AppTheme.darkTheme,
-      themeMode: ThemeMode.system, // Will switch based on system dark/light mode
+      themeMode:
+          ThemeMode.system, // Will switch based on system dark/light mode
       // Tạm thời Load màn hình Roleplay lên trước để bạn test UI
-      home: const ScenarioSelectionScreen(),
+      // home: const ScenarioSelectionScreen(),
     );
   }
 }
