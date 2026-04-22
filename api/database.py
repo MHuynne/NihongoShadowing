@@ -2,9 +2,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# Config your MySQL database connection here
-# Format: "mysql+pymysql://<username>:<password>@<host>:<port>/<database_name>"
-SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:1234@localhost:3306/nihongo_learning"
+# Config your database connection here
+# Cho môi trường Laragon: user mặc định là root, mật khẩu để trống.
+# Bạn hãy chắc chắn đã bấm "Start All" trên Laragon và tạo database tên là "nihongo_learning" trong HeidiSQL nhé!
+SQLALCHEMY_DATABASE_URL = "mysql+pymysql://root:@localhost:3306/nihongo_learning"
 
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)

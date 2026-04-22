@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Ứng dụng cần sử dụng microphone để ghi âm giọng nói luyện tập Shadowing và Roleplay.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Ứng dụng cần quyền nhận diện giọng nói để chuyển nội dung bạn nói thành văn bản.</string>
 </dict>
 </plist>
