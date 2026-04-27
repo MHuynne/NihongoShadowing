@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 
 class RoleplayService {
   // Đối với Android Emulator, 10.0.2.2 trỏ về localhost của máy tính
-  static const String baseUrl = 'http://10.0.2.2:8000/roleplay';
+  static const String baseUrl = 'http://10.0.2.2:8001/roleplay';
 
   // 1. Tạo hoặc lấy Scenario
   Future<int> getOrCreateScenario(String title, String description) async {
@@ -57,6 +57,36 @@ class RoleplayService {
       return jsonDecode(response.body);
     } else {
       throw Exception('Failed to chat with AI');
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getChatHistory({int userId = 1}) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/history?user_id=$userId'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body);
+      return data.cast<Map<String, dynamic>>();
+    } else {
+      throw Exception('Failed to load chat history');
+    }
+  }
+
+  Future<Map<String, dynamic>> getChatHistoryDetail(
+    int sessionId, {
+    int userId = 1,
+  }) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/history/$sessionId?user_id=$userId'),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to load chat history detail');
     }
   }
 }
