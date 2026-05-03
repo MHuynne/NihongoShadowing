@@ -21,3 +21,4 @@ class Lesson(Base):
     created_at = Column(TIMESTAMP, server_default=func.now())
 
     shadowing_topics = relationship("ShadowingTopic", back_populates="lesson")
+    vocabularies     = relationship("Vocabulary", back_populates="lesson", cascade="all, delete-orphan")

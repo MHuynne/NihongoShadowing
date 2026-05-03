@@ -24,7 +24,8 @@ class _KingoChatScreenState extends State<KingoChatScreen> {
         ChatFuriganaWord('私', furigana: 'わたし'),
         ChatFuriganaWord('\nはキンゴです。'),
       ],
-      translation: 'Rất vui được gặp bạn, tôi là Kingo. / Nice to meet you, I\'m Kingo.',
+      translation:
+          'Rất vui được gặp bạn, tôi là Kingo. / Nice to meet you, I\'m Kingo.',
     ),
     ChatMessageModel(
       id: '2',
@@ -102,10 +103,7 @@ class _KingoChatScreenState extends State<KingoChatScreen> {
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
-          child: Container(
-            color: AppColors.slate200,
-            height: 1.0,
-          ),
+          child: Container(color: AppColors.slate200, height: 1.0),
         ),
       ),
       body: Column(
@@ -117,10 +115,13 @@ class _KingoChatScreenState extends State<KingoChatScreen> {
                 // Today Label
                 Center(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 6,
+                    ),
                     margin: const EdgeInsets.only(bottom: 24),
                     decoration: BoxDecoration(
-                      color: AppColors.progressTeal.withOpacity(0.15),
+                      color: AppColors.progressTeal.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: const Text(
@@ -135,11 +136,13 @@ class _KingoChatScreenState extends State<KingoChatScreen> {
                   ),
                 ),
                 ..._messages.map((m) => ChatBubble(message: m)).toList(),
-                
+
                 // Keigo Suggestion
-                KeigoSuggestionCard(onApply: () {
-                  // Implement functionality to apply suggestion
-                }),
+                KeigoSuggestionCard(
+                  onApply: () {
+                    // Implement functionality to apply suggestion
+                  },
+                ),
               ],
             ),
           ),

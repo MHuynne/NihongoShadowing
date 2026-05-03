@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/home/presentation/components/main_bottom_nav_bar.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/roadmap_screen.dart';
-import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
-import 'package:flutter_application_1/features/kingo_chat/presentation/screens/kingo_chat_screen.dart';
+import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_topic_list_screen.dart';
+import 'package:flutter_application_1/features/roleplay/screens/scenario_selection_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -18,8 +18,8 @@ class _MainScreenState extends State<MainScreen> {
   final List<Widget> _screens = [
     const HomeScreen(),
     const RoadmapScreen(),
-    const ShadowingScreen(),
-    const KingoChatScreen(),
+    const ShadowingTopicListScreen(),
+    const ScenarioSelectionScreen(),
     const Center(child: Text('Tài khoản')), // Placeholder
   ];
 

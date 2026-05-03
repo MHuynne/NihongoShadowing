@@ -13,14 +13,14 @@ class QuickAccessGrid extends StatelessWidget {
         children: [
           Row(
             children: const [
-              Icon(Icons.grid_view_rounded, color: AppColors.progressTeal),
+              Icon(Icons.grid_view_rounded, color: AppColors.toriiRed),
               SizedBox(width: 8),
               Text(
                 'Truy cập nhanh',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.textDark,
+                  color: AppColors.slate800,
                 ),
               ),
             ],
@@ -55,7 +55,7 @@ class QuickAccessGrid extends StatelessWidget {
                   icon: Icons.smart_toy_outlined,
                   title: 'Roleplay Chat',
                   iconBgColor: AppColors.lightPinkBackground,
-                  iconColor: AppColors.sunRed,
+                  iconColor: AppColors.toriiRedLight,
                 ),
               ),
               const SizedBox(width: 16),
@@ -83,11 +83,11 @@ class QuickAccessGrid extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.itemBackground,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.02),
+            color: AppColors.toriiRed.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -110,7 +110,7 @@ class QuickAccessGrid extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.bold,
-              color: AppColors.textDark,
+              color: AppColors.slate800,
             ),
           ),
         ],

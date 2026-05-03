@@ -3,8 +3,8 @@ from typing import Optional
 
 class ShadowingSegmentBase(BaseModel):
     order_index: int
-    start_time: float
-    end_time: float
+    start_time: Optional[float] = None
+    end_time: Optional[float] = None
     kanji_content: Optional[str] = None
     furigana: Optional[str] = None
     romaji: Optional[str] = None

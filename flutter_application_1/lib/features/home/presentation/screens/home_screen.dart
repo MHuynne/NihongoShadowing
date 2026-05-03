@@ -48,23 +48,53 @@ class HomeScreen extends StatelessWidget {
     ];
 
     return Scaffold(
-      backgroundColor: AppColors.backgroundLight,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              HomeHeader(user: dummyUser),
-              const SizedBox(height: 8),
-              SrsProgressCard(progress: dummyProgress),
-              const SizedBox(height: 24),
-              const QuickAccessGrid(),
-              const SizedBox(height: 24),
-              LeaderboardList(users: dummyLeaderboard),
-              const SizedBox(height: 32), // Bottom padding
-            ],
+      backgroundColor: Colors.white,
+      body: Stack(
+        children: [
+          // Background Light Gradient
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.white,
+                    Color(0xFFF3E5E7), // Soft dusty pink
+                    Color(0xFFEBDDE0),
+                    Colors.white,
+                  ],
+                  stops: [0.0, 0.3, 0.7, 1.0],
+                ),
+              ),
+            ),
           ),
-        ),
+          SafeArea(
+            bottom: false,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                HomeHeader(user: dummyUser),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const SizedBox(height: 24),
+                        SrsProgressCard(progress: dummyProgress),
+                        const SizedBox(height: 24),
+                        const QuickAccessGrid(),
+                        const SizedBox(height: 24),
+                        LeaderboardList(users: dummyLeaderboard),
+                        const SizedBox(height: 32), // Bottom padding
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }

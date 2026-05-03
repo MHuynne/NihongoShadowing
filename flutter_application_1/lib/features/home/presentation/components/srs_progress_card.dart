@@ -12,46 +12,41 @@ class SrsProgressCard extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 20.0),
       decoration: BoxDecoration(
-        color: AppColors.itemBackground,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
+            color: AppColors.toriiRed.withValues(alpha: 0.1),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Column(
         children: [
-          // Banner Image Area
+          // Banner Area (Optional, can be removed to be more minimalist, but we'll adapt it)
           Container(
-            height: 100, // Adjusted height for better proportionality
-            decoration: const BoxDecoration(
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              image: DecorationImage(
-                // Placeholder image from network, ideally should be an asset
-                image: NetworkImage('https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?q=80&w=600&auto=format&fit=crop'),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(Colors.black26, BlendMode.darken),
-              ),
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              color: AppColors.toriiRed.withValues(alpha: 0.05),
             ),
-            alignment: Alignment.bottomLeft,
-            padding: const EdgeInsets.all(16),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text(
-                'NHIỆM VỤ HÔM NAY',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.progressTeal,
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            alignment: Alignment.centerLeft,
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: AppColors.toriiRed),
+                const SizedBox(width: 8),
+                const Text(
+                  'NHIỆM VỤ HÔM NAY',
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.toriiRed,
+                    letterSpacing: 1.2,
+                  ),
                 ),
-              ),
+              ],
             ),
           ),
           
@@ -69,7 +64,7 @@ class SrsProgressCard extends StatelessWidget {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.textDark,
+                        color: AppColors.slate800,
                       ),
                     ),
                     Text(
@@ -77,7 +72,7 @@ class SrsProgressCard extends StatelessWidget {
                       style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
-                        color: AppColors.progressTeal,
+                        color: AppColors.toriiRed,
                       ),
                     ),
                   ],
@@ -96,11 +91,11 @@ class SrsProgressCard extends StatelessWidget {
                 LinearProgressIndicator(
                   value: progress.progressPercentage,
                   backgroundColor: AppColors.slate100,
-                  color: AppColors.progressTeal,
+                  color: AppColors.toriiRed,
                   minHeight: 12,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 24),
                 
                 // Action Button
                 SizedBox(
@@ -108,24 +103,26 @@ class SrsProgressCard extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {},
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.buttonYellow,
-                      foregroundColor: AppColors.textDark,
+                      backgroundColor: AppColors.toriiRed,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(16),
                       ),
-                      elevation: 0,
+                      elevation: 4,
+                      shadowColor: AppColors.toriiRed.withValues(alpha: 0.4),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: const [
-                        Icon(Icons.play_circle_fill, size: 24),
+                        Icon(Icons.play_arrow_rounded, size: 24),
                         SizedBox(width: 8),
                         Text(
                           'Học tiếp',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
+                            letterSpacing: 0.5,
                           ),
                         ),
                       ],

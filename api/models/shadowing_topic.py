@@ -27,3 +27,4 @@ class ShadowingTopic(Base):
     lesson = relationship("Lesson", back_populates="shadowing_topics")
     segments = relationship("ShadowingSegment", back_populates="topic", cascade="all, delete-orphan")
     results = relationship("ShadowingResult", back_populates="topic", cascade="all, delete-orphan")
+    vocabularies = relationship("Vocabulary", back_populates="topic", cascade="all, delete-orphan")

@@ -3,6 +3,7 @@ from typing import Optional, List
 from datetime import datetime
 from enum import Enum
 from .shadowing_segment import ShadowingSegmentCreate, ShadowingSegment
+from .vocabulary import VocabularyCreate, Vocabulary
 
 class LevelEnum(str, Enum):
     N5 = "N5"
@@ -22,11 +23,13 @@ class ShadowingTopicBase(BaseModel):
 
 class ShadowingTopicCreate(ShadowingTopicBase):
     segments: Optional[List[ShadowingSegmentCreate]] = []
+    vocabularies: Optional[List[VocabularyCreate]] = []
 
 class ShadowingTopic(ShadowingTopicBase):
     id: int
     created_at: Optional[datetime] = None
     segments: List[ShadowingSegment] = []
+    vocabularies: List[Vocabulary] = []
 
     class Config:
         from_attributes = True
