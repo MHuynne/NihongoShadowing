@@ -40,28 +40,30 @@ class DefaultFirebaseOptions {
   // ─── THAY CÁC GIÁ TRỊ DƯỚI ĐÂY SAU KHI CHẠY flutterfire configure ───
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    storageBucket: 'YOUR_PROJECT_ID.firebasestorage.app',
+    apiKey: 'AIzaSyAVn5UlyRcCkIPHR5-glDGOlG009d6RBEg',
+    appId: '1:1030822382399:web:710b0b53ab066b0e84618a',
+    messagingSenderId: '1030822382399',
+    projectId: 'nihongo-shadowing-98ab5',
+    authDomain: 'nihongo-shadowing-98ab5.firebaseapp.com',
+    storageBucket: 'nihongo-shadowing-98ab5.firebasestorage.app',
+    measurementId: 'G-W9S2D3RV1C',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_ANDROID_API_KEY',
-    appId: 'YOUR_ANDROID_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.firebasestorage.app',
+    apiKey: 'AIzaSyCWPtfmcknanCvBXh4EQBNeXS89G8hFqQY',
+    appId: '1:1030822382399:android:cb5b233d7c10688e84618a',
+    messagingSenderId: '1030822382399',
+    projectId: 'nihongo-shadowing-98ab5',
+    storageBucket: 'nihongo-shadowing-98ab5.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_IOS_API_KEY',
-    appId: 'YOUR_IOS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    storageBucket: 'YOUR_PROJECT_ID.firebasestorage.app',
+    apiKey: 'AIzaSyDN_krayxCgsvzoPYJ4Vlz-ucg62sewGBw',
+    appId: '1:1030822382399:ios:fa5683e270d7b10684618a',
+    messagingSenderId: '1030822382399',
+    projectId: 'nihongo-shadowing-98ab5',
+    storageBucket: 'nihongo-shadowing-98ab5.firebasestorage.app',
+    iosClientId: '1030822382399-nuubvh6l0js0utn7f6pghl06okv4ucml.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication1',
   );
 

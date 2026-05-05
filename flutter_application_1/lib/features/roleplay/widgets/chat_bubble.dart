@@ -20,31 +20,33 @@ class ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: AppColors.shadow(context),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
           gradient: isUser
               ? const LinearGradient(
-                  colors: [AppColors.primary, Color(0xFF4F46E5)],
+                  colors: [AppColors.toriiRed, AppColors.toriiRedLight],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 )
               : null,
-          color: isUser ? null : Colors.white,
+          color: isUser ? null : AppColors.surface(context),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
             bottomLeft: Radius.circular(isUser ? 20 : 4),
             bottomRight: Radius.circular(isUser ? 4 : 20),
           ),
-          border: isUser ? null : Border.all(color: AppColors.slate200, width: 1),
+          border: isUser
+              ? null
+              : Border.all(color: AppColors.border(context), width: 1),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: isUser ? Colors.white : AppColors.slate900,
+            color: isUser ? Colors.white : AppColors.primaryText(context),
             fontSize: 15,
             fontWeight: isUser ? FontWeight.w500 : FontWeight.normal,
             height: 1.4,

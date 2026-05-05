@@ -159,7 +159,7 @@ class _ScenarioSelectionScreenState extends State<ScenarioSelectionScreen> {
               child: ElevatedButton(
                 onPressed: _startRoleplay,
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: AppColors.toriiRed,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(15)),
@@ -186,11 +186,11 @@ class _ScenarioSelectionScreenState extends State<ScenarioSelectionScreen> {
         padding: const EdgeInsets.symmetric(vertical: 12),
         decoration: BoxDecoration(
           color: isSelected
-              ? AppColors.softAccentSurface(context, AppColors.primary)
+              ? AppColors.softAccentSurface(context, AppColors.toriiRed)
               : AppColors.inputFill(context),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: isSelected ? AppColors.primary : Colors.transparent,
+            color: isSelected ? AppColors.toriiRed : Colors.transparent,
             width: 2,
           ),
         ),
@@ -199,7 +199,7 @@ class _ScenarioSelectionScreenState extends State<ScenarioSelectionScreen> {
             Icon(
               icon,
               color: isSelected
-                  ? AppColors.primary
+                  ? AppColors.toriiRed
                   : AppColors.secondaryText(context),
             ),
             const SizedBox(height: 4),
@@ -207,7 +207,7 @@ class _ScenarioSelectionScreenState extends State<ScenarioSelectionScreen> {
               label,
               style: TextStyle(
                 color: isSelected
-                    ? AppColors.primary
+                    ? AppColors.toriiRed
                     : AppColors.primaryText(context),
                 fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
               ),
@@ -225,6 +225,13 @@ class _ScenarioSelectionScreenState extends State<ScenarioSelectionScreen> {
       child: ActionChip(
         avatar: Icon(icon, size: 18),
         label: Text(label),
+        backgroundColor: AppColors.lightPinkBackground,
+        side: BorderSide(color: AppColors.toriiRed.withValues(alpha: 0.16)),
+        labelStyle: const TextStyle(
+          color: AppColors.toriiRed,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: const IconThemeData(color: AppColors.toriiRed),
         onPressed: () {
           _targetController.text = target;
           setState(() => _selectedMode = mode);

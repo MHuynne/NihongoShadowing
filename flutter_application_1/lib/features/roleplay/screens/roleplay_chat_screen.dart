@@ -283,7 +283,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             const SnackBar(
               content: Text('👂 Đang nghe... Hãy nói tiếng Nhật!'),
               duration: Duration(seconds: 2),
-              backgroundColor: AppColors.primary,
+              backgroundColor: AppColors.toriiRed,
             ),
           );
         }
@@ -427,8 +427,8 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
         title: Row(
           children: [
             CircleAvatar(
-              backgroundColor: AppColors.primary.withOpacity(0.1),
-              child: const Icon(Icons.person, color: AppColors.primary),
+              backgroundColor: AppColors.lightPinkBackground,
+              child: const Icon(Icons.person, color: AppColors.toriiRed),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -481,7 +481,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
           if (_isLoading)
             const LinearProgressIndicator(
                 minHeight: 2,
-                color: AppColors.primary,
+                color: AppColors.toriiRed,
                 backgroundColor: Colors.transparent),
 
           // Mode Indicator
@@ -497,7 +497,8 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             child: Row(
               children: [
                 Icon(Icons.auto_fix_high,
-                    size: 16, color: AppColors.primary.withOpacity(0.7)),
+                    size: 16,
+                    color: AppColors.toriiRed.withValues(alpha: 0.75)),
                 const SizedBox(width: 8),
                 Text(
                   'Chế độ: ',
@@ -510,7 +511,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
                       : "Thân mật / Plain",
                   style: const TextStyle(
                       fontSize: 13,
-                      color: AppColors.primary,
+                      color: AppColors.toriiRed,
                       fontWeight: FontWeight.bold),
                 ),
               ],
@@ -521,11 +522,11 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
-              color: Colors.orange.withOpacity(0.12),
+              color: AppColors.goldLight,
               child: Row(
                 children: [
                   const Icon(Icons.hourglass_top_rounded,
-                      size: 16, color: Colors.orange),
+                      size: 16, color: AppColors.warningYellow),
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
@@ -617,7 +618,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
                             Icons.send_rounded,
                             color: (_isLoading || _isRateLimited)
                                 ? AppColors.tertiaryText(context)
-                                : AppColors.primary,
+                                : AppColors.toriiRed,
                           ),
                           onPressed: (_isLoading || _isRateLimited)
                               ? null

@@ -78,7 +78,9 @@ class _RoleplayHistoryScreenState extends State<RoleplayHistoryScreen> {
         future: _historyFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.toriiRed),
+            );
           }
 
           if (snapshot.hasError) {
@@ -201,7 +203,9 @@ class _RoleplayHistoryDetailScreenState
         future: _detailFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(color: AppColors.toriiRed),
+            );
           }
 
           if (snapshot.hasError || !snapshot.hasData) {
@@ -234,14 +238,14 @@ class _RoleplayHistoryDetailScreenState
                     Icon(
                       Icons.auto_fix_high,
                       size: 16,
-                      color: AppColors.primary.withValues(alpha: 0.75),
+                      color: AppColors.toriiRed.withValues(alpha: 0.75),
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         _modeLabel(detail['mode']?.toString()),
                         style: const TextStyle(
-                          color: AppColors.primary,
+                          color: AppColors.toriiRed,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -313,12 +317,12 @@ class _HistorySessionTile extends StatelessWidget {
                     height: 40,
                     decoration: BoxDecoration(
                       color: AppColors.softAccentSurface(
-                          context, AppColors.primary),
+                          context, AppColors.toriiRed),
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(
                       Icons.forum_rounded,
-                      color: AppColors.primary,
+                      color: AppColors.toriiRed,
                       size: 20,
                     ),
                   ),
@@ -481,6 +485,10 @@ class _HistoryStatus extends StatelessWidget {
             const SizedBox(height: 18),
             FilledButton(
               onPressed: onPressed,
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.toriiRed,
+                foregroundColor: Colors.white,
+              ),
               child: Text(actionLabel),
             ),
           ],

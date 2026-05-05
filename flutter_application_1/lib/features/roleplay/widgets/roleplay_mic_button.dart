@@ -15,7 +15,8 @@ class RoleplayMicButton extends StatefulWidget {
   State<RoleplayMicButton> createState() => _RoleplayMicButtonState();
 }
 
-class _RoleplayMicButtonState extends State<RoleplayMicButton> with SingleTickerProviderStateMixin {
+class _RoleplayMicButtonState extends State<RoleplayMicButton>
+    with SingleTickerProviderStateMixin {
   late AnimationController _pulseController;
   late Animation<double> _pulseAnimation;
 
@@ -70,11 +71,11 @@ class _RoleplayMicButtonState extends State<RoleplayMicButton> with SingleTicker
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.redAccent.withOpacity(0.3),
+                  color: AppColors.toriiRed.withValues(alpha: 0.24),
                 ),
               ),
             ),
-          
+
           // Nút Mic chính
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
@@ -83,12 +84,12 @@ class _RoleplayMicButtonState extends State<RoleplayMicButton> with SingleTicker
             decoration: BoxDecoration(
               gradient: widget.isRecording
                   ? const LinearGradient(
-                      colors: [Colors.redAccent, Colors.red],
+                      colors: [AppColors.errorRed, AppColors.toriiRed],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     )
-                  : LinearGradient(
-                      colors: [AppColors.primary, AppColors.primary.withOpacity(0.8)],
+                  : const LinearGradient(
+                      colors: [AppColors.toriiRed, AppColors.toriiRedLight],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                     ),
@@ -96,14 +97,14 @@ class _RoleplayMicButtonState extends State<RoleplayMicButton> with SingleTicker
               boxShadow: widget.isRecording
                   ? [
                       BoxShadow(
-                        color: Colors.red.withOpacity(0.4),
+                        color: AppColors.toriiRed.withValues(alpha: 0.34),
                         blurRadius: 15,
                         spreadRadius: 2,
                       )
                     ]
                   : [
                       BoxShadow(
-                        color: AppColors.primary.withOpacity(0.3),
+                        color: AppColors.toriiRed.withValues(alpha: 0.26),
                         blurRadius: 8,
                         offset: const Offset(0, 4),
                       )
