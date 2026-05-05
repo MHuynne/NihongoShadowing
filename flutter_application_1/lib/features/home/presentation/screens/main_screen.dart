@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/home/presentation/components/main_bottom_nav_bar.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/home_screen.dart';
+import 'package:flutter_application_1/features/profile/presentation/screens/profile_screen.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/roadmap_screen.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_topic_list_screen.dart';
 import 'package:flutter_application_1/features/roleplay/screens/scenario_selection_screen.dart';
@@ -20,7 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     const RoadmapScreen(),
     const ShadowingTopicListScreen(),
     const ScenarioSelectionScreen(),
-    const Center(child: Text('Tài khoản')), // Placeholder
+    const ProfileScreen(),
   ];
 
   void _onTabTapped(int index) {
