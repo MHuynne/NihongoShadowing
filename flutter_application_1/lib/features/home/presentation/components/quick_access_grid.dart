@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/dictionary/presentation/screens/dictionary_screen.dart';
+import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 
 class QuickAccessGrid extends StatelessWidget {
   const QuickAccessGrid({super.key});
@@ -36,6 +37,7 @@ class QuickAccessGrid extends StatelessWidget {
                   title: 'Lộ trình',
                   iconBgColor: AppColors.lightTealGreen,
                   iconColor: AppColors.progressTeal,
+                  onTap: () => MainScreen.switchTab(context, 1),
                 ),
               ),
               const SizedBox(width: 16),
@@ -46,6 +48,7 @@ class QuickAccessGrid extends StatelessWidget {
                   title: 'Shadowing',
                   iconBgColor: AppColors.lightBlueBackground,
                   iconColor: Colors.blueAccent,
+                  onTap: () => MainScreen.switchTab(context, 2),
                 ),
               ),
             ],
@@ -60,6 +63,7 @@ class QuickAccessGrid extends StatelessWidget {
                   title: 'Roleplay Chat',
                   iconBgColor: AppColors.lightPinkBackground,
                   iconColor: AppColors.toriiRedLight,
+                  onTap: () => MainScreen.switchTab(context, 3),
                 ),
               ),
               const SizedBox(width: 16),

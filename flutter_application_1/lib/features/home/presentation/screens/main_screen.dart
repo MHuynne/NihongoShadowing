@@ -15,6 +15,13 @@ class MainScreen extends StatefulWidget {
     state?._forceRefreshRoadmap();
   }
 
+  static void switchTab(BuildContext context, int index) {
+    final state = context.findAncestorStateOfType<_MainScreenState>();
+    if (state != null) {
+      state._onTabTapped(index);
+    }
+  }
+
   @override
   State<MainScreen> createState() => _MainScreenState();
 }

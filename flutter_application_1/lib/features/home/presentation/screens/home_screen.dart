@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
-import 'package:flutter_application_1/features/home/models/leaderboard_user.dart';
 import 'package:flutter_application_1/features/home/models/user_model.dart';
 import 'package:flutter_application_1/features/home/presentation/components/home_header.dart';
-import 'package:flutter_application_1/features/home/presentation/components/leaderboard_list.dart';
 import 'package:flutter_application_1/features/home/presentation/components/mountain_progress_widget.dart';
 import 'package:flutter_application_1/features/home/presentation/components/quick_access_grid.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
+import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -61,27 +60,6 @@ class _HomeScreenState extends State<HomeScreen> {
       streakDays: 12,
       balanceYen: 2450,
     );
-
-    final dummyLeaderboard = [
-      LeaderboardUser(
-        rank: 1,
-        name: 'Hương Nguyễn',
-        avatarUrl: 'https://i.pravatar.cc/150?img=5',
-        pointsXP: 8420,
-      ),
-      LeaderboardUser(
-        rank: 2,
-        name: 'Quốc Trung',
-        avatarUrl: 'https://i.pravatar.cc/150?img=11',
-        pointsXP: 7910,
-      ),
-      LeaderboardUser(
-        rank: 3,
-        name: 'Duy Mạnh',
-        avatarUrl: 'https://i.pravatar.cc/150?img=12',
-        pointsXP: 7200,
-      ),
-    ];
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -145,7 +123,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   levelLabel: _levelLabel,
                                   animate: true,
                                   onTap: () {
-                                    // TODO: navigate to roadmap
+                                    MainScreen.switchTab(context, 1);
                                   },
                                 ),
 
@@ -155,11 +133,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           const QuickAccessGrid(),
 
                           const SizedBox(height: 24),
-
-                          // ── Leaderboard ─────────────────────────
-                          LeaderboardList(users: dummyLeaderboard),
-
-                          const SizedBox(height: 40),
                         ],
                       ),
                     ),

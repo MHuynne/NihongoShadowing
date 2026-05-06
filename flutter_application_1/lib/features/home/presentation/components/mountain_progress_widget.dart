@@ -277,13 +277,13 @@ class _MountainPainter extends CustomPainter {
 
     // ── Background sky gradient ──────────────────────────────────────────
     final skyPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
+      ..shader = RadialGradient(
+        center: const Alignment(0.7, -0.4),
+        radius: 1.5,
         colors: [
-          const Color(0xFF0D1B3E),
-          const Color(0xFF1A2A5E),
-          const Color(0xFF243060),
+          const Color(0xFF1E2A5E),
+          const Color(0xFF131B3A),
+          const Color(0xFF0A0F24),
         ],
       ).createShader(Rect.fromLTWH(0, 0, w, h));
     canvas.drawRect(Rect.fromLTWH(0, 0, w, h), skyPaint);
@@ -309,16 +309,31 @@ class _MountainPainter extends CustomPainter {
       canvas.drawCircle(pos, 1.5, starPaint);
     }
 
-    // ── Moon ─────────────────────────────────────────────────────────────
+    // ── Moon & Glow ─────────────────────────────────────────────────────────────
+    final moonCenter = Offset(w * 0.85, h * 0.20);
+    final moonGlow = Paint()
+      ..color = const Color(0xFFFFF9C4).withValues(alpha: 0.2)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
+    canvas.drawCircle(moonCenter, 25, moonGlow);
+
     final moonPaint = Paint()
-      ..color = const Color(0xFFFFF9C4).withValues(alpha: 0.9);
-    canvas.drawCircle(Offset(w * 0.85, h * 0.15), 10, moonPaint);
-    // Moon crescent shadow
-    canvas.drawCircle(
-      Offset(w * 0.88, h * 0.14),
-      9,
-      Paint()..color = const Color(0xFF1A2A5E),
-    );
+      ..shader = RadialGradient(
+        center: const Alignment(-0.2, -0.2),
+        radius: 0.8,
+        colors: [
+          const Color(0xFFFFFDE7),
+          const Color(0xFFFFF59D),
+        ],
+      ).createShader(Rect.fromCircle(center: moonCenter, radius: 12));
+    canvas.drawCircle(moonCenter, 12, moonPaint);
+    
+    // Moon craters
+    canvas.drawCircle(Offset(w * 0.83, h * 0.18), 2, Paint()..color = Colors.black.withValues(alpha: 0.1));
+    canvas.drawCircle(Offset(w * 0.87, h * 0.22), 3, Paint()..color = Colors.black.withValues(alpha: 0.1));
+    canvas.drawCircle(Offset(w * 0.86, h * 0.17), 1.5, Paint()..color = Colors.black.withValues(alpha: 0.08));
+
+    // ── Clouds ─────────────────────────────────────────────────────────────
+    _drawClouds(canvas, w, h);
 
     // ── Mountain body ────────────────────────────────────────────────────
     final mountainPath = Path();
@@ -336,9 +351,9 @@ class _MountainPainter extends CustomPainter {
         begin: Alignment.topCenter,
         end: Alignment.bottomCenter,
         colors: [
-          const Color(0xFF3D4A6B),
+          const Color(0xFF4A5C88),
           const Color(0xFF2D3A5B),
-          const Color(0xFF1E2A45),
+          const Color(0xFF151D33),
         ],
       ).createShader(Rect.fromLTWH(0, 0, w, h));
     canvas.drawPath(mountainPath, mountainPaint);
@@ -530,6 +545,19 @@ class _MountainPainter extends CustomPainter {
       canvas,
       Offset(climberPos.dx - tp.width / 2, climberPos.dy - 22),
     );
+  }
+
+  void _drawClouds(Canvas canvas, double w, double h) {
+    final cloudPaint = Paint()
+      ..color = Colors.white.withValues(alpha: 0.1)
+      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
+      
+    // Cloud 1
+    canvas.drawOval(Rect.fromLTWH(w * 0.05, h * 0.45, w * 0.35, h * 0.12), cloudPaint);
+    // Cloud 2
+    canvas.drawOval(Rect.fromLTWH(w * 0.55, h * 0.35, w * 0.4, h * 0.15), cloudPaint);
+    // Cloud 3
+    canvas.drawOval(Rect.fromLTWH(-w * 0.1, h * 0.65, w * 0.4, h * 0.1), cloudPaint);
   }
 
   @override
