@@ -3,7 +3,13 @@ from models.lesson import Lesson
 from schemas.lesson import LessonCreate
 
 def get_lessons(db: Session, skip: int = 0, limit: int = 100):
-    return db.query(Lesson).offset(skip).limit(limit).all()
+    return (
+        db.query(Lesson)
+        .order_by(Lesson.level, Lesson.order_index)
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 def get_lesson(db: Session, lesson_id: int):
     return db.query(Lesson).filter(Lesson.id == lesson_id).first()

@@ -40,12 +40,13 @@ class DefaultFirebaseOptions {
   // ─── THAY CÁC GIÁ TRỊ DƯỚI ĐÂY SAU KHI CHẠY flutterfire configure ───
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_WEB_API_KEY',
-    appId: 'YOUR_WEB_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    storageBucket: 'YOUR_PROJECT_ID.firebasestorage.app',
+    apiKey: "AIzaSyDbL_cGySXFJFmvPxmVqxqayUX83mImlOw",
+    authDomain: "nihongotokyo-e9af2.firebaseapp.com",
+    projectId: "nihongotokyo-e9af2",
+    storageBucket: "nihongotokyo-e9af2.firebasestorage.app",
+    messagingSenderId: "56132876251",
+    appId: "1:56132876251:web:c889e00e0181ba07d799fe",
+    measurementId: "G-YYL8G02K9K",
   );
 
   static const FirebaseOptions android = FirebaseOptions(

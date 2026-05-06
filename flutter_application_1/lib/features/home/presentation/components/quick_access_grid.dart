@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/features/dictionary/presentation/screens/dictionary_screen.dart';
 
 class QuickAccessGrid extends StatelessWidget {
   const QuickAccessGrid({super.key});
@@ -30,6 +31,7 @@ class QuickAccessGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildGridItem(
+                  context: context,
                   icon: Icons.map_outlined,
                   title: 'Lộ trình',
                   iconBgColor: AppColors.lightTealGreen,
@@ -39,6 +41,7 @@ class QuickAccessGrid extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildGridItem(
+                  context: context,
                   icon: Icons.graphic_eq,
                   title: 'Shadowing',
                   iconBgColor: AppColors.lightBlueBackground,
@@ -52,6 +55,7 @@ class QuickAccessGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildGridItem(
+                  context: context,
                   icon: Icons.smart_toy_outlined,
                   title: 'Roleplay Chat',
                   iconBgColor: AppColors.lightPinkBackground,
@@ -61,10 +65,28 @@ class QuickAccessGrid extends StatelessWidget {
               const SizedBox(width: 16),
               Expanded(
                 child: _buildGridItem(
+                  context: context,
                   icon: Icons.search_rounded,
                   title: 'Từ điển',
                   iconBgColor: AppColors.lightPurpleBackground,
                   iconColor: Colors.purpleAccent,
+                  onTap: () => Navigator.push(
+                    context,
+                    PageRouteBuilder(
+                      pageBuilder: (_, __, ___) => const DictionaryScreen(),
+                      transitionsBuilder: (_, anim, __, child) {
+                        final tween = Tween(
+                          begin: const Offset(1.0, 0.0),
+                          end: Offset.zero,
+                        ).chain(CurveTween(curve: Curves.easeOutCubic));
+                        return SlideTransition(
+                          position: anim.drive(tween),
+                          child: child,
+                        );
+                      },
+                      transitionDuration: const Duration(milliseconds: 350),
+                    ),
+                  ),
                 ),
               ),
             ],
@@ -75,45 +97,50 @@ class QuickAccessGrid extends StatelessWidget {
   }
 
   Widget _buildGridItem({
+    BuildContext? context,
     required IconData icon,
     required String title,
     required Color iconBgColor,
     required Color iconColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.toriiRed.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.toriiRed.withValues(alpha: 0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.slate800,
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: iconBgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: iconColor, size: 24),
             ),
-          ),
-        ],
+            const SizedBox(height: 16),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.slate800,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

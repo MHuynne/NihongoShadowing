@@ -369,7 +369,10 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) => ShadowingScreen(topicId: topic['id'])),
+              builder: (_) => ShadowingScreen(
+                    topicId: topic['id'] as int,
+                    lessonId: topic['lesson_id'] as int? ?? 0,
+                  )),
         ),
         child: Container(
           decoration: BoxDecoration(

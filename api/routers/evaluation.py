@@ -5,8 +5,24 @@ import base64
 import tempfile
 import unicodedata
 import httpx
+import json as _json
+from enum import Enum
+from dataclasses import dataclass, field
+from typing import List, Optional
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from difflib import SequenceMatcher
+
+# pykakasi: chuyển Kanji → Hiragana để so sánh với Google STT output
+try:
+    import pykakasi as _pykakasi
+    _kks = _pykakasi.kakasi()
+    def _kanji_to_hira(text: str) -> str:
+        """Chuyển toàn bộ chuỗi Kanji/Katakana → Hiragana thuần."""
+        result = _kks.convert(text)
+        return "".join(item["hira"] or item["orig"] for item in result)
+except Exception:
+    def _kanji_to_hira(text: str) -> str:  # type: ignore
+        return text
 
 router = APIRouter(prefix="/evaluate", tags=["AI Speech Evaluation"])
 
@@ -31,15 +47,177 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") or GOOGLE_API_KEY
 _JP_PITCH_PARTICLES = {"は", "が", "を", "に", "で", "と", "も", "の", "へ", "から", "まで", "より", "ね", "よ", "か"}
 
 # ==============================================================================
+# SECTION 0: RecommendationEngine — Hệ thống gợi ý học tập AI
+# ==============================================================================
+
+class ErrorType(str, Enum):
+    PRONUNCIATION = "pronunciation"   # Sai âm cụ thể — nghe nhầm mora
+    PROSODY       = "prosody"         # Ngữ điệu/pitch-accent sai
+    RHYTHM        = "rhythm"          # Nhịp ngắt sai chỗ
+    PITCH_ACCENT  = "pitch_accent"    # Trường âm tiếng Nhật (っ, ん, ー, ざ行)
+
+class ActionType(str, Enum):
+    SHOW_HAN_VIET_MODE  = "show_han_viet_mode"   # Hiện Hán-Việt để làm điểm tựa
+    OPEN_VOCABULARY     = "open_vocabulary"       # Mở kho từ vựng ôn từ đó
+    ACTIVATE_SLOW_MODE  = "activate_slow_mode"    # Kích hoạt chế độ Slow-mo 0.75x
+    SHOW_PITCH_GUIDE    = "show_pitch_guide"      # Hiện hướng dẫn Pitch-accent
+    CELEBRATE           = "celebrate"             # Không lỗi — động viên
+    RETRY               = "retry"                 # Điểm quá thấp — cần thử lại
+
+@dataclass
+class ActionPlan:
+    message: str
+    action: ActionType
+    target_word: Optional[str] = None
+    severity: int = 1  # 1=nhẹ, 2=trung bình, 3=nghiêm trọng
+
+    def to_dict(self) -> dict:
+        return {
+            "message": self.message,
+            "action": self.action.value,
+            "target_word": self.target_word,
+            "severity": self.severity,
+        }
+
+
+class RecommendationEngine:
+    """
+    Phân tích kết quả shadowing và đưa ra Action Plan cá nhân hóa.
+    Input : accuracy, fluency, prosody, rhythm, mispronounced_words, error_types
+    Output: ActionPlan với message tiếng Việt + action type cho Flutter xử lý
+    """
+
+    # Danh sách âm Hán-Việt phổ biến người Việt hay nhầm trong tiếng Nhật
+    # (danh sách mở rộng dần theo thực tế lỗi)
+    _SINO_JAPANESE_PATTERNS = [
+        "学", "語", "音", "字", "校", "会", "社", "国", "人", "文",
+        "生", "先", "大", "小", "中", "高", "新", "本", "日", "年",
+        "力", "気", "電", "水", "火", "金", "木", "土", "花", "山",
+        "農", "業", "市", "府", "県", "区", "町", "村", "道", "京",
+    ]
+
+    # Pattern âm ngắt (っ), âm mũi (ん), âm dài (ー) — đặc trưng tiếng Nhật
+    _PITCH_ACCENT_CHARS = ["っ", "ッ", "ん", "ン", "ー", "〜"]
+
+    def _has_sino_japanese_error(self, words: List[str]) -> bool:
+        """Kiểm tra từ sai có chứa Kanji Hán-Việt phổ biến không."""
+        for w in words:
+            for kanji in self._SINO_JAPANESE_PATTERNS:
+                if kanji in w:
+                    return True
+        return False
+
+    def _has_pitch_accent_error(self, words: List[str], error_types: dict) -> bool:
+        """Kiểm tra có lỗi trường âm/xúc âm đặc trưng không."""
+        if error_types.get("pitch_accent"):
+            return True
+        for w in words:
+            for ch in self._PITCH_ACCENT_CHARS:
+                if ch in w:
+                    return True
+        return False
+
+    def analyze(
+        self,
+        accuracy: int,
+        fluency: int,
+        prosody: int,
+        rhythm: int,
+        mispronounced_words: List[str],
+        error_types: dict,
+        sentence_length: int = 0,
+    ) -> ActionPlan:
+        """
+        Trả về ActionPlan phù hợp nhất dựa trên kết quả phân tích.
+        Thứ tự ưu tiên: điểm quá thấp → lỗi Hán-Việt → câu dài khó → pitch-accent → prosody → celebrate
+        """
+        # ── Case 1: Điểm quá thấp → ép thử lại với hỗ trợ ──────────────────
+        if accuracy < 50:
+            return ActionPlan(
+                message=(
+                    "Đừng nản lòng! Điểm phát âm của bạn chưa đạt ngưỡng Pass. "
+                    "Hãy thử dùng chế độ 'Hiện Hán-Việt' để làm điểm tựa nhớ âm nhé! 🌸"
+                ),
+                action=ActionType.SHOW_HAN_VIET_MODE,
+                severity=3,
+            )
+
+        # ── Case 2: Sai Kanji Hán-Việt → mở kho từ vựng ──────────────────
+        if mispronounced_words and self._has_sino_japanese_error(mispronounced_words):
+            word = mispronounced_words[0]
+            return ActionPlan(
+                message=(
+                    f"Bạn có vẻ chưa chắc âm Hán-Việt của từ 「{word}」. "
+                    "Nhấn vào đây để vào kho từ vựng ôn lại nhé!"
+                ),
+                action=ActionType.OPEN_VOCABULARY,
+                target_word=word,
+                severity=2,
+            )
+
+        # ── Case 3: Câu dài + fluency thấp → kích hoạt Slow-mo ─────────
+        if fluency < 65 and sentence_length > 20:
+            return ActionPlan(
+                message=(
+                    "Phản xạ câu dài của bạn chưa tốt. "
+                    "Hãy thử lại với tốc độ 0.75x để luyện nhịp nhé! ⏱️"
+                ),
+                action=ActionType.ACTIVATE_SLOW_MODE,
+                severity=2,
+            )
+
+        # ── Case 4: Lỗi trường âm/pitch-accent (っ ん ー) ─────────────────
+        if self._has_pitch_accent_error(mispronounced_words, error_types):
+            bad_word = (error_types.get("pitch_accent") or mispronounced_words or [""])[0]
+            return ActionPlan(
+                message=(
+                    f"Âm đặc biệt 「{bad_word}」 (っ/ん/ー) bạn phát âm chưa chuẩn. "
+                    "Đây là điểm khó nhất với người Việt! Xem hướng dẫn pitch-accent nhé 🎵"
+                ),
+                action=ActionType.SHOW_PITCH_GUIDE,
+                target_word=bad_word or None,
+                severity=2,
+            )
+
+        # ── Case 5: Prosody thấp → gợi ý nghe lại và bắt chước ngữ điệu ─
+        if prosody < 60:
+            return ActionPlan(
+                message=(
+                    "Ngữ điệu (Pitch-accent) của bạn chưa khớp mẫu. "
+                    "Hãy nghe lại bản gốc 0.75x và chú ý âm lên/xuống của người Nhật bản ngữ! 🎧"
+                ),
+                action=ActionType.ACTIVATE_SLOW_MODE,
+                severity=2,
+            )
+
+        # ── Case 6: Tốt! Động viên ────────────────────────────────────────
+        if accuracy >= 85 and fluency >= 75:
+            return ActionPlan(
+                message=(
+                    "Tuyệt vời! 🌟 Phát âm và nhịp điệu của bạn rất gần chuẩn bản ngữ. "
+                    "Tiếp tục luyện tập để đạt đến mức tự nhiên nhé!"
+                ),
+                action=ActionType.CELEBRATE,
+                severity=0,
+            )
+
+        # ── Default: Khuyến khích tiếp tục ───────────────────────────────
+        return ActionPlan(
+            message="Khá tốt! Hãy luyện thêm để đồng bộ nhịp điệu và ngữ điệu với mẫu. 💪",
+            action=ActionType.CELEBRATE,
+            severity=1,
+        )
+
+
+# Singleton engine
+_recommendation_engine = RecommendationEngine()
+
+# ==============================================================================
 # SECTION 1: Audio Pre-processing
 # ==============================================================================
 
 def _trim_silence(audio_bytes: bytes, threshold: int = 500, frame_size: int = 512) -> bytes:
-    """
-    Cắt bỏ khoảng lặng ở đầu và cuối audio (raw PCM 16-bit little-endian).
-    Hoạt động trực tiếp trên bytes — không cần ffmpeg hay pydub.
-    Với file có container header (WebM/OGG), sẽ thử cắt nhưng fallback an toàn.
-    """
+ 
     if len(audio_bytes) < frame_size * 2:
         return audio_bytes
 
@@ -75,23 +253,38 @@ def _trim_silence(audio_bytes: bytes, threshold: int = 500, frame_size: int = 51
 # ==============================================================================
 
 def _normalize(text: str) -> str:
+    """NFKC normalize + lowercase. Dùng để so sánh text thô."""
     return unicodedata.normalize("NFKC", text).strip().lower()
+
+
+def _normalize_jp(text: str) -> str:
+    """
+    Normalize text tiếng Nhật để so sánh:
+    1. NFKC normalize
+    2. Chuyển Kanji/Katakana → Hiragana (để khớp với Google STT output)
+    3. Bỏ dấu câu, khoảng trắng
+    """
+    text = unicodedata.normalize("NFKC", text).strip()
+    text = _kanji_to_hira(text)  # Kanji → Hiragana
+    text = re.sub(r"[。、！？!?.,・ー…「」『』【】〔〕（）()\s]", "", text)
+    return text.lower()
 
 
 def _jp_mora_split(text: str) -> list[str]:
     """
-    Chia văn bản tiếng Nhật thành danh sách mora (đơn vị âm tiết).
-    Xử lý: ký tự thường nhỏ (っ, ぁ, ぃ...) gắn với mora trước; bỏ dấu câu.
+    Chia văn bản tiếng Nhật thành danh sách mora.
+    Tự động convert Kanji → Hiragana trước khi tách.
     """
     SMALL = set("ぁぃぅぇぉっゃゅょァィゥェォッャュョ")
     PUNCT = set("。、！？!?.,・ー…「」『』【】〔〕（）()")
-    text = unicodedata.normalize("NFKC", text)
+    # Convert Kanji → Hiragana để đồng nhất với Google STT
+    text = unicodedata.normalize("NFKC", _kanji_to_hira(text))
     moras = []
     for ch in text:
         if ch in PUNCT or ch.isspace():
             continue
         if ch in SMALL and moras:
-            moras[-1] += ch  # gắn vào mora trước
+            moras[-1] += ch
         else:
             moras.append(ch)
     return moras
@@ -193,11 +386,26 @@ def _compute_shadowing_scores(expected: str, recognized: str) -> tuple[int, int,
 
 
 def _find_error_word(expected: str, recognized: str) -> str:
+    """Tìm từ/cụm bị sai — normalize cả 2 về Hiragana trước khi so sánh."""
+    exp_hira = _normalize_jp(expected)
+    rec_hira = _normalize_jp(recognized)
+    # Tìm từ kanji trong expected mà Hiragana tương ứng không có trong recognized
+    # Dùng pykakasi để tách từ
+    try:
+        from janome.tokenizer import Tokenizer
+        t = Tokenizer()
+        tokens = [tok.surface for tok in t.tokenize(expected)]
+        for tok in tokens:
+            tok_hira = _normalize_jp(tok)
+            if tok_hira and len(tok_hira) > 1 and tok_hira not in rec_hira:
+                return tok
+    except Exception:
+        pass
+    # Fallback: tìm từ space-separated
     rec_lower = _normalize(recognized)
-    rec_clean = re.sub(r'[。、！？!?.,・ー…「」『』【】〔〕（）()]', '', rec_lower)
     for word in _normalize(expected).split():
         word_clean = re.sub(r'[。、！？!?.,・ー…「」『』【】〔〕（）()]', '', word)
-        if word_clean and word_clean not in rec_clean and len(word_clean) > 1:
+        if word_clean and word_clean not in rec_lower and len(word_clean) > 1:
             idx = _normalize(expected).find(word)
             if idx != -1:
                 return expected[idx: idx + len(word)]
@@ -302,59 +510,120 @@ async def _ai_generate_tip(
 
     return fallback_tip
 
-async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
+# Danh sách model fallback theo thứ tự ưu tiên
+_GEMINI_MODELS = [
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-1.5-flash-8b",
+]
+
+
+async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
     """
-    Dùng Gemini để đánh giá toàn diện: Điểm (accuracy, fluency, prosody, rhythm)
-    và mảng words_analysis.
+    Gọi Gemini API với fallback model nếu bị 429 quota.
+    Trả về parsed JSON hoặc {} nếu thất bại.
     """
     if not GEMINI_API_KEY:
         return {}
-    
-    prompt = (
-        "Bạn là giám khảo chấm thi nói tiếng Nhật chuyên nghiệp. Học viên vừa đọc một đoạn văn Shadowing:\n"
-        f"Câu gốc (chuẩn): {expected_text}\n"
-        f"STT nghe được: {recognized_text}\n\n"
-        "Đây là một đoạn văn dài. Hãy phân tích thật tỉ mỉ từng chi tiết (sai chữ, thiếu chữ, nhầm Hiragana). So sánh khớp thời gian và ngắt nghỉ tự nhiên.\n"
-        "Yêu cầu trả về kết quả định dạng JSON chuẩn (Không bọc Markdown) với cấu trúc:\n"
-        "{\n"
-        "  \"accuracy\": 80,\n"
-        "  \"fluency\": 75,\n"
-        "  \"prosody\": 70,\n"
-        "  \"rhythm\": 90,\n"
-        "  \"words_analysis\": [\n"
-        "    {\"text\": \"京都府\", \"is_correct\": true},\n"
-        "    {\"text\": \"南丹市で\", \"is_correct\": false},\n"
-        "    {\"text\": \"11歳の\", \"is_correct\": true}\n"
-        "  ]\n"
-        "}\n"
-        "Quy tắc tuyệt đối (NẾU VI PHẠM THÌ HỆ THỐNG SẼ CRASH):\n"
-        "1. words_analysis phải chia nhỏ đoạn văn thành các cụm từ rất ngắn (2-4 chữ) để bôi đỏ thật chuẩn xác.\n"
-        "2. KHI GHÉP TOÀN BỘ CÁC TRƯỜNG 'text' TRONG MẢNG LẠI, NÓ PHẢI GIỐNG HỆT 100% CÂU GỐC ban đầu kể cả dấu chấm phẩy, không được sót bất kỳ kí tự nào.\n"
-        "3. Nếu STT bị mất chữ hoặc có dấu hiệu học viên bỏ cách, đánh dấu is_correct là false cho CỤM ĐÓ."
-    )
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-    )
+
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(url, json=payload)
-        if resp.status_code == 200:
-            data = resp.json()
-            text = (
-                data.get("candidates", [{}])[0]
-                .get("content", {})
-                .get("parts", [{}])[0]
-                .get("text", "")
-                .strip()
-            )
-            import json, re
-            match = re.search(r"\{.*\}", text, re.DOTALL)
-            if match:
-                return json.loads(match.group())
-    except Exception as e:
-        print(f"[Gemini full eval error]: {e}")
+
+    for model in _GEMINI_MODELS:
+        url = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{model}:generateContent?key={GEMINI_API_KEY}"
+        )
+        try:
+            async with httpx.AsyncClient(timeout=timeout) as client:
+                resp = await client.post(url, json=payload)
+
+            if resp.status_code == 429:
+                print(f"[Gemini] {model} quota exceeded, trying next model...")
+                continue  # thử model kế tiếp
+
+            if resp.status_code == 200:
+                data = resp.json()
+                text = (
+                    data.get("candidates", [{}])[0]
+                    .get("content", {})
+                    .get("parts", [{}])[0]
+                    .get("text", "")
+                    .strip()
+                )
+                # Clean markdown
+                text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+                text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
+                text = text.strip()
+                match = re.search(r"\{.*\}", text, re.DOTALL)
+                if match:
+                    return _json.loads(match.group())
+                return {"_text": text}  # text bình thường
+
+            print(f"[Gemini] {model} HTTP {resp.status_code}")
+        except Exception as e:
+            print(f"[Gemini] {model} error: {e}")
+
+    return {}
+
+
+async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
+    """
+    Dùng Gemini để chấm điểm shadowing toàn diện.
+
+    Lưu ý quan trọng:
+    - expected_text có thể là Kanji (ví dụ: 明日は早く起きなければなりません)
+    - recognized_text là output của Google STT — thường ở dạng Hiragana
+    - Gemini cần hiểu rằng Kanji và Hiragana đọc giống nhau là ĐÚNG
+    """
+    if not recognized_text or recognized_text == "(Được đọc)":
+        return {}
+
+    # Convert expected sang Hiragana để Gemini so sánh dễ hơn
+    expected_hira = _kanji_to_hira(expected_text)
+
+    prompt = (
+        "Bạn là giám khảo chấm thi nói tiếng Nhật chuyên nghiệp.\n\n"
+        f"★ Câu gốc (Kanji):   {expected_text}\n"
+        f"★ Câu gốc (Hiragana): {expected_hira}\n"
+        f"★ STT nhận dạng:     {recognized_text}\n\n"
+        "QUY TẮc CHẤM QUAN TRỌNG:\n"
+        "- STT Google trả về Hiragana, câu gốc có thể là Kanji. "
+        "Hãy so sánh theo ÂM ĐỌC, không phải ký tự.\n"
+        "- Nếu STT khớp hoàn toàn với Hiragana của câu gốc → accuracy ≥ 90, fluency ≥ 85.\n"
+        "- Nếu thiếu 1-2 từ → accuracy 70-85.\n"
+        "- Nếu sai nhiều → accuracy < 70.\n"
+        "- Không phạt điểm vì khác Kanji/Hiragana.\n\n"
+        "Trả về JSON THUẦN (không markdown, không text ngoài JSON):\n"
+        "{\n"
+        '  "accuracy": 85,\n'
+        '  "fluency": 80,\n'
+        '  "prosody": 75,\n'
+        '  "rhythm": 90,\n'
+        '  "mispronounced_words": [],\n'
+        '  "error_types": {\n'
+        '    "pronunciation": [],\n'
+        '    "prosody": [],\n'
+        '    "pitch_accent": [],\n'
+        '    "rhythm": []\n'
+        '  },\n'
+        '  "words_analysis": [\n'
+        '    {"text": "明日は", "is_correct": true},\n'
+        '    {"text": "早く起き", "is_correct": true}\n'
+        '  ]\n'
+        "}\n\n"
+        "Quy tắc words_analysis:\n"
+        "1. Chia nhỏ câu gốc thành cụm 2-4 ký tự Kanji/Kana.\n"
+        "2. is_correct=true nếu cụm đó được nói đúng (dựa theo Hiragana).\n"
+        "3. Gép lại phải khôi phục được 100% câu gốc."
+    )
+
+    result = await _gemini_post(prompt, timeout=20)
+    if result and "accuracy" in result:
+        # Validate và clamp điểm
+        for k in ["accuracy", "fluency", "prosody", "rhythm"]:
+            if k in result:
+                result[k] = max(0, min(100, int(result[k])))
+        return result
     return {}
 
 def _fallback_word_analysis(expected_text: str, recognized_text: str) -> list:
@@ -706,32 +975,53 @@ async def evaluate_shadowing(
         )
 
         # ----------------------------------------------------------------
-        # ỨNG DỤNG BỘ ĐÁNH GIÁ AI TOÀN DIỆN NẾU ĐÃ CÓ TEXT (AZURE/GOOGLE)
+        # BƯỚC 1: Đánh giá AI toàn diện (Gemini) → lấy structured errors
         # ----------------------------------------------------------------
-        words_analysis = []
+        words_analysis       = []
+        mispronounced_words  = []
+        error_types          = {"pronunciation": [], "prosody": [], "pitch_accent": [], "rhythm": []}
+
         if recognized_text and recognized_text != "(Không nhận được audio)":
             ai_eval = await _ai_full_evaluation(expected_text, recognized_text)
             if ai_eval:
-                accuracy_score = ai_eval.get("accuracy", accuracy_score)
-                fluency_score  = ai_eval.get("fluency", fluency_score)
-                prosody_score  = ai_eval.get("prosody", prosody_score)
-                rhythm_score   = ai_eval.get("rhythm", rhythm_score)
-                words_analysis = ai_eval.get("words_analysis", [])
+                accuracy_score      = ai_eval.get("accuracy", accuracy_score)
+                fluency_score       = ai_eval.get("fluency", fluency_score)
+                prosody_score       = ai_eval.get("prosody", prosody_score)
+                rhythm_score        = ai_eval.get("rhythm", rhythm_score)
+                words_analysis      = ai_eval.get("words_analysis", [])
+                mispronounced_words = ai_eval.get("mispronounced_words", [])
+                error_types         = ai_eval.get("error_types", error_types)
 
         if not words_analysis:
             words_analysis = _fallback_word_analysis(expected_text, recognized_text)
 
+        # ----------------------------------------------------------------
+        # BƯỚC 2: RecommendationEngine → sinh ActionPlan cá nhân hóa
+        # ----------------------------------------------------------------
+        action_plan = _recommendation_engine.analyze(
+            accuracy=accuracy_score,
+            fluency=fluency_score,
+            prosody=prosody_score,
+            rhythm=rhythm_score,
+            mispronounced_words=mispronounced_words,
+            error_types=error_types,
+            sentence_length=len(expected_text),
+        )
+
         return {
-            "success":        True,
-            "mode":           "shadowing",
-            "accuracy":       accuracy_score,
-            "fluency":        fluency_score,
-            "prosody":        prosody_score,
-            "rhythm":         rhythm_score,
-            "recognized_text": recognized_text,
-            "error_word":     error_word,
-            "words_analysis": words_analysis,
-            "tip":            tip,
+            "success":             True,
+            "mode":               "shadowing",
+            "accuracy":           accuracy_score,
+            "fluency":            fluency_score,
+            "prosody":            prosody_score,
+            "rhythm":             rhythm_score,
+            "recognized_text":    recognized_text,
+            "error_word":         error_word,
+            "mispronounced_words": mispronounced_words,
+            "error_types":        error_types,
+            "words_analysis":     words_analysis,
+            "tip":                tip,
+            "action_plan":        action_plan.to_dict(),
         }
 
     except Exception as e:

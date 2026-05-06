@@ -5,10 +5,12 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/core/utils/sample_audio_player.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/vocabulary_test_screen.dart';
+import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 
 class FlashcardScreen extends StatefulWidget {
   final int topicId;
-  const FlashcardScreen({super.key, required this.topicId});
+  final int lessonId; // ← THÊM: để lưu tiến độ
+  const FlashcardScreen({super.key, required this.topicId, required this.lessonId});
 
   @override
   State<FlashcardScreen> createState() => _FlashcardScreenState();
@@ -270,12 +272,16 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
           Expanded(
             flex: 3,
             child: ElevatedButton.icon(
-              onPressed: () {
+              onPressed: () async {
+                // Lưu tiến độ flashcard trước khi chuyển màn hình
+                await ProgressService.markFlashcardDone(widget.lessonId);
+                if (!context.mounted) return;
                 Navigator.pushReplacement(
                   context,
                   MaterialPageRoute(
                     builder: (_) => VocabularyTestScreen(
                       topicId: widget.topicId,
+                      lessonId: widget.lessonId,
                       isReview: false,
                     ),
                   ),
