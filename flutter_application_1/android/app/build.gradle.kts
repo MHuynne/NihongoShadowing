@@ -3,8 +3,20 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
-    // Firebase Google Services plugin
-    id("com.google.gms.google-services")
+}
+
+val googleServicesFiles =
+    listOf(
+        file("google-services.json"),
+        file("src/google-services.json"),
+        file("src/debug/google-services.json"),
+        file("src/Debug/google-services.json"),
+    )
+
+if (googleServicesFiles.any { it.isFile }) {
+    apply(plugin = "com.google.gms.google-services")
+} else {
+    logger.warn("google-services.json not found; skipping Google Services Gradle plugin.")
 }
 
 android {

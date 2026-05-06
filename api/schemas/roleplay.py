@@ -49,3 +49,39 @@ class ChatResponseResp(BaseModel):
     ai_reply: str
     suggestions: List[str] = []
     grammar_correction: Optional[GrammarCorrectionSchema] = None
+    retry_after_seconds: Optional[int] = None
+
+class RoleplayMessageResp(BaseModel):
+    id: int
+    session_id: int
+    role: str
+    content: str
+    grammar_correction: Optional[GrammarCorrectionSchema] = None
+    suggestions: Optional[List[str]] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class SessionHistoryResp(BaseModel):
+    id: int
+    scenario_id: int
+    user_id: int
+    mode: RoleplayMode
+    scenario_title: str
+    scenario_description: Optional[str] = None
+    message_count: int
+    last_message: Optional[str] = None
+    last_role: Optional[str] = None
+    created_at: datetime
+    last_message_at: Optional[datetime] = None
+
+class SessionHistoryDetailResp(BaseModel):
+    id: int
+    scenario_id: int
+    user_id: int
+    mode: RoleplayMode
+    scenario_title: str
+    scenario_description: Optional[str] = None
+    created_at: datetime
+    messages: List[RoleplayMessageResp] = []

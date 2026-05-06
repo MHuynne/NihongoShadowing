@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "1030822382399",
+    "project_id": "nihongo-shadowing-98ab5",
+    "storage_bucket": "nihongo-shadowing-98ab5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1030822382399:android:cb5b233d7c10688e84618a",
+        "android_client_info": {
+          "package_name": "com.example.flutter_application_1"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1030822382399-9a0rng62usr0fhuvhrhah1iel4a0qha9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCWPtfmcknanCvBXh4EQBNeXS89G8hFqQY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1030822382399-9a0rng62usr0fhuvhrhah1iel4a0qha9.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1030822382399-nuubvh6l0js0utn7f6pghl06okv4ucml.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.flutterApplication1"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

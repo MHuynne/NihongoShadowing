@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from typing import List
 
@@ -28,6 +28,58 @@ def create_session(session_req: schemas_roleplay.SessionCreateReq, db: Session =
     """Tạo một phiên trò chuyện roleplay mới"""
     new_session = crud_roleplay.create_session(db, session_req)
     return new_session
+
+@router.get("/history", response_model=List[schemas_roleplay.SessionHistoryResp])
+def get_chat_history(user_id: int = Query(1), db: Session = Depends(get_db)):
+    sessions = crud_roleplay.get_user_sessions(db, user_id)
+    history = []
+
+    for session in sessions:
+        message_count = crud_roleplay.count_session_messages(db, session.id)
+        if message_count == 0:
+            continue
+
+        last_message = crud_roleplay.get_last_session_message(db, session.id)
+        scenario = session.scenario
+        history.append({
+            "id": session.id,
+            "scenario_id": session.scenario_id,
+            "user_id": session.user_id,
+            "mode": session.mode,
+            "scenario_title": scenario.title if scenario else "Roleplay",
+            "scenario_description": scenario.description if scenario else None,
+            "message_count": message_count,
+            "last_message": last_message.content if last_message else None,
+            "last_role": last_message.role if last_message else None,
+            "created_at": session.created_at,
+            "last_message_at": last_message.created_at if last_message else None,
+        })
+
+    return history
+
+@router.get("/history/{session_id}", response_model=schemas_roleplay.SessionHistoryDetailResp)
+def get_chat_history_detail(
+    session_id: int,
+    user_id: int = Query(1),
+    db: Session = Depends(get_db),
+):
+    session = crud_roleplay.get_session(db, session_id)
+    if not session or session.user_id != user_id:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    scenario = session.scenario
+    messages = crud_roleplay.get_session_messages(db, session_id)
+
+    return {
+        "id": session.id,
+        "scenario_id": session.scenario_id,
+        "user_id": session.user_id,
+        "mode": session.mode,
+        "scenario_title": scenario.title if scenario else "Roleplay",
+        "scenario_description": scenario.description if scenario else None,
+        "created_at": session.created_at,
+        "messages": messages,
+    }
 
 @router.patch("/session/{session_id}/mode", response_model=schemas_roleplay.SessionResp)
 def update_mode(session_id: int, mode_req: schemas_roleplay.SessionModeUpdateReq, db: Session = Depends(get_db)):

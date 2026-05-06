@@ -4,6 +4,7 @@ import 'package:flutter_application_1/features/home/presentation/screens/home_sc
 import 'package:flutter_application_1/features/roadmap/presentation/screens/roadmap_screen.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_topic_list_screen.dart';
 import 'package:flutter_application_1/features/kingo_chat/presentation/screens/kingo_chat_screen.dart';
+import 'package:flutter_application_1/features/profile/presentation/screens/profile_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -23,27 +24,32 @@ class _MainScreenState extends State<MainScreen> {
   // Tăng key này để force rebuild RoadmapScreen sau khi hoàn thành bài
   int _roadmapRefreshKey = 0;
 
-  final _homeScreen      = const HomeScreen();
+  final _homeScreen = const HomeScreen();
   final _shadowingScreen = const ShadowingTopicListScreen();
-  final _chatScreen      = const KingoChatScreen();
-  final _profileScreen   = const Center(child: Text('Tài khoản'));
+  final _chatScreen = const KingoChatScreen();
+  final _profileScreen = const ProfileScreen();
 
   void _forceRefreshRoadmap() {
     setState(() {
-      _currentIndex = 1;           // Chuyển sang tab Roadmap
-      _roadmapRefreshKey++;        // Đổi key → AnimatedSwitcher rebuild RoadmapScreen
+      _currentIndex = 1; // Chuyển sang tab Roadmap
+      _roadmapRefreshKey++; // Đổi key → AnimatedSwitcher rebuild RoadmapScreen
     });
   }
 
   Widget _buildCurrentScreen() {
     switch (_currentIndex) {
-      case 0:  return _homeScreen;
-      case 1:  // Key thay đổi mỗi khi hoàn thành bài → RoadmapScreen.initState() chạy lại
-               return RoadmapScreen(key: ValueKey('roadmap_$_roadmapRefreshKey'));
-      case 2:  return _shadowingScreen;
-      case 3:  return _chatScreen;
-      case 4:  return _profileScreen;
-      default: return _homeScreen;
+      case 0:
+        return _homeScreen;
+      case 1: // Key thay đổi mỗi khi hoàn thành bài → RoadmapScreen.initState() chạy lại
+        return RoadmapScreen(key: ValueKey('roadmap_$_roadmapRefreshKey'));
+      case 2:
+        return _shadowingScreen;
+      case 3:
+        return _chatScreen;
+      case 4:
+        return _profileScreen;
+      default:
+        return _homeScreen;
     }
   }
 

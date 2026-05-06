@@ -47,6 +47,29 @@ def get_session_messages(db: Session, session_id: int):
     """Lấy lịch sử tin nhắn của một phiên"""
     return db.query(RoleplayMessage).filter(RoleplayMessage.session_id == session_id).order_by(RoleplayMessage.created_at.asc()).all()
 
+def get_user_sessions(db: Session, user_id: int):
+    return (
+        db.query(RoleplaySession)
+        .filter(RoleplaySession.user_id == user_id)
+        .order_by(RoleplaySession.created_at.desc())
+        .all()
+    )
+
+def get_last_session_message(db: Session, session_id: int):
+    return (
+        db.query(RoleplayMessage)
+        .filter(RoleplayMessage.session_id == session_id)
+        .order_by(RoleplayMessage.created_at.desc())
+        .first()
+    )
+
+def count_session_messages(db: Session, session_id: int):
+    return (
+        db.query(RoleplayMessage)
+        .filter(RoleplayMessage.session_id == session_id)
+        .count()
+    )
+
 def create_message(db: Session, session_id: int, role: str, content: str, grammar_correction: dict = None, suggestions: list = None):
     """Lưu tin nhắn của user hoặc AI vào database"""
     db_msg = RoleplayMessage(
