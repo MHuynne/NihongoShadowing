@@ -37,10 +37,18 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       AdminSection.roleplay => 'Quan ly roleplay',
     };
 
-    return Scaffold(
-      backgroundColor: AdminPalette.scaffold,
-      body: Row(
-        children: [
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: AdminPalette.scaffold,
+        colorScheme: const ColorScheme.dark().copyWith(
+          primary: AdminPalette.topicAccent,
+          surface: AdminPalette.surface,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: AdminPalette.scaffold,
+        body: Row(
+          children: [
           _AdminSidebar(
             current: _section,
             onChanged: (section) => setState(() => _section = section),
@@ -67,7 +75,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             Text(
                               title,
                               style: const TextStyle(
-                                color: AppColors.textDark,
+                                color: AdminPalette.textPrimary,
                                 fontSize: 22,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -76,7 +84,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             Text(
                               'Ket noi truc tiep FastAPI + MySQL Laragon',
                               style: const TextStyle(
-                                color: AppColors.slate500,
+                                color: AdminPalette.textSecondary,
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -117,6 +125,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }
@@ -161,7 +170,7 @@ class _AdminSidebar extends StatelessWidget {
                 width: 14,
                 height: 14,
                 decoration: const BoxDecoration(
-                  color: AppColors.toriiRed,
+                  color: AdminPalette.lessonAccent,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -232,7 +241,7 @@ class _AdminSidebar extends StatelessWidget {
                     Icon(
                       Icons.cloud_done_rounded,
                       size: 18,
-                      color: AppColors.progressTeal,
+                      color: AdminPalette.topicAccent,
                     ),
                     SizedBox(width: 8),
                     Text(

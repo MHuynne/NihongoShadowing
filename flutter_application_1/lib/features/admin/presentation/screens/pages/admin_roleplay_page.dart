@@ -245,14 +245,14 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
-                        color: AppColors.textDark,
+                        color: AdminPalette.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 6),
                     Text(
                       (scenario['description'] ?? 'Khong co mo ta').toString(),
                       style: const TextStyle(
-                        color: AppColors.slate600,
+                        color: AdminPalette.textSecondary,
                         height: 1.5,
                       ),
                     ),
@@ -261,7 +261,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                       Text(
                         (scenario['icon_url'] ?? '').toString(),
                         style: const TextStyle(
-                          color: AppColors.slate400,
+                          color: AdminPalette.textSecondary,
                           fontSize: 12,
                         ),
                       ),
