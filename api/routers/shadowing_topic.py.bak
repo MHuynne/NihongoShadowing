@@ -18,13 +18,13 @@ router = APIRouter(
 
 @router.get("/", response_model=List[schemas.ShadowingTopic])
 def read_topics(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
-    """Lấy danh sách các chủ đề Shadowing, bao gồm mảng segments."""
+    """L?y danh s�ch c�c ch? d? Shadowing, bao g?m m?ng segments."""
     return crud.get_topics(db, skip=skip, limit=limit)
 
 
 @router.get("/{topic_id}", response_model=schemas.ShadowingTopic)
 def read_topic(topic_id: int, db: Session = Depends(get_db)):
-    """Lấy chi tiết 1 chủ đề Shadowing bằng ID."""
+    """L?y chi ti?t 1 ch? d? Shadowing b?ng ID."""
     db_topic = crud.get_topic(db, topic_id=topic_id)
     if db_topic is None:
         raise HTTPException(status_code=404, detail="Topic not found")
@@ -38,8 +38,8 @@ def get_topic_vocabulary(
     db: Session = Depends(get_db),
 ):
     """
-    Lấy danh sách từ vựng (tối đa 40 từ) của 1 Shadowing Topic.
-    Dùng cho màn hình Vocabulary Discovery sau khi hoàn thành bài shadowing.
+    L?y danh s�ch t? v?ng (t?i da 40 t?) c?a 1 Shadowing Topic.
+    D�ng cho m�n h�nh Vocabulary Discovery sau khi ho�n th�nh b�i shadowing.
     """
     db_topic = crud.get_topic(db, topic_id=topic_id)
     if db_topic is None:
@@ -56,13 +56,13 @@ def get_topic_vocabulary(
 
 @router.post("/", response_model=schemas.ShadowingTopic, status_code=status.HTTP_201_CREATED)
 def create_topic(topic: schemas.ShadowingTopicCreate, db: Session = Depends(get_db)):
-    """Tạo mới 1 chủ đề."""
+    """T?o m?i 1 ch? d?."""
     return crud.create_topic(db=db, topic=topic)
 
 
 @router.delete("/{topic_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_topic(topic_id: int, db: Session = Depends(get_db)):
-    """Xóa 1 chủ đề Shadowing (cascade xóa segments và kết quả)."""
+    """X�a 1 ch? d? Shadowing (cascade x�a segments v� k?t qu?)."""
     db_topic = crud.delete_topic(db, topic_id=topic_id)
     if db_topic is None:
         raise HTTPException(status_code=404, detail="Topic not found")
