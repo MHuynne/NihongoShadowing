@@ -19,6 +19,18 @@ def create_lesson(db: Session, lesson: LessonCreate):
     db.refresh(db_lesson)
     return db_lesson
 
+def update_lesson(db: Session, lesson_id: int, lesson: LessonCreate):
+    db_lesson = get_lesson(db, lesson_id)
+    if db_lesson is None:
+        return None
+
+    db_lesson.level = lesson.level.value if lesson.level else None
+    db_lesson.chapter_name = lesson.chapter_name
+    db_lesson.order_index = lesson.order_index
+    db.commit()
+    db.refresh(db_lesson)
+    return db_lesson
+
 def delete_lesson(db: Session, lesson_id: int):
     db_lesson = get_lesson(db, lesson_id)
     if db_lesson:
