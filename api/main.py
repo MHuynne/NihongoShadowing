@@ -1,49 +1,16 @@
 from fastapi import FastAPI
 from database import engine, Base
 from dotenv import load_dotenv
-import os
 
 # Tải các biến môi trường từ file .env
 load_dotenv()
 
 # Import all models here so SQLAlchemy knows them before create_all
 import models 
-from models import shadowing_topic, shadowing_segment, shadowing_result, lesson, roleplay
+from models import shadowing_topic, shadowing_segment, shadowing_result, lesson, user_progress
 
 # Create all database tables
 Base.metadata.create_all(bind=engine)
-
-def seed_roleplay_scenarios():
-    from database import SessionLocal
-    from models.roleplay import RoleplayScenario
-    db = SessionLocal()
-    try:
-        scenarios = db.query(RoleplayScenario).all()
-        if not scenarios:
-            print("Seeding default Roleplay Scenarios...")
-            default_scenarios = [
-                RoleplayScenario(
-                    title="Phỏng vấn xin việc (面接)",
-                    description="Bạn là một ứng viên phần mềm đang tham gia phỏng vấn tại một công ty IT Nhật Bản. Hãy thể hiện mình là một người chuyên nghiệp.",
-                    icon_url="https://cdn-icons-png.flaticon.com/512/942/942748.png"
-                ),
-                RoleplayScenario(
-                    title="Xin lỗi vì đi làm muộn (遅刻の謝罪)",
-                    description="Bạn đi làm muộn do tàu điện bị trễ. Bạn cần báo cáo và xin lỗi sếp lớn tại công ty một cách lịch sự.",
-                    icon_url="https://cdn-icons-png.flaticon.com/512/942/942751.png"
-                ),
-                RoleplayScenario(
-                    title="Gọi món tại nhà hàng (レストラン)",
-                    description="Bạn đang ở một nhà hàng Nhật Bản. Bạn muốn hỏi nhân viên về các món đặc biệt và gọi món.",
-                    icon_url="https://cdn-icons-png.flaticon.com/512/942/942766.png"
-                )
-            ]
-            db.add_all(default_scenarios)
-            db.commit()
-    finally:
-        db.close()
-
-seed_roleplay_scenarios()
 
 # Import routers
 from routers import shadowing_topic as router_topic
@@ -52,8 +19,11 @@ from routers import lesson as router_lesson
 from routers import vocabulary as router_vocabulary
 from routers import evaluation as router_evaluation
 from routers import tts as router_tts
+from routers import user_progress as router_progress
+from routers import dictionary as router_dictionary
 from routers import roleplay as router_roleplay
 from routers import admin as router_admin
+from routers import upload as router_upload
 
 app = FastAPI(
     title="Japanese Learning Backend API",
@@ -62,6 +32,11 @@ app = FastAPI(
 )
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+import os
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Cấu hình CORS để cho phép Flutter Web (và các client khác) truy cập API
 app.add_middleware(
@@ -79,8 +54,11 @@ app.include_router(router_lesson.router)
 app.include_router(router_vocabulary.router)
 app.include_router(router_evaluation.router)
 app.include_router(router_tts.router)
+app.include_router(router_progress.router)
+app.include_router(router_dictionary.router)
 app.include_router(router_roleplay.router)
 app.include_router(router_admin.router)
+app.include_router(router_upload.router)
 
 @app.get("/")
 def read_root():

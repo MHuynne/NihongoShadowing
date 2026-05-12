@@ -57,11 +57,13 @@ class _LessonNodeState extends State<LessonNode>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Label above
+            // Badge phía trên node
             if (widget.lesson.status == LessonStatus.inProgress)
               _InProgressBadge(title: widget.lesson.title),
+            if (widget.lesson.status == LessonStatus.completed)
+              const _CompletedBadge(),
 
-            // The node circle
+            // Vòng tròn node
             GestureDetector(
               onTap: widget.onTap,
               child: _buildNode(),
@@ -69,7 +71,7 @@ class _LessonNodeState extends State<LessonNode>
 
             const SizedBox(height: 6),
 
-            // Label below
+            // Label bên dưới
             _NodeLabel(lesson: widget.lesson),
           ],
         ),
@@ -182,8 +184,24 @@ class _NodeLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isLocked = lesson.status == LessonStatus.locked;
+    final isLocked    = lesson.status == LessonStatus.locked;
     final isInProgress = lesson.status == LessonStatus.inProgress;
+    final isCompleted  = lesson.status == LessonStatus.completed;
+
+    final subtitleColor = isLocked
+        ? const Color(0xFFADB5BD)
+        : isInProgress
+            ? AppColors.toriiRed
+            : isCompleted
+                ? const Color(0xFF16A34A)   // xanh lá cho completed
+                : const Color(0xFF94A3B8);
+
+    final titleColor = isLocked
+        ? const Color(0xFFADB5BD)
+        : isCompleted
+            ? const Color(0xFF1E293B)
+            : const Color(0xFF1E293B);
+
     return Column(
       children: [
         Text(
@@ -191,11 +209,7 @@ class _NodeLabel extends StatelessWidget {
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
-            color: isLocked
-                ? const Color(0xFFADB5BD)
-                : isInProgress
-                    ? AppColors.toriiRed
-                    : const Color(0xFF94A3B8),
+            color: subtitleColor,
             letterSpacing: 0.8,
           ),
         ),
@@ -210,9 +224,7 @@ class _NodeLabel extends StatelessWidget {
             style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w700,
-              color: isLocked
-                  ? const Color(0xFFADB5BD)
-                  : const Color(0xFF1E293B),
+              color: titleColor,
             ),
           ),
         ),
@@ -241,16 +253,56 @@ class _InProgressBadge extends StatelessWidget {
           )
         ],
       ),
-      child: Row(
+      child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const Text(
+          Text(
             'ĐANG HỌC',
             style: TextStyle(
               color: Colors.white,
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Badge xanh lá hiện phía trên các node đã hoàn thành.
+class _CompletedBadge extends StatelessWidget {
+  const _CompletedBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      decoration: BoxDecoration(
+        color: const Color(0xFF16A34A),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF16A34A).withValues(alpha: 0.25),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.check_circle_rounded, color: Colors.white, size: 11),
+          SizedBox(width: 4),
+          Text(
+            'HOÀN THÀNH',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
             ),
           ),
         ],

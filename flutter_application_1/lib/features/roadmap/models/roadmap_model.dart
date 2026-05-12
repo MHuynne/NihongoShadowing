@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 
 class LessonModel {
-  final String id;
+  final String id;       // display ID (chuỗi dùng cho UI)
+  final int lessonId;    // ID thật trong bảng lessons
+  final int topicId;     // ID của shadowing_topic tương ứng
   final String title;
   final String subtitle;
   final IconData icon;
   final LessonStatus status;
-  final double? progress; // e.g. 0.4 for 40%
+  final double? progress; // 0.0 – 1.0
 
   LessonModel({
     required this.id,
+    required this.lessonId,
+    required this.topicId,
     required this.title,
     required this.subtitle,
     required this.icon,

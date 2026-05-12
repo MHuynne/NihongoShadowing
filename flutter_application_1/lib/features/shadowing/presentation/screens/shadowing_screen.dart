@@ -12,13 +12,15 @@ import 'package:flutter_application_1/features/shadowing/presentation/components
 import 'package:flutter_application_1/features/shadowing/presentation/components/shadowing_controls.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/shadowing_header.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/waveform_visualizer.dart';
-import 'package:flutter_application_1/features/roadmap/presentation/screens/vocabulary_test_screen.dart';
+import 'package:flutter_application_1/features/shadowing/presentation/components/recommendation_bottom_sheet.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/lesson_summary_screen.dart';
+import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 
 class ShadowingScreen extends StatefulWidget {
   final int topicId;
+  final int lessonId; // ← THÊM
   final int testErrors;
-  const ShadowingScreen({super.key, required this.topicId, this.testErrors = 0});
+  const ShadowingScreen({super.key, required this.topicId, required this.lessonId, this.testErrors = 0});
 
   @override
   State<ShadowingScreen> createState() => _ShadowingScreenState();
@@ -45,6 +47,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
   ShadowingFeedbackModel? _dynamicFeedback;
   String _errorWord = "";
+  ActionPlan? _lastActionPlan;          // Lưu action plan mới nhất từ AI
 
   @override
   void initState() {
@@ -275,17 +278,27 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                 accuracy: data['accuracy'] ?? 0,
                 fluency: data['fluency'] ?? 0,
                 prosody: data['prosody'] ?? 0,
-                rhythm: data['rhythm'] ?? 0,         // điểm nhịp ngắt mới
+                rhythm: data['rhythm'] ?? 0,
                 feedbackHtml: data['recognized_text'] ?? '',
                 tip: data['tip'] ?? '',
                 wordsAnalysis: (data['words_analysis'] as List<dynamic>?)
                         ?.map((e) => WordAnalysisModel.fromJson(e as Map<String, dynamic>))
                         .toList() ??
                     [],
+                misprnouncedWords: List<String>.from(
+                  data['mispronounced_words'] ?? [],
+                ),
+                errorTypes: ErrorTypes.fromJson(
+                  data['error_types'] as Map<String, dynamic>?,
+                ),
+                actionPlan: ActionPlan.fromJson(
+                  data['action_plan'] as Map<String, dynamic>?,
+                ),
               );
               _errorWord = data['error_word'] ?? '';
-              
-              // Tracking lỗi dựa trên Accuracy hoặc mảng phân tích từ mới của AI
+              _lastActionPlan = _dynamicFeedback!.actionPlan;
+
+              // Tracking lỗi
               bool hasWordError = _dynamicFeedback!.wordsAnalysis.any((w) => !w.isCorrect);
               if ((data['accuracy'] ?? 0) < 90 || hasWordError || _errorWord.isNotEmpty) {
                 _failedSentences.add(_currentIndex);
@@ -312,24 +325,109 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   }
   
   void _nextSentence() {
-    setState(() {
-      if (_currentIndex < _sentences.length - 1) {
+    if (_currentIndex < _sentences.length - 1) {
+      // ── Câu trung gian: chuyển sang câu tiếp theo ──────────────────────
+      setState(() {
         _currentIndex++;
         _isBlindMode = false;
         _showFeedback = false;
-      } else {
-        // Luồng mới: Học xong Shadowing thì tới bài Tổng kết
-        Navigator.pushReplacement(
-           context,
-           MaterialPageRoute(
-             builder: (context) => LessonSummaryScreen(
-               testErrors: widget.testErrors,
-               shadowingErrors: _failedSentences.length,
-             ),
-           ),
+      });
+    } else {
+      // ── Câu cuối: hiện BottomSheet Sakura Pink trước khi tổng kết ──────
+      final plan = _lastActionPlan ?? ActionPlan(
+        message: 'Bạn đã hoàn thành bài học! Tiếp tục luyện tập mỗi ngày nhé 🌸',
+        action: ActionType.celebrate,
+        severity: 0,
+      );
+      final feedback = _dynamicFeedback;
+
+      RecommendationBottomSheet.show(
+        context: context,
+        actionPlan: plan,
+        errorTypes: feedback?.errorTypes ?? const ErrorTypes(),
+        misprnouncedWords: feedback?.misprnouncedWords ?? [],
+        accuracy: feedback?.accuracy ?? 0,
+        fluency: feedback?.fluency ?? 0,
+        prosody: feedback?.prosody ?? 0,
+        onActionPressed: _handleActionPlanPress,
+        onContinue: _navigateToSummary,
+      );
+    }
+  }
+
+  /// Xử lý khi người dùng nhấn Action Button trong BottomSheet
+  void _handleActionPlanPress() {
+    final plan = _lastActionPlan;
+    if (plan == null) return;
+
+    switch (plan.action) {
+      case ActionType.activateSlowMode:
+        // Kích hoạt slow-mo 0.75x và đóng sheet
+        setState(() => _currentSpeed = 0.75);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⏱️ Đã bật chế độ 0.75x cho lần phát tiếp theo!'),
+            backgroundColor: Color(0xFFFF6B9D),
+          ),
         );
-      }
-    });
+        break;
+
+      case ActionType.showHanVietMode:
+        // Tắt blind mode để hiện Hán-Việt
+        setState(() {
+          _isBlindMode = false;
+          _showFeedback = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('🌸 Đã bật chế độ Hiện Hán-Việt!'),
+            backgroundColor: Color(0xFFFF6B9D),
+          ),
+        );
+        break;
+
+      case ActionType.openVocabulary:
+        // TODO: Navigate tới màn hình từ vựng với target_word
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('📖 Mở từ: ${plan.targetWord ?? "kho từ vựng"}'),
+            backgroundColor: const Color(0xFFFF6B9D),
+          ),
+        );
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  /// Navigate đến LessonSummaryScreen (sau khi lưu tiến độ)
+  Future<void> _navigateToSummary() async {
+    // Tính overall score từ accuracy các câu
+    final totalSentences = _sentences.length;
+    final failedCount = _failedSentences.length;
+    final shadowingScore = totalSentences == 0
+        ? 0.0
+        : ((totalSentences - failedCount) / totalSentences) * 100.0;
+
+    // Lưu kết quả shadowing vào backend
+    await ProgressService.saveShadowingResult(widget.lessonId, shadowingScore);
+
+    // Đánh dấu bài học hoàn thành → mở khoá bài kế tiếp trên Roadmap
+    await ProgressService.markLessonCompleted(widget.lessonId);
+
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LessonSummaryScreen(
+          testErrors: widget.testErrors,
+          shadowingErrors: failedCount,
+          lessonId: widget.lessonId,
+          shadowingScore: shadowingScore,
+        ),
+      ),
+    );
   }
 
   @override

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 
 class QuickAccessGrid extends StatelessWidget {
   const QuickAccessGrid({super.key});
@@ -7,20 +7,26 @@ class QuickAccessGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      padding: const EdgeInsets.symmetric(horizontal: 24.0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.grid_view_rounded, color: AppColors.toriiRed),
-              SizedBox(width: 8),
-              Text(
-                'Truy cập nhanh',
-                style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.slate800,
+            children: [
+              Expanded(
+                child: _buildGridItem(
+                  context: context,
+                  icon: Icons.style_rounded, // Flashcards icon
+                  title: 'Flashcards',
+                  onTap: () {}, // Can be implemented later
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: _buildGridItem(
+                  context: context,
+                  icon: Icons.graphic_eq_rounded, // AI Shadowing
+                  title: 'AI Shadowing',
+                  onTap: () => MainScreen.switchTab(context, 2),
                 ),
               ),
             ],
@@ -30,41 +36,19 @@ class QuickAccessGrid extends StatelessWidget {
             children: [
               Expanded(
                 child: _buildGridItem(
-                  icon: Icons.map_outlined,
-                  title: 'Lộ trình',
-                  iconBgColor: AppColors.lightTealGreen,
-                  iconColor: AppColors.progressTeal,
+                  context: context,
+                  icon: Icons.record_voice_over_rounded, // Roleplay
+                  title: 'Roleplay',
+                  onTap: () => MainScreen.switchTab(context, 3),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildGridItem(
-                  icon: Icons.graphic_eq,
-                  title: 'Shadowing',
-                  iconBgColor: AppColors.lightBlueBackground,
-                  iconColor: Colors.blueAccent,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _buildGridItem(
-                  icon: Icons.smart_toy_outlined,
-                  title: 'Roleplay Chat',
-                  iconBgColor: AppColors.lightPinkBackground,
-                  iconColor: AppColors.toriiRedLight,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: _buildGridItem(
-                  icon: Icons.search_rounded,
-                  title: 'Từ điển',
-                  iconBgColor: AppColors.lightPurpleBackground,
-                  iconColor: Colors.purpleAccent,
+                  context: context,
+                  icon: Icons.bar_chart_rounded, // Mastery Stats
+                  title: 'Mastery Stats',
+                  onTap: () {}, // Can be implemented later
                 ),
               ),
             ],
@@ -75,46 +59,64 @@ class QuickAccessGrid extends StatelessWidget {
   }
 
   Widget _buildGridItem({
+    BuildContext? context,
     required IconData icon,
     required String title,
-    required Color iconBgColor,
-    required Color iconColor,
+    VoidCallback? onTap,
   }) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.toriiRed.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(
-              color: iconBgColor,
-              shape: BoxShape.circle,
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 16,
+              offset: const Offset(0, 8),
             ),
-            child: Icon(icon, color: iconColor, size: 24),
-          ),
-          const SizedBox(height: 16),
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppColors.slate800,
+          ],
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                  const BoxShadow(
+                    color: Colors.white,
+                    blurRadius: 10,
+                    offset: Offset(0, -4),
+                  ),
+                ],
+              ),
+              child: Icon(icon, color: const Color(0xFFFF5238), size: 24),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF1E293B),
+                letterSpacing: -0.2,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }
 }
+

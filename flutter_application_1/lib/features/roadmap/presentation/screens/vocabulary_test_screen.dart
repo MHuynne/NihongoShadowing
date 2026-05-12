@@ -4,13 +4,15 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/flashcard_screen.dart';
+import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
 
 class VocabularyTestScreen extends StatefulWidget {
   final int topicId;
+  final int lessonId; // ← THÊM
   final bool isReview;
 
-  const VocabularyTestScreen({super.key, required this.topicId, required this.isReview});
+  const VocabularyTestScreen({super.key, required this.topicId, required this.lessonId, required this.isReview});
 
   @override
   State<VocabularyTestScreen> createState() => _VocabularyTestScreenState();
@@ -217,7 +219,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (_) => FlashcardScreen(topicId: widget.topicId),
+                builder: (_) => FlashcardScreen(topicId: widget.topicId, lessonId: widget.lessonId),
               ),
             );
           },
@@ -433,16 +435,24 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
         shadowColor: AppColors.textDark.withValues(alpha: 0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
-      onPressed: () {
+      onPressed: () async {
         if (widget.isReview) {
           Navigator.popUntil(context, (route) => route.isFirst);
         } else {
-          int testErrors = _vocabularies.length - _score;
+          // Lưu điểm test vào backend
+          final double scorePercent = _vocabularies.isEmpty
+              ? 0
+              : (_score / _vocabularies.length) * 100;
+          await ProgressService.saveTestResult(widget.lessonId, scorePercent);
+
+          if (!context.mounted) return;
+          final int testErrors = _vocabularies.length - _score;
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
               builder: (context) => ShadowingScreen(
                 topicId: widget.topicId,
+                lessonId: widget.lessonId,
                 testErrors: testErrors,
               ),
             ),
@@ -450,7 +460,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
         }
       },
       child: Text(
-        widget.isReview ? 'HOÀN THÀNH BÀI HỌC' : 'SANG Luyện Giọng 👋', 
+        widget.isReview ? 'HOÀN THÀNH BÀI HỌC' : 'SANG Luyện Giọng 👋',
         style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1)
       ),
     );

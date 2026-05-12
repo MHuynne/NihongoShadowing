@@ -176,8 +176,10 @@ class _ChapterSectionState extends State<ChapterSection>
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) =>
-                        FlashcardScreen(topicId: int.tryParse(lesson.id) ?? 1),
+                    builder: (context) => FlashcardScreen(
+                      topicId: lesson.topicId,
+                      lessonId: lesson.lessonId,
+                    ),
                   ),
                 );
               }

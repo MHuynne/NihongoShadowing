@@ -4,9 +4,16 @@ import 'package:flutter_application_1/features/admin/presentation/widgets/admin_
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
 class AdminLessonsPage extends StatefulWidget {
-  const AdminLessonsPage({super.key, required this.api});
+  const AdminLessonsPage({
+    super.key,
+    required this.api,
+    required this.onNavigateToVocab,
+    required this.onNavigateToTopic,
+  });
 
   final AdminApiService api;
+  final ValueChanged<int> onNavigateToVocab;
+  final ValueChanged<int> onNavigateToTopic;
 
   @override
   State<AdminLessonsPage> createState() => _AdminLessonsPageState();
@@ -160,7 +167,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.errorRed),
+            style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
             child: const Text('Xoa'),
           ),
         ],
@@ -209,7 +216,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
     if (_error != null) {
       return Center(
           child:
-              Text(_error!, style: const TextStyle(color: AppColors.errorRed)));
+              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
     }
 
     if (_lessons.isEmpty) {
@@ -220,44 +227,57 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
     }
 
     return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: DataTable(
-        columnSpacing: 28,
-        columns: const [
-          DataColumn(label: Text('ID')),
-          DataColumn(label: Text('Ten bai hoc')),
-          DataColumn(label: Text('Level')),
-          DataColumn(label: Text('Thu tu')),
-          DataColumn(label: Text('Hanh dong')),
-        ],
-        rows: _lessons
-            .map(
-              (lesson) => DataRow(
-                cells: [
-                  DataCell(Text('${lesson['id']}')),
-                  DataCell(Text((lesson['chapter_name'] ?? '').toString())),
-                  DataCell(Text((lesson['level'] ?? 'N/A').toString())),
-                  DataCell(Text('${lesson['order_index'] ?? '-'}')),
-                  DataCell(
-                    Row(
-                      children: [
-                        IconButton(
-                          tooltip: 'Sua',
-                          onPressed: () => _openLessonDialog(lesson),
-                          icon: const Icon(Icons.edit_outlined),
-                        ),
-                        IconButton(
-                          tooltip: 'Xoa',
-                          onPressed: () => _deleteLesson(lesson),
-                          icon: const Icon(Icons.delete_outline_rounded),
-                        ),
-                      ],
+      scrollDirection: Axis.vertical,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: DataTable(
+          columnSpacing: 28,
+          columns: const [
+            DataColumn(label: Text('ID')),
+            DataColumn(label: Text('Ten bai hoc')),
+            DataColumn(label: Text('Level')),
+            DataColumn(label: Text('Thu tu')),
+            DataColumn(label: Text('Hanh dong')),
+          ],
+          rows: _lessons
+              .map(
+                (lesson) => DataRow(
+                  cells: [
+                    DataCell(Text('${lesson['id']}')),
+                    DataCell(Text((lesson['chapter_name'] ?? '').toString())),
+                    DataCell(Text((lesson['level'] ?? 'N/A').toString())),
+                    DataCell(Text('${lesson['order_index'] ?? '-'}')),
+                    DataCell(
+                      Row(
+                        children: [
+                          IconButton(
+                            tooltip: 'Tu vung',
+                            onPressed: () => widget.onNavigateToVocab(lesson['id'] as int),
+                            icon: const Icon(Icons.translate_rounded),
+                          ),
+                          IconButton(
+                            tooltip: 'Shadowing',
+                            onPressed: () => widget.onNavigateToTopic(lesson['id'] as int),
+                            icon: const Icon(Icons.graphic_eq_rounded),
+                          ),
+                          IconButton(
+                            tooltip: 'Sua',
+                            onPressed: () => _openLessonDialog(lesson),
+                            icon: const Icon(Icons.edit_outlined),
+                          ),
+                          IconButton(
+                            tooltip: 'Xoa',
+                            onPressed: () => _deleteLesson(lesson),
+                            icon: const Icon(Icons.delete_outline_rounded),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            )
-            .toList(),
+                  ],
+                ),
+              )
+              .toList(),
+        ),
       ),
     );
   }

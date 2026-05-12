@@ -8,13 +8,7 @@ import 'package:flutter_application_1/features/admin/presentation/screens/pages/
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
-enum AdminSection {
-  dashboard,
-  lessons,
-  vocabularies,
-  topics,
-  roleplay,
-}
+enum AdminSection { dashboard, lessons, vocabularies, topics, roleplay }
 
 class AdminShellScreen extends StatefulWidget {
   const AdminShellScreen({super.key});
@@ -26,97 +20,130 @@ class AdminShellScreen extends StatefulWidget {
 class _AdminShellScreenState extends State<AdminShellScreen> {
   final AdminApiService _api = AdminApiService();
   AdminSection _section = AdminSection.dashboard;
+  int? _initialLessonIdForVocab;
+  int? _initialLessonIdForTopic;
+
+  void _navigateToVocab(int lessonId) {
+    setState(() {
+      _initialLessonIdForVocab = lessonId;
+      _section = AdminSection.vocabularies;
+    });
+  }
+
+  void _navigateToTopic(int lessonId) {
+    setState(() {
+      _initialLessonIdForTopic = lessonId;
+      _section = AdminSection.topics;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final title = switch (_section) {
       AdminSection.dashboard => 'Admin Dashboard',
-      AdminSection.lessons => 'Quan ly bai hoc',
+      AdminSection.lessons => 'Lo trinh bai hoc',
       AdminSection.vocabularies => 'Quan ly tu vung',
-      AdminSection.topics => 'Quan ly shadowing',
+      AdminSection.topics => 'Shadowing',
       AdminSection.roleplay => 'Quan ly roleplay',
     };
 
-    return Scaffold(
-      backgroundColor: AdminPalette.scaffold,
-      body: Row(
-        children: [
-          _AdminSidebar(
-            current: _section,
-            onChanged: (section) => setState(() => _section = section),
-          ),
-          Expanded(
-            child: Column(
-              children: [
-                Container(
-                  height: 76,
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
-                  decoration: const BoxDecoration(
-                    color: AdminPalette.surface,
-                    border: Border(
-                      bottom: BorderSide(color: AdminPalette.borderSoft),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              title,
-                              style: const TextStyle(
-                                color: AppColors.textDark,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Ket noi truc tiep FastAPI + MySQL Laragon',
-                              style: const TextStyle(
-                                color: AppColors.slate500,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
-                        ),
+    return Theme(
+      data: ThemeData.dark().copyWith(
+        scaffoldBackgroundColor: AdminPalette.scaffold,
+        colorScheme: const ColorScheme.dark(
+          primary: AdminPalette.sidebarSelectedForeground,
+          surface: AdminPalette.surface,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: AdminPalette.scaffold,
+        body: Row(
+          children: [
+            _AdminSidebar(
+              current: _section,
+              onChanged: (section) {
+                setState(() {
+                  _section = section;
+                  if (section == AdminSection.vocabularies)
+                    _initialLessonIdForVocab = null;
+                  if (section == AdminSection.topics)
+                    _initialLessonIdForTopic = null;
+                });
+              },
+            ),
+            Expanded(
+              child: Column(
+                children: [
+                  Container(
+                    height: 76,
+                    padding: const EdgeInsets.symmetric(horizontal: 28),
+                    decoration: const BoxDecoration(
+                      color: AdminPalette.surface,
+                      border: Border(
+                        bottom: BorderSide(color: AdminPalette.borderSoft),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 10,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AdminPalette.pillBackground,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: AdminPalette.borderSoft),
-                        ),
-                        child: const Text(
-                          'WEB ADMIN',
-                          style: TextStyle(
-                            color: AdminPalette.pillForeground,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.8,
+                    ),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  color: AdminPalette.textPrimary,
+                                  fontSize: 22,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                'Ket noi truc tiep FastAPI + MySQL Laragon',
+                                style: const TextStyle(
+                                  color: AdminPalette.textMuted,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
-                    ],
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AdminPalette.pillBackground,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(color: AdminPalette.borderSoft),
+                          ),
+                          child: const Text(
+                            'WEB ADMIN',
+                            style: TextStyle(
+                              color: AdminPalette.pillForeground,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(24),
-                    child: _buildSection(),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.all(24),
+                      child: _buildSection(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -126,11 +153,21 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
       case AdminSection.dashboard:
         return AdminDashboardPage(api: _api);
       case AdminSection.lessons:
-        return AdminLessonsPage(api: _api);
+        return AdminLessonsPage(
+          api: _api,
+          onNavigateToVocab: _navigateToVocab,
+          onNavigateToTopic: _navigateToTopic,
+        );
       case AdminSection.vocabularies:
-        return AdminVocabulariesPage(api: _api);
+        return AdminVocabulariesPage(
+          api: _api,
+          initialLessonId: _initialLessonIdForVocab,
+        );
       case AdminSection.topics:
-        return AdminTopicsPage(api: _api);
+        return AdminTopicsPage(
+          api: _api,
+          initialLessonId: _initialLessonIdForTopic,
+        );
       case AdminSection.roleplay:
         return AdminRoleplayPage(api: _api);
     }
@@ -138,10 +175,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
 }
 
 class _AdminSidebar extends StatelessWidget {
-  const _AdminSidebar({
-    required this.current,
-    required this.onChanged,
-  });
+  const _AdminSidebar({required this.current, required this.onChanged});
 
   final AdminSection current;
   final ValueChanged<AdminSection> onChanged;
@@ -161,7 +195,7 @@ class _AdminSidebar extends StatelessWidget {
                 width: 14,
                 height: 14,
                 decoration: const BoxDecoration(
-                  color: AppColors.toriiRed,
+                  color: AdminPalette.lessonAccent,
                   shape: BoxShape.circle,
                 ),
               ),
@@ -193,7 +227,7 @@ class _AdminSidebar extends StatelessWidget {
             onTap: () => onChanged(AdminSection.dashboard),
           ),
           _SidebarItem(
-            label: 'Bai hoc',
+            label: 'Lo trinh bai hoc',
             icon: Icons.menu_book_rounded,
             selected: current == AdminSection.lessons,
             onTap: () => onChanged(AdminSection.lessons),
@@ -205,7 +239,7 @@ class _AdminSidebar extends StatelessWidget {
             onTap: () => onChanged(AdminSection.vocabularies),
           ),
           _SidebarItem(
-            label: 'Shadowing',
+            label: 'Shadowing doc lap',
             icon: Icons.graphic_eq_rounded,
             selected: current == AdminSection.topics,
             onTap: () => onChanged(AdminSection.topics),
@@ -232,7 +266,7 @@ class _AdminSidebar extends StatelessWidget {
                     Icon(
                       Icons.cloud_done_rounded,
                       size: 18,
-                      color: AppColors.progressTeal,
+                      color: AdminPalette.topicAccent,
                     ),
                     SizedBox(width: 8),
                     Text(

@@ -2,32 +2,37 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 
 class AdminPalette {
-  static const Color scaffold = AppColors.washi;
-  static const Color surface = AppColors.itemBackground;
-  static const Color surfaceMuted = AppColors.surfaceBackground;
-  static const Color border = AppColors.slate200;
-  static const Color borderSoft = AppColors.slate100;
+  static const Color scaffold = Color(0xFF0F0F1A);
+  static const Color surface = Color(0xFF1B1B2F);
+  static const Color surfaceMuted = Color(0xFF262640);
+  static const Color border = Color(0xFF383854);
+  static const Color borderSoft = Color(0xFF2E2E48);
 
-  static const Color sidebar = AppColors.inkBlack;
-  static const Color sidebarSurface = AppColors.surfaceDark;
-  static const Color sidebarBorder = AppColors.borderDark;
-  static const Color sidebarMuted = AppColors.slate400;
-  static const Color sidebarSelectedBackground = AppColors.lightBlueBackground;
-  static const Color sidebarSelectedForeground = AppColors.primary;
+  static const Color sidebar = Color(0xFF0B0B14);
+  static const Color sidebarSurface = Color(0xFF161625);
+  static const Color sidebarBorder = Color(0xFF222238);
+  static const Color sidebarMuted = Color(0xFF8B8BA7);
+  static const Color sidebarSelectedBackground = Color(0x334D4DFF);
+  static const Color sidebarSelectedForeground = Color(0xFF8A8AFF);
 
-  static const Color pillBackground = AppColors.lightBlueBackground;
-  static const Color pillForeground = AppColors.primary;
+  static const Color pillBackground = Color(0x33B200FF);
+  static const Color pillForeground = Color(0xFFD466FF);
 
-  static const Color lessonAccent = AppColors.toriiRed;
-  static const Color lessonSurface = AppColors.lightPinkBackground;
-  static const Color topicAccent = AppColors.primary;
-  static const Color topicSurface = AppColors.lightBlueBackground;
-  static const Color vocabularyAccent = AppColors.progressTeal;
-  static const Color vocabularySurface = AppColors.lightTealGreen;
-  static const Color roleplayAccent = AppColors.sunRed;
-  static const Color roleplaySurface = AppColors.goldLight;
-  static const Color neutralAccent = AppColors.slate700;
-  static const Color neutralSurface = AppColors.slate100;
+  static const Color lessonAccent = Color(0xFFFF007F);
+  static const Color lessonSurface = Color(0x33FF007F);
+  static const Color topicAccent = Color(0xFF00F0FF);
+  static const Color topicSurface = Color(0x3300F0FF);
+  static const Color vocabularyAccent = Color(0xFFB200FF);
+  static const Color vocabularySurface = Color(0x33B200FF);
+  static const Color roleplayAccent = Color(0xFFFFD700);
+  static const Color roleplaySurface = Color(0x33FFD700);
+  static const Color neutralAccent = Color(0xFF8B8BA7);
+  static const Color neutralSurface = Color(0x338B8BA7);
+
+  static const Color textPrimary = Colors.white;
+  static const Color textSecondary = Color(0xFF8B8BA7);
+  static const Color textMuted = Color(0xFFA0A0B8);
+  static const Color errorRed = Color(0xFFFF3366);
 }
 
 class AdminSurface extends StatelessWidget {
@@ -49,7 +54,7 @@ class AdminSurface extends StatelessWidget {
         border: Border.all(color: AdminPalette.borderSoft),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withValues(alpha: 0.04),
+            color: Colors.black.withValues(alpha: 0.2),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -86,7 +91,7 @@ class AdminSectionHeader extends StatelessWidget {
                 style: const TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.textDark,
+                  color: AdminPalette.textPrimary,
                 ),
               ),
               const SizedBox(height: 4),
@@ -94,7 +99,7 @@ class AdminSectionHeader extends StatelessWidget {
                 subtitle,
                 style: const TextStyle(
                   fontSize: 13,
-                  color: AppColors.slate500,
+                  color: AdminPalette.textMuted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -124,7 +129,7 @@ class AdminPrimaryButton extends StatelessWidget {
     return FilledButton.icon(
       onPressed: onPressed,
       style: FilledButton.styleFrom(
-        backgroundColor: AppColors.primary,
+        backgroundColor: AdminPalette.sidebarSelectedForeground,
         foregroundColor: Colors.white,
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
@@ -174,7 +179,7 @@ class AdminEmptyState extends StatelessWidget {
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              color: AppColors.textDark,
+              color: AdminPalette.textPrimary,
             ),
           ),
           const SizedBox(height: 6),
@@ -183,7 +188,7 @@ class AdminEmptyState extends StatelessWidget {
             textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
-              color: AppColors.slate500,
+              color: AdminPalette.textMuted,
             ),
           ),
         ],

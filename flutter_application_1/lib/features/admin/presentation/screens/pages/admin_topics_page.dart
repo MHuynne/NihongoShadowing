@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
+import 'package:file_picker/file_picker.dart';
 
 class AdminTopicsPage extends StatefulWidget {
-  const AdminTopicsPage({super.key, required this.api});
+  const AdminTopicsPage({super.key, required this.api, this.initialLessonId});
 
   final AdminApiService api;
+  final int? initialLessonId;
 
   @override
   State<AdminTopicsPage> createState() => _AdminTopicsPageState();
@@ -17,11 +20,24 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
   String? _error;
   List<Map<String, dynamic>> _lessons = [];
   List<Map<String, dynamic>> _topics = [];
+  List<Map<String, dynamic>> _allTopics = [];
+  int? _selectedLessonId;
 
   @override
   void initState() {
     super.initState();
+    _selectedLessonId = widget.initialLessonId;
     _loadData();
+  }
+
+  void _applyFilter() {
+    if (_selectedLessonId == null) {
+      _topics = _allTopics;
+    } else if (_selectedLessonId == -1) {
+      _topics = _allTopics.where((t) => t['lesson_id'] == null).toList();
+    } else {
+      _topics = _allTopics.where((t) => t['lesson_id'] == _selectedLessonId).toList();
+    }
   }
 
   Future<void> _loadData() async {
@@ -36,7 +52,8 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       if (!mounted) return;
       setState(() {
         _lessons = lessons;
-        _topics = topics;
+        _allTopics = topics;
+        _applyFilter();
         _isLoading = false;
       });
     } catch (e) {
@@ -77,6 +94,11 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     final audioController = TextEditingController(
       text: (topic?['full_audio_url'] ?? '').toString(),
     );
+    String? imageFileName = topic?['image_url']?.toString().split('/').last;
+    if (imageFileName?.isEmpty ?? true) imageFileName = null;
+    String? audioFileName = topic?['full_audio_url']?.toString().split('/').last;
+    if (audioFileName?.isEmpty ?? true) audioFileName = null;
+    List<int>? imageBytes; // để preview ảnh vừa chọn
     final scriptController = TextEditingController(
       text: (topic?['full_script_ja'] ?? '').toString(),
     );
@@ -98,10 +120,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
         'sino_vietnamese',
         'translation_vi',
       ],
-    );
-    final vocabularies = _normalizeRows(
-      topic?['vocabularies'],
-      ['word', 'reading', 'meaning', 'example'],
     );
 
     final saved = await showDialog<bool>(
@@ -149,7 +167,8 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                       const SizedBox(height: 12),
                       _twoColumn(
                         DropdownButtonFormField<String?>(
-                          value: lessonId,
+                          isExpanded: true,
+                          value: _lessons.any((l) => l['id'].toString() == lessonId) ? lessonId : null,
                           decoration: const InputDecoration(
                             labelText: 'Gan vao lesson',
                             border: OutlineInputBorder(),
@@ -164,6 +183,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                                 value: lesson['id'].toString(),
                                 child: Text(
                                   '${lesson['chapter_name'] ?? 'Khong ten'} (${lesson['level'] ?? 'N/A'})',
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                             ),
@@ -183,19 +203,144 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                       ),
                       const SizedBox(height: 12),
                       _twoColumn(
-                        TextField(
-                          controller: imageController,
-                          decoration: const InputDecoration(
-                            labelText: 'Image URL',
-                            border: OutlineInputBorder(),
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Preview ảnh
+                            if (imageBytes != null)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.memory(
+                                  Uint8List.fromList(imageBytes!),
+                                  height: 140,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                ),
+                              )
+                            else if (imageController.text.isNotEmpty)
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.network(
+                                  '${widget.api.baseUrl}${imageController.text}',
+                                  height: 140,
+                                  width: double.infinity,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (_, __, ___) => Container(
+                                    height: 140,
+                                    color: Colors.grey.shade800,
+                                    child: const Icon(Icons.broken_image, color: Colors.grey),
+                                  ),
+                                ),
+                              )
+                            else
+                              Container(
+                                height: 140,
+                                width: double.infinity,
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.4)),
+                                  borderRadius: BorderRadius.circular(8),
+                                  color: Colors.grey.withValues(alpha: 0.05),
+                                ),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: const [
+                                    Icon(Icons.image_outlined, size: 36, color: Colors.grey),
+                                    SizedBox(height: 8),
+                                    Text('Chua co anh', style: TextStyle(color: Colors.grey)),
+                                  ],
+                                ),
+                              ),
+                            const SizedBox(height: 8),
+                            // Tên file + nút tải
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    imageFileName ?? 'Chua chon file anh',
+                                    overflow: TextOverflow.ellipsis,
+                                    style: TextStyle(
+                                      color: imageFileName != null ? Colors.white70 : Colors.grey,
+                                      fontSize: 13,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                ElevatedButton.icon(
+                                  onPressed: () async {
+                                    try {
+                                      final result = await FilePicker.pickFiles(
+                                        type: FileType.image,
+                                        withData: true,
+                                      );
+                                      if (result != null && result.files.single.bytes != null) {
+                                        final bytes = result.files.single.bytes!;
+                                        final url = await widget.api.uploadFile(
+                                          bytes,
+                                          result.files.single.name,
+                                        );
+                                        setDialogState(() {
+                                          imageController.text = url;
+                                          imageFileName = result.files.single.name;
+                                          imageBytes = bytes;
+                                        });
+                                      }
+                                    } catch (e) {
+                                      if (!context.mounted) return;
+                                      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loi tai anh: $e')));
+                                    }
+                                  },
+                                  icon: const Icon(Icons.upload_file_rounded),
+                                  label: const Text('Tai len'),
+                                ),
+                              ],
+                            ),
+                          ],
                         ),
-                        TextField(
-                          controller: audioController,
-                          decoration: const InputDecoration(
-                            labelText: 'Audio URL',
-                            border: OutlineInputBorder(),
-                          ),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey.withValues(alpha: 0.5)),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: Text(
+                                  audioFileName ?? 'Chua chon file audio',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: audioFileName != null ? Colors.white : Colors.grey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            ElevatedButton.icon(
+                              onPressed: () async {
+                                try {
+                                  final result = await FilePicker.pickFiles(
+                                    type: FileType.audio,
+                                    withData: true,
+                                  );
+                                  if (result != null && result.files.single.bytes != null) {
+                                    final url = await widget.api.uploadFile(
+                                      result.files.single.bytes!,
+                                      result.files.single.name,
+                                    );
+                                    setDialogState(() {
+                                      audioController.text = url;
+                                      audioFileName = result.files.single.name;
+                                    });
+                                  }
+                                } catch (e) {
+                                  if (!context.mounted) return;
+                                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Loi tai audio: $e')));
+                                }
+                              },
+                              icon: const Icon(Icons.upload_file_rounded),
+                              label: const Text('Tai len'),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -259,43 +404,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                           ),
                         );
                       }),
-                      const SizedBox(height: 20),
-                      _sectionTitle(
-                        'Vocabularies',
-                        onAdd: () => setDialogState(
-                          () => vocabularies.add(
-                            {
-                              'word': '',
-                              'reading': '',
-                              'meaning': '',
-                              'example': '',
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ...List.generate(vocabularies.length, (index) {
-                        final vocabulary = vocabularies[index];
-                        return _ItemEditorCard(
-                          title: 'Vocabulary ${index + 1}',
-                          onRemove: vocabularies.length == 1
-                              ? null
-                              : () => setDialogState(
-                                  () => vocabularies.removeAt(index)),
-                          child: Column(
-                            children: [
-                              _twoColumn(
-                                _smallField(vocabulary, 'word', 'Word'),
-                                _smallField(vocabulary, 'reading', 'Reading'),
-                              ),
-                              const SizedBox(height: 10),
-                              _smallField(vocabulary, 'meaning', 'Meaning'),
-                              const SizedBox(height: 10),
-                              _smallField(vocabulary, 'example', 'Example'),
-                            ],
-                          ),
-                        );
-                      }),
                     ],
                   ),
                 ),
@@ -348,17 +456,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
             },
           )
           .toList(),
-      'vocabularies': vocabularies
-          .where((vocabulary) => (vocabulary['word'] ?? '').trim().isNotEmpty)
-          .map(
-            (vocabulary) => {
-              'word': (vocabulary['word'] ?? '').trim(),
-              'reading': _nullable(vocabulary['reading']),
-              'meaning': (vocabulary['meaning'] ?? '').trim(),
-              'example': _nullable(vocabulary['example']),
-            },
-          )
-          .toList(),
     };
 
     try {
@@ -391,7 +488,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.errorRed),
+            style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
             child: const Text('Xoa'),
           ),
         ],
@@ -439,7 +536,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: AdminPalette.textPrimary,
           ),
         ),
         const Spacer(),
@@ -480,13 +577,56 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminSectionHeader(
-            title: 'Shadowing topics',
-            subtitle: 'Quan ly topic, segment va vocabulary cho bai shadowing.',
-            action: AdminPrimaryButton(
-              label: 'Them topic',
-              onPressed: _openTopicDialog,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: AdminSectionHeader(
+                  title: 'Shadowing topics',
+                  subtitle: 'Quan ly topic, segment va vocabulary cho bai shadowing.',
+                ),
+              ),
+              SizedBox(
+                width: 280,
+                child: DropdownButtonFormField<int?>(
+                  isExpanded: true,
+                  value: (_selectedLessonId == null || _selectedLessonId == -1 || _lessons.any((l) => l['id'] == _selectedLessonId)) ? _selectedLessonId : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Loc theo lesson',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Tat ca topic'),
+                    ),
+                    const DropdownMenuItem<int?>(
+                      value: -1,
+                      child: Text('Topic doc lap (Khong thuoc lesson)'),
+                    ),
+                    ..._lessons.map(
+                      (lesson) => DropdownMenuItem<int?>(
+                        value: lesson['id'] as int,
+                        child: Text(
+                          (lesson['chapter_name'] ?? 'Khong ten').toString(),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLessonId = value;
+                      _applyFilter();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              AdminPrimaryButton(
+                label: 'Them topic',
+                onPressed: _openTopicDialog,
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           Expanded(child: _buildBody()),
@@ -503,7 +643,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     if (_error != null) {
       return Center(
           child:
-              Text(_error!, style: const TextStyle(color: AppColors.errorRed)));
+              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
     }
 
     if (_topics.isEmpty) {
@@ -519,7 +659,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       itemBuilder: (context, index) {
         final topic = _topics[index];
         final segments = (topic['segments'] as List?) ?? const [];
-        final vocabularies = (topic['vocabularies'] as List?) ?? const [];
 
         return Container(
           decoration: BoxDecoration(
@@ -556,7 +695,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: AdminPalette.textPrimary,
                             ),
                           ),
                         ),
@@ -572,8 +711,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                             'Lesson ${topic['lesson_id'] ?? '-'}'),
                         _metaChip(Icons.list_alt_rounded,
                             '${segments.length} segments'),
-                        _metaChip(Icons.translate_rounded,
-                            '${vocabularies.length} vocab'),
                         _metaChip(Icons.schedule_rounded,
                             '${topic['total_duration'] ?? '-'}'),
                       ],
@@ -587,7 +724,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: AppColors.slate600, height: 1.5),
+                            color: AdminPalette.textSecondary, height: 1.5),
                       ),
                     ],
                   ],
@@ -644,12 +781,12 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.slate500),
+          Icon(icon, size: 14, color: AdminPalette.textMuted),
           const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.slate600,
+              color: AdminPalette.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -689,7 +826,7 @@ class _ItemEditorCard extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+                  color: AdminPalette.textPrimary,
                 ),
               ),
               const Spacer(),

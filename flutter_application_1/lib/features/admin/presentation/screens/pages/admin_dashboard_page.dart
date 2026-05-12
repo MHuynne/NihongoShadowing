@@ -74,14 +74,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               'Khong tai duoc tong quan admin',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+                color: AdminPalette.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.slate500),
+              style: const TextStyle(color: AdminPalette.textMuted),
             ),
             const SizedBox(height: 16),
             AdminPrimaryButton(
@@ -103,9 +103,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         .map((item) => Map<String, dynamic>.from(item as Map))
         .toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         const AdminSectionHeader(
           title: 'Tong quan noi dung',
           subtitle:
@@ -161,10 +162,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
         const SizedBox(height: 20),
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               Expanded(
                 child: AdminSurface(
                   child: _RecentListCard(
@@ -220,8 +220,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -265,14 +265,14 @@ class _StatCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.w900,
-                color: AppColors.textDark,
+                color: AdminPalette.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: const TextStyle(
-                color: AppColors.slate500,
+                color: AdminPalette.textMuted,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -306,7 +306,7 @@ class _RecentListCard extends StatelessWidget {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: AdminPalette.textPrimary,
           ),
         ),
         const SizedBox(height: 16),

@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 class AdminApiService {
   final String _baseUrl = ApiConfig.baseUrl;
 
+  String get baseUrl => _baseUrl;
+
   Uri _uri(String path, [Map<String, dynamic>? queryParameters]) {
     return Uri.parse('$_baseUrl$path').replace(
       queryParameters: queryParameters?.map(
@@ -59,6 +61,23 @@ class AdminApiService {
       return _decodeResponse(response);
     }
 
+    final payload = await _decodeResponse(response);
+    final detail = payload is Map<String, dynamic> ? payload['detail'] : null;
+    throw Exception(detail ?? 'HTTP ${response.statusCode}');
+  }
+
+  Future<String> uploadFile(List<int> bytes, String filename) async {
+    final uri = _uri('/upload/');
+    final request = http.MultipartRequest('POST', uri);
+    request.files.add(
+      http.MultipartFile.fromBytes('file', bytes, filename: filename),
+    );
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = await _decodeResponse(response);
+      return data['url'] as String;
+    }
     final payload = await _decodeResponse(response);
     final detail = payload is Map<String, dynamic> ? payload['detail'] : null;
     throw Exception(detail ?? 'HTTP ${response.statusCode}');

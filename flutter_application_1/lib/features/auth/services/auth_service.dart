@@ -5,7 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  GoogleSignIn? _googleSignInInstance;
+
+  GoogleSignIn get _googleSignIn {
+    _googleSignInInstance ??= GoogleSignIn(
+      clientId: kIsWeb ? 'YOUR_CLIENT_ID.apps.googleusercontent.com' : null,
+    );
+    return _googleSignInInstance!;
+  }
 
   static const String _tokenKey = 'firebase_id_token';
 
