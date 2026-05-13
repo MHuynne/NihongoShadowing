@@ -74,14 +74,14 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               'Khong tai duoc tong quan admin',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
-                color: AppColors.textDark,
+                color: AdminPalette.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.slate500),
+              style: const TextStyle(color: AdminPalette.textSecondary),
             ),
             const SizedBox(height: 16),
             AdminPrimaryButton(
@@ -265,14 +265,14 @@ class _StatCard extends StatelessWidget {
               style: const TextStyle(
                 fontSize: 30,
                 fontWeight: FontWeight.w900,
-                color: AppColors.textDark,
+                color: AdminPalette.textPrimary,
               ),
             ),
             const SizedBox(height: 4),
             Text(
               label,
               style: const TextStyle(
-                color: AppColors.slate500,
+                color: AdminPalette.textSecondary,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -306,7 +306,7 @@ class _RecentListCard extends StatelessWidget {
           style: const TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: AdminPalette.textPrimary,
           ),
         ),
         const SizedBox(height: 16),

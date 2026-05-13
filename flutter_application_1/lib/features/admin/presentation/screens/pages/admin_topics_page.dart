@@ -439,7 +439,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
           style: const TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
-            color: AppColors.textDark,
+            color: AdminPalette.textPrimary,
           ),
         ),
         const Spacer(),
@@ -556,7 +556,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
-                              color: AppColors.textDark,
+                              color: AdminPalette.textPrimary,
                             ),
                           ),
                         ),
@@ -587,7 +587,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: AppColors.slate600, height: 1.5),
+                            color: AdminPalette.textSecondary, height: 1.5),
                       ),
                     ],
                   ],
@@ -644,12 +644,12 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AppColors.slate500),
+          Icon(icon, size: 14, color: AdminPalette.textSecondary),
           const SizedBox(width: 6),
           Text(
             label,
             style: const TextStyle(
-              color: AppColors.slate600,
+              color: AdminPalette.textSecondary,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -689,7 +689,7 @@ class _ItemEditorCard extends StatelessWidget {
                 title,
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
-                  color: AppColors.textDark,
+                  color: AdminPalette.textPrimary,
                 ),
               ),
               const Spacer(),
