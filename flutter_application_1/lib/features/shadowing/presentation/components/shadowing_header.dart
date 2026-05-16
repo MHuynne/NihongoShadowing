@@ -6,6 +6,7 @@ class ShadowingHeader extends StatelessWidget {
   final int totalCount;
   final bool isBlindMode;
   final ValueChanged<bool> onModeChanged;
+  final String? segmentTitle;  // Tiêu đề hiển thị của segment đang luyện
 
   const ShadowingHeader({
     super.key,
@@ -13,6 +14,7 @@ class ShadowingHeader extends StatelessWidget {
     required this.totalCount,
     required this.isBlindMode,
     required this.onModeChanged,
+    this.segmentTitle,
   });
 
   @override
@@ -62,6 +64,17 @@ class ShadowingHeader extends StatelessWidget {
                       color: AppColors.textDark,
                     ),
                   ),
+                  if (segmentTitle != null && segmentTitle!.isNotEmpty)
+                    Text(
+                      segmentTitle!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.sunRed.withValues(alpha: 0.75),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ],

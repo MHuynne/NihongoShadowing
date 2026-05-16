@@ -6,6 +6,14 @@ class StubSampleAudioPlayer implements SampleAudioPlayer {
   Future<void> play(List<int> mp3Bytes, {required void Function() onComplete}) async {}
 
   @override
+  Future<void> playUrlFromTo(
+    String url,
+    double startSec,
+    double endSec, {
+    required void Function() onComplete,
+  }) async {}
+
+  @override
   Future<void> stop() async {}
 
   @override

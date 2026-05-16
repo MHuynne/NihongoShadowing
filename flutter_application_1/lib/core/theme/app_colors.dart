@@ -1,12 +1,19 @@
 import 'package:flutter/material.dart';
 
 class AppColors {
-  static const Color primary = Color(0xFF1325ec);
-  static const Color backgroundLight = Color(0xFFf6f6f8);
-  static const Color backgroundDark = Color(0xFF101222);
-  static const Color surfaceDark = Color(0xFF171B2E);
-  static const Color elevatedSurfaceDark = Color(0xFF1D2338);
-  static const Color borderDark = Color(0xFF2B344E);
+  // Sakura Theme Update
+  static const Color primary = Color(
+    0xFFFF9EB1,
+  ); // A more vibrant Sakura pink for primary brand color
+  static const Color backgroundLight = Color(
+    0xFFFFF7F9,
+  ); // Very soft warm pinkish-white
+  static const Color backgroundDark = Color(
+    0xFF26181A,
+  ); // Dark brownish-pink for dark mode
+  static const Color surfaceDark = Color(0xFF332023);
+  static const Color elevatedSurfaceDark = Color(0xFF40282C);
+  static const Color borderDark = Color(0xFF5A3940);
 
   static const Color slate50 = Color(0xFFf8fafc);
   static const Color slate100 = Color(0xFFf1f5f9);
@@ -20,7 +27,7 @@ class AppColors {
   static const Color slate900 = Color(0xFF0f172a);
 
   // Custom Project Colors
-  static const Color sunRed = Color(0xFFE53935);
+  static const Color sunRed = primary; // Replaced with Sakura primary
   static const Color sakuraPink = Color(0xFFFFB7C5);
   static const Color progressTeal = Color(0xFF38A3A5);
   static const Color buttonYellow = Color(0xFFE9C46A);
@@ -34,8 +41,8 @@ class AppColors {
   static const Color lightPurpleBackground = Color(0xFFF3E8FF);
 
   // Aliases used by the main branch screens.
-  static const Color toriiRed = sunRed;
-  static const Color toriiRedLight = Color(0xFFE8534A);
+  static const Color toriiRed = primary; // Update to Sakura
+  static const Color toriiRedLight = sakuraPink; // Update to Sakura
   static const Color matcha = progressTeal;
   static const Color matchaLight = lightTealGreen;
   static const Color goldAccent = buttonYellow;

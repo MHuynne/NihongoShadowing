@@ -1,10 +1,11 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/home/presentation/components/main_bottom_nav_bar.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/home_screen.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/roadmap_screen.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_topic_list_screen.dart';
 import 'package:flutter_application_1/features/kingo_chat/presentation/screens/kingo_chat_screen.dart';
 import 'package:flutter_application_1/features/profile/presentation/screens/profile_screen.dart';
+import 'package:flutter_application_1/features/roleplay/screens/scenario_selection_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -33,7 +34,7 @@ class _MainScreenState extends State<MainScreen> {
 
   final _homeScreen = const HomeScreen();
   final _shadowingScreen = const ShadowingTopicListScreen();
-  final _chatScreen = const KingoChatScreen();
+  final _chatScreen = const ScenarioSelectionScreen();
   final _profileScreen = const ProfileScreen();
 
   void _forceRefreshRoadmap() {

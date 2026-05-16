@@ -149,7 +149,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.errorRed),
+            style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
             child: const Text('Xoa'),
           ),
         ],
@@ -198,7 +198,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     if (_error != null) {
       return Center(
           child:
-              Text(_error!, style: const TextStyle(color: AppColors.errorRed)));
+              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
     }
 
     if (_scenarios.isEmpty) {

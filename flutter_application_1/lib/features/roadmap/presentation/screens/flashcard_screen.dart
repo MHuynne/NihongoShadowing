@@ -10,7 +10,11 @@ import 'package:flutter_application_1/features/roadmap/services/progress_service
 class FlashcardScreen extends StatefulWidget {
   final int topicId;
   final int lessonId; // ← THÊM: để lưu tiến độ
-  const FlashcardScreen({super.key, required this.topicId, required this.lessonId});
+  const FlashcardScreen({
+    super.key,
+    required this.topicId,
+    required this.lessonId,
+  });
 
   @override
   State<FlashcardScreen> createState() => _FlashcardScreenState();
@@ -148,7 +152,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
           const SizedBox(width: 14),
           const Expanded(
             child: Text(
-              'Kingo JP',
+              'NihongoJP',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
@@ -254,7 +258,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
               onPressed: () => Navigator.of(context).maybePop(),
               icon: const Icon(Icons.close_rounded, size: 18),
               label: const Text(
-                'Bỏ qua',
+                'Quay về',
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               style: OutlinedButton.styleFrom(

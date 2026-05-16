@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-const _kBg = Color(0xFFF8F5F5);
-const _kSurface = Color(0xFFFFFFFF);
-const _kOnSurface = Color(0xFF1E1E1E);
-const _kSubtext = Color(0xFF6D7A77);
-const _kMint = Color(0xFFFFECED);
+const _kBg      = Color(0xFFF4F6F9);
+const _kSurface = Colors.white;
+const _kOnSurface = Color(0xFF1E293B);
+const _kSubtext   = Color(0xFF64748B);
+const _kPrimary   = Color(0xFFFF5238);
+
 
 class ShadowingTopicListScreen extends StatefulWidget {
   const ShadowingTopicListScreen({super.key});
@@ -22,40 +24,65 @@ class ShadowingTopicListScreen extends StatefulWidget {
 class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   bool _isLoading = true;
   String? _error;
-  List<dynamic> _topics = [];
-  String _selectedCategory = 'Tất cả';
 
-  final List<String> _categories = ['Tất cả', 'Giao tiếp', 'Công việc', 'Du lịch', 'JLPT N3'];
+  /// Tất cả segments từ API
+  List<Map<String, dynamic>> _segments = [];
+
+  /// Danh sách categories từ DB (thêm "Tất cả" ở đầu)
+  List<String> _categoryNames = ['Tất cả'];
+
+  String _selectedCategory = 'Tất cả';
 
   @override
   void initState() {
     super.initState();
-    _fetchTopics();
+    _fetchData();
   }
 
-  Future<void> _fetchTopics() async {
-    String apiUrl = 'http://localhost:8000/shadowing/topics/';
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      apiUrl = 'http://10.0.2.2:8000/shadowing/topics/';
-    }
+  String get _base => ApiConfig.baseUrl;
+
+  Future<void> _fetchData() async {
+    setState(() {
+      _isLoading = true;
+      _error = null;
+    });
 
     try {
-      final response = await http.get(Uri.parse(apiUrl));
-      if (response.statusCode == 200) {
-        final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-        if (mounted) {
-          setState(() {
-            _topics = data;
-            _isLoading = false;
-          });
-        }
-      } else {
-        if (mounted) {
-          setState(() {
-            _error = 'Lỗi HTTP ${response.statusCode}';
-            _isLoading = false;
-          });
-        }
+      // Gọi song song: segments + categories
+      final results = await Future.wait([
+        http.get(Uri.parse('$_base/shadowing/segments/all')),
+        http.get(Uri.parse('$_base/categories/')),
+      ]);
+
+      final segRes = results[0];
+      final catRes = results[1];
+
+      if (segRes.statusCode != 200) {
+        throw Exception('Lỗi tải segments: HTTP ${segRes.statusCode}');
+      }
+      if (catRes.statusCode != 200) {
+        throw Exception('Lỗi tải categories: HTTP ${catRes.statusCode}');
+      }
+
+      final List<dynamic> rawSegs = json.decode(utf8.decode(segRes.bodyBytes));
+      final List<dynamic> rawCats = json.decode(utf8.decode(catRes.bodyBytes));
+
+      final segs = rawSegs
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList();
+
+      // Tên categories từ DB
+      final catNames = rawCats
+          .map((c) => (c as Map)['name']?.toString() ?? '')
+          .where((n) => n.isNotEmpty)
+          .toList();
+
+      if (mounted) {
+        setState(() {
+          _segments = segs;
+          _categoryNames = ['Tất cả', ...catNames];
+          _isLoading = false;
+        });
       }
     } catch (e) {
       if (mounted) {
@@ -67,49 +94,22 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     }
   }
 
-  List<dynamic> get _filteredTopics {
-    if (_selectedCategory == 'Tất cả') return _topics;
-    return _topics.where((t) {
-      final level = (t['level'] ?? '').toString();
-      switch (_selectedCategory) {
-        case 'JLPT N3':
-          return level == 'N3';
-        case 'Giao tiếp':
-          return level == 'N5' || level == 'N4';
-        case 'Công việc':
-          return level == 'N3' || level == 'N2';
-        case 'Du lịch':
-          return level == 'N4' || level == 'N5';
-        default:
-          return true;
-      }
+  /// Filter segments theo category đang chọn
+  List<Map<String, dynamic>> get _filteredSegments {
+    if (_selectedCategory == 'Tất cả') return _segments;
+    return _segments.where((seg) {
+      final cats = (seg['categories'] as List?) ?? [];
+      return cats.any((c) =>
+          (c as Map)['name']?.toString() == _selectedCategory);
     }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: _kBg,
       body: Stack(
         children: [
-          // Soft Sakura background gradient
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white,
-                    Color(0xFFF5E8E9),
-                    Color(0xFFEEDFE1),
-                    Colors.white,
-                  ],
-                  stops: [0.0, 0.35, 0.65, 1.0],
-                ),
-              ),
-            ),
-          ),
           SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -132,16 +132,18 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
+  // ── Top bar ─────────────────────────────────────────────────────────────────
+
   Widget _buildTopBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: _kSurface,
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.toriiRed.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -156,11 +158,11 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.toriiRed, width: 2),
-                  color: _kMint,
+                  border: Border.all(color: _kPrimary, width: 2),
+                  color: Colors.white,
                 ),
                 child: const Icon(Icons.record_voice_over_rounded,
-                    color: AppColors.toriiRed, size: 22),
+                    color: _kPrimary, size: 22),
               ),
               const SizedBox(width: 12),
               const Text(
@@ -168,7 +170,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.toriiRed,
+                  color: _kPrimary,
                   letterSpacing: -0.4,
                 ),
               ),
@@ -177,14 +179,16 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           Container(
             width: 36,
             height: 36,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               shape: BoxShape.circle,
-              color: _kMint,
+              color: Colors.white,
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
-              icon: const Icon(Icons.tune_rounded, color: AppColors.toriiRed, size: 20),
-              onPressed: () {},
+              icon: const Icon(Icons.tune_rounded,
+                  color: _kPrimary, size: 20),
+              onPressed: _fetchData,
+              tooltip: 'Tải lại',
             ),
           ),
         ],
@@ -192,13 +196,18 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
+  // ── Scroll body ──────────────────────────────────────────────────────────────
+
   Widget _buildScrollBody() {
+    final filtered = _filteredSegments;
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       children: [
+        const SizedBox(height: 20),
         // Hero header
         const Text(
-          'Shadowing Topics',
+          'Shadowing',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w800,
@@ -208,44 +217,47 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        Text(
+        const Text(
           'Chọn chủ đề bạn muốn luyện tập hôm nay.',
           style: TextStyle(
             fontSize: 14,
-            color: _kSubtext.withValues(alpha: 0.8),
+            color: _kSubtext,
             fontWeight: FontWeight.w500,
           ),
         ),
         const SizedBox(height: 20),
 
-        // Category filter chips
+        // ── Category filter chips (từ DB) ──────────────────────────────────
         SizedBox(
           height: 42,
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
-            itemCount: _categories.length,
-            separatorBuilder: (context, index) => const SizedBox(width: 10),
+            itemCount: _categoryNames.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 10),
             itemBuilder: (context, index) {
-              final selected = _selectedCategory == _categories[index];
+              final cat = _categoryNames[index];
+              final selected = _selectedCategory == cat;
               return GestureDetector(
-                onTap: () =>
-                    setState(() => _selectedCategory = _categories[index]),
+                onTap: () => setState(() => _selectedCategory = cat),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 220),
                   curve: Curves.easeInOut,
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selected ? AppColors.toriiRed : _kSurface,
+                    color: selected ? _kPrimary : _kSurface,
                     borderRadius: BorderRadius.circular(21),
                     border: Border.all(
-                      color: selected ? AppColors.toriiRed : const Color(0xFFE8D5D6),
+                      color: selected
+                          ? _kPrimary
+                          : const Color(0xFFE2E8F0),
                       width: 1.5,
                     ),
                     boxShadow: selected
                         ? [
                             BoxShadow(
-                              color: AppColors.toriiRed.withValues(alpha: 0.25),
+                              color:
+                                  _kPrimary.withValues(alpha: 0.25),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
@@ -253,7 +265,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                         : [],
                   ),
                   child: Text(
-                    _categories[index],
+                    cat,
                     style: TextStyle(
                       color: selected ? Colors.white : _kSubtext,
                       fontWeight:
@@ -268,23 +280,22 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
         ),
         const SizedBox(height: 20),
 
-        // Topic cards
-        if (_filteredTopics.isEmpty)
+        // ── Segment cards ──────────────────────────────────────────────────
+        if (filtered.isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 60),
             child: Center(
-              child: Text('Không có chủ đề nào',
+              child: Text('Không có nội dung nào',
                   style: TextStyle(color: _kSubtext)),
             ),
           )
         else
-          ...List.generate(
-            _filteredTopics.length,
-            (i) => _buildTopicCard(_filteredTopics[i], i),
-          ),
+          ...filtered.map((seg) => _buildSegmentCard(seg)),
       ],
     );
   }
+
+  // ── Error state ──────────────────────────────────────────────────────────────
 
   Widget _buildError() {
     return Center(
@@ -303,18 +314,12 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
             const SizedBox(height: 20),
             ElevatedButton.icon(
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.toriiRed,
+                backgroundColor: _kPrimary,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12)),
               ),
-              onPressed: () {
-                setState(() {
-                  _isLoading = true;
-                  _error = null;
-                });
-                _fetchTopics();
-              },
+              onPressed: _fetchData,
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Thử lại'),
             ),
@@ -324,55 +329,38 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  Widget _buildTopicCard(dynamic topic, int index) {
-    final title = topic['title']?.toString() ?? 'Chủ đề';
-    final level = topic['level']?.toString() ?? 'N4';
-    final duration = topic['total_duration'];
-    final imageUrl = topic['image_url']?.toString();
+  // ── Segment card ─────────────────────────────────────────────────────────────
 
-    // Tiến độ demo
-    final double progress = (index % 3 == 0)
-        ? 0.6
-        : (index % 3 == 1)
-            ? 0.12
-            : 1.0;
-    final bool isCompleted = progress >= 1.0;
-    final String progressLabel = isCompleted
-        ? 'Hoàn tất'
-        : (progress > 0 ? 'Đang học' : 'Chưa bắt đầu');
+  Widget _buildSegmentCard(Map<String, dynamic> seg) {
+    final title = (seg['title'] ?? '').toString().trim();
+    final kanji = (seg['kanji_content'] ?? '').toString();
+    final romaji = (seg['romaji'] ?? '').toString();
+    final meaning = (seg['translation_vi'] ?? '').toString();
 
-    // Level badge colours
-    final Color badgeColor;
-    final Color badgeBg;
-    switch (level) {
-      case 'N5':
-      case 'N4':
-        badgeBg = const Color(0xFFE8F5E9);
-        badgeColor = const Color(0xFF2E7D32);
-        break;
-      case 'N3':
-        badgeBg = const Color(0xFFE3F2FD);
-        badgeColor = const Color(0xFF1565C0);
-        break;
-      case 'N2':
-        badgeBg = const Color(0xFFFFF3E0);
-        badgeColor = const Color(0xFFE65100);
-        break;
-      default:
-        badgeBg = _kMint;
-        badgeColor = AppColors.toriiRed;
-    }
+    // Tiêu đề hiển thị: ưu tiên title, fallback sang kanji/romaji
+    final displayTitle = title.isNotEmpty
+        ? title
+        : (kanji.isNotEmpty ? kanji : romaji);
+    // Sub-title: nếu có title riêng thì show kanji bên dưới
+    final displaySub = title.isNotEmpty
+        ? (kanji.isNotEmpty ? kanji : meaning)
+        : meaning;
+
+    // Categories chips
+    final cats = (seg['categories'] as List?) ?? [];
+    final catNames =
+        cats.map((c) => (c as Map)['name']?.toString() ?? '').toList();
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: 20),
+      padding: const EdgeInsets.only(bottom: 16),
       child: GestureDetector(
         onTap: () => Navigator.push(
           context,
           MaterialPageRoute(
-              builder: (_) => ShadowingScreen(
-                    topicId: topic['id'] as int,
-                    lessonId: topic['lesson_id'] as int? ?? 0,
-                  )),
+            builder: (_) => ShadowingScreen(
+              segmentId: seg['id'] as int,
+            ),
+          ),
         ),
         child: Container(
           decoration: BoxDecoration(
@@ -380,9 +368,9 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: AppColors.toriiRed.withValues(alpha: 0.07),
-                blurRadius: 20,
-                offset: const Offset(0, 6),
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -390,157 +378,121 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Image banner
+              // ── Banner / Image ──────────────────────────────────────────────
               SizedBox(
-                height: 180,
+                height: 100,
                 width: double.infinity,
-                child: imageUrl != null && imageUrl.isNotEmpty
-                    ? Image.network(
-                        imageUrl,
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    if (seg['image_url'] != null && seg['image_url'].toString().isNotEmpty)
+                      Image.network(
+                        seg['image_url'].toString().startsWith('http') 
+                          ? seg['image_url'].toString() 
+                          : '${ApiConfig.baseUrl}${seg['image_url']}',
                         fit: BoxFit.cover,
-                        errorBuilder: (ctx, err, st) => _buildImagePlaceholder(level),
+                        errorBuilder: (_, __, ___) => _buildGradientFallback(title, kanji),
                       )
-                    : _buildImagePlaceholder(level),
+                    else
+                      _buildGradientFallback(title, kanji),
+
+                    // ID badge góc trái
+                    Positioned(
+                      top: 12,
+                      left: 14,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _kBg.withValues(alpha: 0.85),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                        ),
+                        child: Text(
+                          '#${seg['id']}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: _kSubtext,
+                          ),
+                        ),
+                      ),
+                    ),
+                    // Play icon góc phải
+                    Positioned(
+                      right: 14,
+                      bottom: 12,
+                      child: Container(
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: Colors.white,
+                          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                        ),
+                        child: const Icon(Icons.play_circle_filled_rounded,
+                            color: _kPrimary, size: 32),
+                      ),
+                    ),
+                  ],
+                ),
               ),
 
-              // Content
+              // ── Content ───────────────────────────────────────────────
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Badge + duration
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: badgeBg,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'JLPT $level',
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.8,
-                              color: badgeColor,
-                            ),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            Icon(Icons.schedule_rounded,
-                                size: 13, color: _kSubtext.withValues(alpha: 0.7)),
-                            const SizedBox(width: 4),
-                            Text(
-                              duration != null
-                                  ? '${duration.round()} phút'
-                                  : '3 phút',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  color: _kSubtext.withValues(alpha: 0.7),
-                                  fontWeight: FontWeight.w500),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-
-                    // Title
+                    // Title (tiêu đề chính)
                     Text(
-                      title,
+                      displayTitle,
                       style: const TextStyle(
-                        fontSize: 18,
+                        fontSize: 17,
                         fontWeight: FontWeight.w800,
                         color: _kOnSurface,
-                        height: 1.25,
+                        height: 1.3,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
 
-                    // Japanese subtitle from segments
-                    Text(
-                      _getJapaneseSubtitle(topic),
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: _kSubtext.withValues(alpha: 0.9),
+                    if (displaySub.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        displaySub,
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: _kSubtext,
+                          fontWeight: FontWeight.w500,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 14),
+                    ],
 
-                    // Progress row
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            SizedBox(
-                              width: 38,
-                              height: 38,
-                              child: Stack(
-                                fit: StackFit.expand,
-                                children: [
-                                  CircularProgressIndicator(
-                                    value: 1.0,
-                                    strokeWidth: 3.5,
-                                    color: const Color(0xFFEEDFDF),
-                                  ),
-                                  CircularProgressIndicator(
-                                    value: progress,
-                                    strokeWidth: 3.5,
-                                    color: AppColors.toriiRed,
-                                    strokeCap: StrokeCap.round,
-                                  ),
-                                  Center(
-                                    child: Text(
-                                      '${(progress * 100).toInt()}%',
-                                      style: const TextStyle(
-                                        fontSize: 9,
-                                        fontWeight: FontWeight.w800,
-                                        color: AppColors.toriiRed,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    const SizedBox(height: 10),
+
+                    // Category chips
+                    if (catNames.isNotEmpty)
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 4,
+                        children: catNames.map((name) {
+                          return Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _kPrimary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(6),
                             ),
-                            const SizedBox(width: 10),
-                            Text(
-                              progressLabel,
+                            child: Text(
+                              name,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 11,
                                 fontWeight: FontWeight.w600,
-                                color: _kSubtext,
+                                color: _kPrimary,
                               ),
                             ),
-                          ],
-                        ),
-                        Container(
-                          width: 38,
-                          height: 38,
-                          decoration: BoxDecoration(
-                            color: AppColors.toriiRed.withValues(alpha: 0.1),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            isCompleted
-                                ? Icons.check_circle_rounded
-                                : Icons.play_arrow_rounded,
-                            color: AppColors.toriiRed,
-                            size: 22,
-                          ),
-                        ),
-                      ],
-                    ),
+                          );
+                        }).toList(),
+                      ),
                   ],
                 ),
               ),
@@ -551,36 +503,31 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  String _getJapaneseSubtitle(dynamic topic) {
-    final segments = topic['segments'] as List?;
-    if (segments != null && segments.isNotEmpty) {
-      final first = segments[0];
-      return first['kanji_content']?.toString() ??
-          first['furigana']?.toString() ??
-          '日本語の練習';
-    }
-    final script = topic['full_script_ja']?.toString() ?? '';
-    if (script.isNotEmpty) return script.split('\n').first;
-    return '日本語の練習';
-  }
-
-  Widget _buildImagePlaceholder(String level) {
+  Widget _buildGradientFallback(String title, String kanji) {
     return Container(
-      color: _kMint,
-      child: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.record_voice_over_rounded,
-                size: 48, color: AppColors.toriiRed.withValues(alpha: 0.4)),
-            const SizedBox(height: 8),
-            Text(
-              'JLPT $level',
-              style: TextStyle(
-                  color: AppColors.toriiRed.withValues(alpha: 0.6),
-                  fontWeight: FontWeight.bold),
-            ),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            _kPrimary.withValues(alpha: 0.12),
+            _kPrimary.withValues(alpha: 0.05),
           ],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          title.isNotEmpty
+              ? (title.length > 14 ? '${title.substring(0, 14)}…' : title)
+              : (kanji.isNotEmpty
+                  ? (kanji.length > 10 ? '${kanji.substring(0, 10)}…' : kanji)
+                  : '日本語'),
+          style: TextStyle(
+            fontSize: title.isNotEmpty ? 18 : 24,
+            fontWeight: FontWeight.w800,
+            color: AppColors.toriiRed.withValues(alpha: 0.35),
+            letterSpacing: title.isNotEmpty ? 0 : 1,
+          ),
         ),
       ),
     );

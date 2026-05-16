@@ -38,10 +38,29 @@ AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "eastasia")
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
 # =====================================================================
-# Gemini AI key — dùng để sinh gợi ý cải thiện phát âm thông minh
-# Dùng cùng key Google AI Studio hoặc set GEMINI_API_KEY riêng
+# Gemini AI key — hỗ trợ nhiều key để rotate khi hết quota
+# Cách dùng: set GEMINI_API_KEYS=key1,key2,key3 trong .env
+#            hoặc set GEMINI_API_KEY=single_key
 # =====================================================================
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") or GOOGLE_API_KEY
+
+# Pool nhiều key để rotate — tránh hết quota
+_raw_keys = os.getenv("GEMINI_API_KEYS", "")
+_GEMINI_KEY_POOL: list[str] = [k.strip() for k in _raw_keys.split(",") if k.strip()]
+if GEMINI_API_KEY and GEMINI_API_KEY not in _GEMINI_KEY_POOL:
+    _GEMINI_KEY_POOL.insert(0, GEMINI_API_KEY)  # key chính luôn ở đầu
+
+_key_index = 0  # round-robin index
+
+def _next_gemini_key() -> str:
+    """Trả về key tiếp theo theo vòng tròn. Thread-safe cho single-process."""
+    global _key_index
+    if not _GEMINI_KEY_POOL:
+        return GEMINI_API_KEY
+    key = _GEMINI_KEY_POOL[_key_index % len(_GEMINI_KEY_POOL)]
+    _key_index += 1
+    return key
+
 
 # Trợ từ & từ pitch-accent quan trọng trong tiếng Nhật
 _JP_PITCH_PARTICLES = {"は", "が", "を", "に", "で", "と", "も", "の", "へ", "から", "まで", "より", "ね", "よ", "か"}
@@ -462,108 +481,108 @@ async def _ai_generate_tip(
     expected_text: str,
     recognized_text: str,
     fallback_tip: str,
+    mispronounced_words: list = None,
 ) -> str:
     """
-    Gọi Gemini 2.0 Flash để sinh gợi ý cải thiện phát âm cá nhân hóa.
-    Fallback về tip tĩnh nếu không có key hoặc lỗi mạng.
+    Sinh gợi ý cải thiện phát âm cá nhân hóa bằng Gemini (có fallback model).
+    Sử dụng _gemini_post để tự động thử lần lượt các model khi bị quota.
     """
     if not GEMINI_API_KEY:
         return fallback_tip
 
+    mispronounced_info = ", ".join(mispronounced_words) if mispronounced_words else error_word
     prompt = (
-        "Bạn là giáo viên tiếng Nhật chuyên luyện phát âm và shadowing. "
-        "Học viên vừa đọc một câu tiếng Nhật và nhận được kết quả sau:\n\n"
-        f"- Câu gốc (mẫu):  {expected_text}\n"
-        f"- Câu nhận diện:  {recognized_text or '(không nhận diện được)'}\n"
+        "Bạn là giáo viên tiếng Nhật chuyên luyện phát âm và shadowing.\n"
+        "Học viên vừa đọc một câu tiếng Nhật và nhận được kết quả:\n\n"
+        f"- Câu gốc (mẫu):       {expected_text}\n"
+        f"- Câu nhận diện được:  {recognized_text or '(không nhận diện được)'}\n"
         f"- Độ chính xác phát âm: {accuracy}/100\n"
         f"- Fluency (ngắt nghỉ):  {fluency}/100\n"
         f"- Prosody (ngữ điệu):   {prosody}/100\n"
-        + (f"- Từ phát âm sai:        {error_word}\n" if error_word else "")
-        + "\nHãy đưa ra **1 đến 3 gợi ý ngắn gọn, cụ thể và thực hành được ngay** "
-        "để học viên cải thiện điểm yếu nhất. "
-        "Nếu điểm tốt thì động viên ngắn và khuyến khích tiếp tục. "
-        "Trả lời bằng tiếng Việt, không dùng markdown, không quá 80 từ."
+        + (f"- Từ/cụm phát âm sai:   {mispronounced_info}\n" if mispronounced_info else "")
+        + "\nYêu cầu:\n"
+        "- Nếu có từ sai: nêu rõ từ đó, giải thích tại sao khó, và hướng dẫn cách sửa cụ thể (vị trí miệng/lưỡi, so sánh với âm tiếng Việt).\n"
+        "- Nếu fluency thấp: hướng dẫn cách luyện nhịp ngắt.\n"
+        "- Nếu prosody thấp: hướng dẫn cách bắt chước pitch-accent.\n"
+        "- Nếu điểm tốt (≥90): động viên ngắn, gợi ý nâng cao.\n"
+        "Trả lời bằng tiếng Việt, không dùng markdown, tối đa 100 từ."
     )
 
-    url = (
-        "https://generativelanguage.googleapis.com/v1beta/models/"
-        f"gemini-2.0-flash:generateContent?key={GEMINI_API_KEY}"
-    )
-    payload = {"contents": [{"parts": [{"text": prompt}]}]}
-
-    try:
-        async with httpx.AsyncClient(timeout=15) as client:
-            resp = await client.post(url, json=payload)
-        if resp.status_code == 200:
-            data = resp.json()
-            text = (
-                data.get("candidates", [{}])[0]
-                .get("content", {})
-                .get("parts", [{}])[0]
-                .get("text", "")
-                .strip()
-            )
-            if text:
-                return text
-    except Exception as e:
-        print(f"[Gemini tip] Error: {e}")
+    # Dùng _gemini_post (có sẵn fallback model) thay vì gọi thẳng 1 model
+    result = await _gemini_post(prompt, timeout=15)
+    text = result.get("_text", "").strip()
+    if text:
+        return text
 
     return fallback_tip
 
 # Danh sách model fallback theo thứ tự ưu tiên
+# (lấy từ API: /v1beta/models — chỉ giữ model hỗ trợ generateContent)
 _GEMINI_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-1.5-flash-8b",
+    "gemini-2.0-flash",           # nhanh, nhưng hay bị quota
+    "gemini-2.0-flash-lite",      # nhẹ hơn
+    "gemini-2.5-flash-lite",      # mới, ổn định, free tier
+    "gemini-2.5-flash",           # mạnh hơn, free tier
+    "gemini-3.1-flash-lite",      # mới nhất, nhẹ nhất
 ]
+
 
 
 async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
     """
-    Gọi Gemini API với fallback model nếu bị 429 quota.
+    Gọi Gemini API với fallback model + key rotation nếu bị 429 quota.
     Trả về parsed JSON hoặc {} nếu thất bại.
     """
-    if not GEMINI_API_KEY:
+    if not _GEMINI_KEY_POOL and not GEMINI_API_KEY:
         return {}
 
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     for model in _GEMINI_MODELS:
-        url = (
-            "https://generativelanguage.googleapis.com/v1beta/models/"
-            f"{model}:generateContent?key={GEMINI_API_KEY}"
-        )
-        try:
-            async with httpx.AsyncClient(timeout=timeout) as client:
-                resp = await client.post(url, json=payload)
+        # Thử tất cả key trong pool cho mỗi model
+        tried_keys: set = set()
+        for _ in range(max(len(_GEMINI_KEY_POOL), 1)):
+            api_key = _next_gemini_key()
+            if api_key in tried_keys:
+                continue
+            tried_keys.add(api_key)
 
-            if resp.status_code == 429:
-                print(f"[Gemini] {model} quota exceeded, trying next model...")
-                continue  # thử model kế tiếp
+            url = (
+                "https://generativelanguage.googleapis.com/v1beta/models/"
+                f"{model}:generateContent?key={api_key}"
+            )
+            try:
+                async with httpx.AsyncClient(timeout=timeout) as client:
+                    resp = await client.post(url, json=payload)
 
-            if resp.status_code == 200:
-                data = resp.json()
-                text = (
-                    data.get("candidates", [{}])[0]
-                    .get("content", {})
-                    .get("parts", [{}])[0]
-                    .get("text", "")
-                    .strip()
-                )
-                # Clean markdown
-                text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
-                text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
-                text = text.strip()
-                match = re.search(r"\{.*\}", text, re.DOTALL)
-                if match:
-                    return _json.loads(match.group())
-                return {"_text": text}  # text bình thường
+                if resp.status_code == 429:
+                    print(f"[Gemini] {model} key=...{api_key[-6:]} quota exceeded, trying next...")
+                    continue  # thử key khác
 
-            print(f"[Gemini] {model} HTTP {resp.status_code}")
-        except Exception as e:
-            print(f"[Gemini] {model} error: {e}")
+                if resp.status_code == 200:
+                    data = resp.json()
+                    text = (
+                        data.get("candidates", [{}])[0]
+                        .get("content", {})
+                        .get("parts", [{}])[0]
+                        .get("text", "")
+                        .strip()
+                    )
+                    # Clean markdown
+                    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+                    text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
+                    text = text.strip()
+                    match = re.search(r"\{.*\}", text, re.DOTALL)
+                    if match:
+                        return _json.loads(match.group())
+                    return {"_text": text}  # text bình thường
+
+                print(f"[Gemini] {model} HTTP {resp.status_code}")
+            except Exception as e:
+                print(f"[Gemini] {model} error: {e}")
 
     return {}
+
 
 
 async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
@@ -582,39 +601,41 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
     expected_hira = _kanji_to_hira(expected_text)
 
     prompt = (
-        "Bạn là giám khảo chấm thi nói tiếng Nhật chuyên nghiệp.\n\n"
-        f"★ Câu gốc (Kanji):   {expected_text}\n"
+        "Bạn là giám khảo chấm thi nói tiếng Nhật chuyên nghiệp và nghiêm khắc.\n\n"
+        f"★ Câu gốc (Kanji):    {expected_text}\n"
         f"★ Câu gốc (Hiragana): {expected_hira}\n"
-        f"★ STT nhận dạng:     {recognized_text}\n\n"
-        "QUY TẮc CHẤM QUAN TRỌNG:\n"
-        "- STT Google trả về Hiragana, câu gốc có thể là Kanji. "
-        "Hãy so sánh theo ÂM ĐỌC, không phải ký tự.\n"
-        "- Nếu STT khớp hoàn toàn với Hiragana của câu gốc → accuracy ≥ 90, fluency ≥ 85.\n"
-        "- Nếu thiếu 1-2 từ → accuracy 70-85.\n"
-        "- Nếu sai nhiều → accuracy < 70.\n"
-        "- Không phạt điểm vì khác Kanji/Hiragana.\n\n"
+        f"★ STT nhận dạng:      {recognized_text}\n\n"
+        "QUY TẮC CHẤM ĐIỂM NGHIÊM KHẮC:\n"
+        "- So sánh theo ÂM ĐỌC (Hiragana), không phải ký tự bề mặt.\n"
+        "- Nếu STT nhận dạng khớp 100% Hiragana câu gốc → accuracy 90-100.\n"
+        "- Nếu thiếu hoặc thêm 1 mora → accuracy giảm 10 điểm.\n"
+        "- Nếu sai 1 từ rõ ràng → accuracy giảm 15-20 điểm.\n"
+        "- Nếu sai nhiều từ → accuracy < 65.\n"
+        "- Từ nào STT ra khác Hiragana câu gốc → đánh dấu is_correct=false VÀ thêm vào mispronounced_words.\n"
+        "- KHÔNG làm tròn điểm lên một cách vô lý. Hãy chấm thực chất.\n\n"
         "Trả về JSON THUẦN (không markdown, không text ngoài JSON):\n"
         "{\n"
         '  "accuracy": 85,\n'
         '  "fluency": 80,\n'
         '  "prosody": 75,\n'
         '  "rhythm": 90,\n'
-        '  "mispronounced_words": [],\n'
+        '  "mispronounced_words": ["từ sai 1", "từ sai 2"],\n'
         '  "error_types": {\n'
-        '    "pronunciation": [],\n'
+        '    "pronunciation": ["từ phát âm sai"],\n'
         '    "prosody": [],\n'
         '    "pitch_accent": [],\n'
         '    "rhythm": []\n'
         '  },\n'
         '  "words_analysis": [\n'
         '    {"text": "明日は", "is_correct": true},\n'
-        '    {"text": "早く起き", "is_correct": true}\n'
+        '    {"text": "早く起き", "is_correct": false}\n'
         '  ]\n'
         "}\n\n"
         "Quy tắc words_analysis:\n"
-        "1. Chia nhỏ câu gốc thành cụm 2-4 ký tự Kanji/Kana.\n"
-        "2. is_correct=true nếu cụm đó được nói đúng (dựa theo Hiragana).\n"
-        "3. Gép lại phải khôi phục được 100% câu gốc."
+        "1. Chia nhỏ câu gốc thành cụm 2-4 ký tự Kanji/Kana nguyên gốc (không đổi sang Hiragana).\n"
+        "2. is_correct=false nếu cụm đó KHÔNG xuất hiện (kể cả dạng Hiragana) trong STT output.\n"
+        "3. Ghép lại phải khôi phục được 100% câu gốc (Kanji).\n"
+        "4. Nếu STT trống hoặc rất ngắn so với câu gốc, đánh dấu hầu hết là false."
     )
 
     result = await _gemini_post(prompt, timeout=20)
@@ -957,23 +978,6 @@ async def evaluate_shadowing(
         else:
             recognized_text = "(Không nhận được audio)"
 
-        if accuracy_score >= 90:
-            error_word = ""
-
-        fallback_tip = _build_tip(
-            accuracy_score, fluency_score, prosody_score, error_word,
-            rhythm_score=rhythm_score, mode="shadowing"
-        )
-        tip = await _ai_generate_tip(
-            accuracy=accuracy_score,
-            fluency=fluency_score,
-            prosody=prosody_score,
-            error_word=error_word,
-            expected_text=expected_text,
-            recognized_text=recognized_text,
-            fallback_tip=fallback_tip,
-        )
-
         # ----------------------------------------------------------------
         # BƯỚC 1: Đánh giá AI toàn diện (Gemini) → lấy structured errors
         # ----------------------------------------------------------------
@@ -994,6 +998,28 @@ async def evaluate_shadowing(
 
         if not words_analysis:
             words_analysis = _fallback_word_analysis(expected_text, recognized_text)
+
+        # Cập nhật error_word từ mispronounced_words nếu có
+        if mispronounced_words and not error_word:
+            error_word = mispronounced_words[0]
+
+        # ----------------------------------------------------------------
+        # BƯỚC 2: Sinh tip AI với đầy đủ thông tin lỗi
+        # ----------------------------------------------------------------
+        fallback_tip = _build_tip(
+            accuracy_score, fluency_score, prosody_score, error_word,
+            rhythm_score=rhythm_score, mode="shadowing"
+        )
+        tip = await _ai_generate_tip(
+            accuracy=accuracy_score,
+            fluency=fluency_score,
+            prosody=prosody_score,
+            error_word=error_word,
+            expected_text=expected_text,
+            recognized_text=recognized_text,
+            fallback_tip=fallback_tip,
+            mispronounced_words=mispronounced_words,
+        )
 
         # ----------------------------------------------------------------
         # BƯỚC 2: RecommendationEngine → sinh ActionPlan cá nhân hóa

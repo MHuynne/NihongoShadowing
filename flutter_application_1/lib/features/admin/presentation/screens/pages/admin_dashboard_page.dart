@@ -81,7 +81,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             Text(
               _error!,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: AdminPalette.textSecondary),
+              style: const TextStyle(color: AdminPalette.textMuted),
             ),
             const SizedBox(height: 16),
             AdminPrimaryButton(
@@ -103,9 +103,10 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         .map((item) => Map<String, dynamic>.from(item as Map))
         .toList();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
         const AdminSectionHeader(
           title: 'Tong quan noi dung',
           subtitle:
@@ -161,10 +162,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           ],
         ),
         const SizedBox(height: 20),
-        Expanded(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
               Expanded(
                 child: AdminSurface(
                   child: _RecentListCard(
@@ -220,8 +220,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               ),
             ],
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -272,7 +272,7 @@ class _StatCard extends StatelessWidget {
             Text(
               label,
               style: const TextStyle(
-                color: AdminPalette.textSecondary,
+                color: AdminPalette.textMuted,
                 fontWeight: FontWeight.w700,
               ),
             ),

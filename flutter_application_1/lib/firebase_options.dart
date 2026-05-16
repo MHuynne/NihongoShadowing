@@ -40,7 +40,7 @@ class DefaultFirebaseOptions {
   // ─── THAY CÁC GIÁ TRỊ DƯỚI ĐÂY SAU KHI CHẠY flutterfire configure ───
 
   static const FirebaseOptions web = FirebaseOptions(
-   apiKey: "AIzaSyDbL_cGySXFJFmvPxmVqxqayUX83mImlOw",
+    apiKey: "AIzaSyDbL_cGySXFJFmvPxmVqxqayUX83mImlOw",
     authDomain: "nihongotokyo-e9af2.firebaseapp.com",
     projectId: "nihongotokyo-e9af2",
     storageBucket: "nihongotokyo-e9af2.firebasestorage.app",
@@ -63,16 +63,18 @@ class DefaultFirebaseOptions {
     messagingSenderId: '1030822382399',
     projectId: 'nihongo-shadowing-98ab5',
     storageBucket: 'nihongo-shadowing-98ab5.firebasestorage.app',
-    iosClientId: '1030822382399-nuubvh6l0js0utn7f6pghl06okv4ucml.apps.googleusercontent.com',
+    iosClientId:
+        '1030822382399-nuubvh6l0js0utn7f6pghl06okv4ucml.apps.googleusercontent.com',
     iosBundleId: 'com.example.flutterApplication1',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'YOUR_WINDOWS_API_KEY',
-    appId: 'YOUR_WINDOWS_APP_ID',
-    messagingSenderId: 'YOUR_MESSAGING_SENDER_ID',
-    projectId: 'YOUR_PROJECT_ID',
-    authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-    storageBucket: 'YOUR_PROJECT_ID.firebasestorage.app',
+    apiKey: "AIzaSyDbL_cGySXFJFmvPxmVqxqayUX83mImlOw",
+    authDomain: "nihongotokyo-e9af2.firebaseapp.com",
+    projectId: "nihongotokyo-e9af2",
+    storageBucket: "nihongotokyo-e9af2.firebasestorage.app",
+    messagingSenderId: "56132876251",
+    appId: "1:56132876251:web:c889e00e0181ba07d799fe",
+    measurementId: "G-YYL8G02K9K",
   );
 }

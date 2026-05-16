@@ -1,4 +1,4 @@
-class LeaderboardUser {
+﻿class LeaderboardUser {
   final int rank;
   final String name;
   final String avatarUrl;

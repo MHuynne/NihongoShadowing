@@ -1,16 +1,22 @@
 class ShadowingSentenceModel {
+  final String title;
   final String kanji;
   final String furiganaHtml;
   final String romaji;
   final String hanViet;
   final String meaning;
+  final double startTime; // start_time của segment (giây)
+  final double endTime;   // end_time của segment (giây)
 
   ShadowingSentenceModel({
+    this.title = '',
     required this.kanji,
     required this.furiganaHtml,
     required this.romaji,
     required this.hanViet,
     required this.meaning,
+    this.startTime = 0.0,
+    this.endTime = 0.0,
   });
 }
 

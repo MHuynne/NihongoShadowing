@@ -8,6 +8,15 @@ abstract class SampleAudioPlayer {
   /// Phát audio từ bytes MP3. Gọi [onComplete] khi xong.
   Future<void> play(List<int> mp3Bytes, {required void Function() onComplete});
 
+  /// Phát URL từ [startSec] đến [endSec] (giây).
+  /// Nếu [endSec] <= [startSec], phát đến hết file.
+  Future<void> playUrlFromTo(
+    String url,
+    double startSec,
+    double endSec, {
+    required void Function() onComplete,
+  });
+
   /// Dừng phát
   Future<void> stop();
 

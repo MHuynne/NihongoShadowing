@@ -1,14 +1,6 @@
+﻿import 'package:flutter/material.dart';
 
-import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
-
-/// Widget hiển thị tiến độ học tập dưới dạng leo núi Phú Sĩ.
-///
-/// [completedLessons] - số bài đã hoàn thành
-/// [totalLessons]     - tổng số bài học
-/// [levelLabel]       - nhãn cấp độ hiện tại (N5, N4, N3...)
-/// [animate]          - có chạy animation khi vào màn hình không
-class MountainProgressWidget extends StatefulWidget {
+class MountainProgressWidget extends StatelessWidget {
   final int completedLessons;
   final int totalLessons;
   final String levelLabel;
@@ -25,550 +17,174 @@ class MountainProgressWidget extends StatefulWidget {
   });
 
   @override
-  State<MountainProgressWidget> createState() => _MountainProgressWidgetState();
-}
-
-class _MountainProgressWidgetState extends State<MountainProgressWidget>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _progressAnim;
-  late Animation<double> _glowAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    );
-
-    final target = widget.totalLessons > 0
-        ? widget.completedLessons / widget.totalLessons
-        : 0.0;
-
-    _progressAnim = Tween<double>(begin: 0, end: target).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic),
-    );
-
-    _glowAnim = Tween<double>(begin: 0.4, end: 1.0).animate(
-      CurvedAnimation(parent: _ctrl, curve: Curves.easeInOut),
-    );
-
-    if (widget.animate) {
-      Future.delayed(const Duration(milliseconds: 300), () {
-        if (mounted) _ctrl.forward();
-      });
-    } else {
-      _ctrl.value = 1.0;
-    }
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
-  void didUpdateWidget(MountainProgressWidget oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.completedLessons != widget.completedLessons) {
-      final target = widget.totalLessons > 0
-          ? widget.completedLessons / widget.totalLessons
-          : 0.0;
-      _progressAnim = Tween<double>(
-        begin: _progressAnim.value,
-        end: target,
-      ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-      _ctrl
-        ..reset()
-        ..forward();
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
-    final pct = widget.totalLessons > 0
-        ? (widget.completedLessons / widget.totalLessons * 100).round()
-        : 0;
+    final double progress = totalLessons > 0 ? completedLessons / totalLessons : 0;
+    final int pct = (progress * 100).round();
 
     return GestureDetector(
-      onTap: widget.onTap,
+      onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(28),
+          borderRadius: BorderRadius.circular(24),
           gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF1A1A3E), Color(0xFF0F1729)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFE2E8F0),
+              Color(0xFF94A3B8),
+              Color(0xFF334155),
+            ],
+            stops: [0.0, 0.4, 1.0],
           ),
           boxShadow: [
             BoxShadow(
-              color: AppColors.toriiRed.withValues(alpha: 0.25),
+              color: Colors.black.withValues(alpha: 0.15),
               blurRadius: 20,
-              offset: const Offset(0, 8),
+              offset: const Offset(0, 10),
             ),
           ],
         ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: AnimatedBuilder(
-            animation: _ctrl,
-            builder: (context, _) {
-              return Column(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Left side
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Mountain canvas ─────────────────────────────────────
-                  SizedBox(
-                    height: 180,
-                    child: CustomPaint(
-                      painter: _MountainPainter(
-                        progress: _progressAnim.value,
-                        glowOpacity: _glowAnim.value,
-                      ),
-                      child: Align(
-                        alignment: Alignment.topCenter,
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 12),
-                          child: _buildTopBadge(),
+                  Row(
+                    children: [
+                      const Icon(Icons.terrain_rounded, color: Colors.green, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Mount Fuji Progress',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.black87.withValues(alpha: 0.7),
                         ),
                       ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'JOURNEY TO THE PEAK',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white70,
+                      letterSpacing: 1.2,
                     ),
                   ),
-
-                  // ── Bottom info bar ─────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 20, vertical: 14),
-                    decoration: const BoxDecoration(
-                      color: Color(0xFF12122A),
+                  const SizedBox(height: 4),
+                  Text(
+                    '$levelLabel Mastery',
+                    style: const TextStyle(
+                      fontSize: 28,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      height: 1.1,
                     ),
-                    child: Row(
-                      children: [
-                        // Level badge
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 5),
-                          decoration: BoxDecoration(
-                            color: AppColors.toriiRed.withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(
-                              color: AppColors.toriiRed.withValues(alpha: 0.5),
-                            ),
-                          ),
-                          child: Text(
-                            widget.levelLabel,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w800,
-                              color: AppColors.toriiRedLight,
-                            ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFF4D6D),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          'Station $completedLessons of $totalLessons',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${widget.completedLessons}/${widget.totalLessons} bài',
-                                    style: const TextStyle(
-                                      fontSize: 13,
-                                      color: Color(0xFF94A3B8),
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                  Text(
-                                    '$pct%',
-                                    style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w900,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 6),
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: LinearProgressIndicator(
-                                  value: _progressAnim.value,
-                                  backgroundColor:
-                                      Colors.white.withValues(alpha: 0.08),
-                                  valueColor:
-                                      const AlwaysStoppedAnimation<Color>(
-                                          AppColors.toriiRed),
-                                  minHeight: 6,
-                                ),
-                              ),
-                            ],
+                      ),
+                      const SizedBox(width: 8),
+                      const Flexible(
+                        child: Text(
+                          'Gotemba Trail',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.white,
                           ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ],
-              );
-            },
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopBadge() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 16),
-          child: Text(
-            '🗻 Leo núi Phú Sĩ',
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: Colors.white70,
-            ),
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(right: 16),
-          child: Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Text(
-              '富士山',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.white54,
-                fontWeight: FontWeight.w600,
               ),
             ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── CustomPainter — Vẽ núi Phú Sĩ + nhân vật leo núi ────────────────────────
-
-class _MountainPainter extends CustomPainter {
-  final double progress; // 0.0 → 1.0
-  final double glowOpacity;
-
-  const _MountainPainter({
-    required this.progress,
-    required this.glowOpacity,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final w = size.width;
-    final h = size.height;
-
-    // ── Background sky gradient ──────────────────────────────────────────
-    final skyPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(0.7, -0.4),
-        radius: 1.5,
-        colors: [
-          const Color(0xFF1E2A5E),
-          const Color(0xFF131B3A),
-          const Color(0xFF0A0F24),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-    canvas.drawRect(Rect.fromLTWH(0, 0, w, h), skyPaint);
-
-    // ── Stars ────────────────────────────────────────────────────────────
-    final starPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.6)
-      ..strokeWidth = 1.2
-      ..style = PaintingStyle.fill;
-
-    final starPositions = [
-      Offset(w * 0.08, h * 0.08),
-      Offset(w * 0.2,  h * 0.05),
-      Offset(w * 0.35, h * 0.12),
-      Offset(w * 0.65, h * 0.07),
-      Offset(w * 0.78, h * 0.04),
-      Offset(w * 0.90, h * 0.10),
-      Offset(w * 0.55, h * 0.03),
-      Offset(w * 0.12, h * 0.20),
-      Offset(w * 0.88, h * 0.22),
-    ];
-    for (final pos in starPositions) {
-      canvas.drawCircle(pos, 1.5, starPaint);
-    }
-
-    // ── Moon & Glow ─────────────────────────────────────────────────────────────
-    final moonCenter = Offset(w * 0.85, h * 0.20);
-    final moonGlow = Paint()
-      ..color = const Color(0xFFFFF9C4).withValues(alpha: 0.2)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 20);
-    canvas.drawCircle(moonCenter, 25, moonGlow);
-
-    final moonPaint = Paint()
-      ..shader = RadialGradient(
-        center: const Alignment(-0.2, -0.2),
-        radius: 0.8,
-        colors: [
-          const Color(0xFFFFFDE7),
-          const Color(0xFFFFF59D),
-        ],
-      ).createShader(Rect.fromCircle(center: moonCenter, radius: 12));
-    canvas.drawCircle(moonCenter, 12, moonPaint);
-    
-    // Moon craters
-    canvas.drawCircle(Offset(w * 0.83, h * 0.18), 2, Paint()..color = Colors.black.withValues(alpha: 0.1));
-    canvas.drawCircle(Offset(w * 0.87, h * 0.22), 3, Paint()..color = Colors.black.withValues(alpha: 0.1));
-    canvas.drawCircle(Offset(w * 0.86, h * 0.17), 1.5, Paint()..color = Colors.black.withValues(alpha: 0.08));
-
-    // ── Clouds ─────────────────────────────────────────────────────────────
-    _drawClouds(canvas, w, h);
-
-    // ── Mountain body ────────────────────────────────────────────────────
-    final mountainPath = Path();
-    mountainPath.moveTo(0, h);
-    mountainPath.lineTo(w * 0.05, h * 0.75);
-    mountainPath.quadraticBezierTo(w * 0.15, h * 0.45, w * 0.35, h * 0.25);
-    mountainPath.quadraticBezierTo(w * 0.45, h * 0.12, w * 0.50, h * 0.05);
-    mountainPath.quadraticBezierTo(w * 0.55, h * 0.12, w * 0.65, h * 0.25);
-    mountainPath.quadraticBezierTo(w * 0.85, h * 0.45, w * 0.95, h * 0.75);
-    mountainPath.lineTo(w, h);
-    mountainPath.close();
-
-    final mountainPaint = Paint()
-      ..shader = LinearGradient(
-        begin: Alignment.topCenter,
-        end: Alignment.bottomCenter,
-        colors: [
-          const Color(0xFF4A5C88),
-          const Color(0xFF2D3A5B),
-          const Color(0xFF151D33),
-        ],
-      ).createShader(Rect.fromLTWH(0, 0, w, h));
-    canvas.drawPath(mountainPath, mountainPaint);
-
-    // ── Snow cap ──────────────────────────────────────────────────────────
-    final snowPath = Path();
-    snowPath.moveTo(w * 0.35, h * 0.28);
-    snowPath.quadraticBezierTo(w * 0.45, h * 0.14, w * 0.50, h * 0.05);
-    snowPath.quadraticBezierTo(w * 0.55, h * 0.14, w * 0.65, h * 0.28);
-    snowPath.quadraticBezierTo(w * 0.575, h * 0.20, w * 0.50, h * 0.18);
-    snowPath.quadraticBezierTo(w * 0.425, h * 0.20, w * 0.35, h * 0.28);
-    snowPath.close();
-
-    canvas.drawPath(
-      snowPath,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.92)
-        ..style = PaintingStyle.fill,
-    );
-
-    // Snow outline
-    canvas.drawPath(
-      snowPath,
-      Paint()
-        ..color = Colors.white.withValues(alpha: 0.4)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 0.5,
-    );
-
-    // ── Path trail on mountain ────────────────────────────────────────────
-    // Điểm trên đường leo (từ đáy → đỉnh)
-    final pathPoints = _getMountainPathPoints(w, h);
-
-    // Vẽ đường trail (chưa đi)
-    final trailPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.15)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-
-    final trailPath = Path();
-    trailPath.moveTo(pathPoints.first.dx, pathPoints.first.dy);
-    for (int i = 1; i < pathPoints.length; i++) {
-      trailPath.lineTo(pathPoints[i].dx, pathPoints[i].dy);
-    }
-    canvas.drawPath(trailPath, trailPaint);
-
-    // ── Completed trail (đã đi) ───────────────────────────────────────────
-    final completedIndex =
-        (progress * (pathPoints.length - 1)).round().clamp(0, pathPoints.length - 1);
-
-    if (completedIndex > 0) {
-      final donePaint = Paint()
-        ..color = AppColors.toriiRed.withValues(alpha: 0.85)
-        ..strokeWidth = 2.5
-        ..style = PaintingStyle.stroke
-        ..strokeCap = StrokeCap.round;
-
-      final donePath = Path();
-      donePath.moveTo(pathPoints[0].dx, pathPoints[0].dy);
-      for (int i = 1; i <= completedIndex; i++) {
-        donePath.lineTo(pathPoints[i].dx, pathPoints[i].dy);
-      }
-      canvas.drawPath(donePath, donePaint);
-
-      // Waypoint dots
-      for (int i = 0; i <= completedIndex; i += 3) {
-        canvas.drawCircle(
-          pathPoints[i],
-          2.5,
-          Paint()..color = AppColors.toriiRed,
-        );
-      }
-    }
-
-    // ── Climber (nhân vật leo núi) ────────────────────────────────────────
-    final climberPos = pathPoints[completedIndex];
-    _drawClimber(canvas, climberPos, glowOpacity);
-
-    // ── Flag at summit ────────────────────────────────────────────────────
-    if (progress >= 1.0) {
-      _drawFlag(canvas, Offset(w * 0.50, h * 0.05 - 16));
-    }
-
-    // ── XP label (nếu progress > 0) ──────────────────────────────────────
-    if (progress > 0.05) {
-      final labelOffset = pathPoints[completedIndex];
-      _drawXpLabel(canvas, labelOffset, progress);
-    }
-  }
-
-  List<Offset> _getMountainPathPoints(double w, double h) {
-    // 20 điểm từ chân → đỉnh núi, theo cạnh phải của núi
-    final points = <Offset>[];
-    const steps = 20;
-    for (int i = 0; i <= steps; i++) {
-      final t = i / steps;
-      // Đường leo theo cạnh phải núi (từ góc phải đáy → đỉnh)
-      final x = w * (0.95 - t * 0.45);
-      // y theo hình dạng núi
-      final y = _mountainY(t, h);
-      points.add(Offset(x, y));
-    }
-    return points;
-  }
-
-  double _mountainY(double t, double h) {
-    // t=0: đáy (y = h * 0.9), t=1: đỉnh (y = h * 0.05)
-    // Dùng easeIn để gần đỉnh thì dốc hơn
-    final ease = t * t * (3 - 2 * t); // smoothstep
-    return h * 0.90 - ease * h * 0.85;
-  }
-
-  void _drawClimber(Canvas canvas, Offset pos, double glow) {
-    // Glow effect
-    canvas.drawCircle(
-      pos,
-      14,
-      Paint()
-        ..color = AppColors.toriiRed.withValues(alpha: 0.3 * glow)
-        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 8),
-    );
-
-    // Climber body (circle)
-    canvas.drawCircle(
-      pos,
-      8,
-      Paint()
-        ..color = Colors.white
-        ..style = PaintingStyle.fill,
-    );
-
-    // Inner dot (toriiRed)
-    canvas.drawCircle(
-      pos,
-      5,
-      Paint()..color = AppColors.toriiRed,
-    );
-
-    // Outline
-    canvas.drawCircle(
-      pos,
-      8,
-      Paint()
-        ..color = AppColors.toriiRed.withValues(alpha: 0.6)
-        ..style = PaintingStyle.stroke
-        ..strokeWidth = 1.5,
-    );
-  }
-
-  void _drawFlag(Canvas canvas, Offset pos) {
-    // Pole
-    canvas.drawLine(
-      pos,
-      Offset(pos.dx, pos.dy - 20),
-      Paint()
-        ..color = AppColors.goldAccent
-        ..strokeWidth = 2,
-    );
-    // Flag
-    final flagPath = Path()
-      ..moveTo(pos.dx, pos.dy - 20)
-      ..lineTo(pos.dx + 14, pos.dy - 15)
-      ..lineTo(pos.dx, pos.dy - 10)
-      ..close();
-    canvas.drawPath(
-      flagPath,
-      Paint()..color = AppColors.toriiRed,
-    );
-  }
-
-  void _drawXpLabel(Canvas canvas, Offset climberPos, double progress) {
-    final pct = (progress * 100).round();
-    final label = '$pct%';
-
-    final tp = TextPainter(
-      text: TextSpan(
-        text: label,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
+            
+            // Right side Circular Progress
+            Container(
+              width: 90,
+              height: 90,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  SizedBox(
+                    width: 70,
+                    height: 70,
+                    child: CircularProgressIndicator(
+                      value: progress,
+                      strokeWidth: 8,
+                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4D6D)),
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '$pct',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white,
+                          height: 1.0,
+                        ),
+                      ),
+                      const Text(
+                        'PERCENT',
+                        style: TextStyle(
+                          fontSize: 8,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.white70,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
       ),
-      textDirection: TextDirection.ltr,
-    )..layout();
-
-    tp.paint(
-      canvas,
-      Offset(climberPos.dx - tp.width / 2, climberPos.dy - 22),
     );
   }
-
-  void _drawClouds(Canvas canvas, double w, double h) {
-    final cloudPaint = Paint()
-      ..color = Colors.white.withValues(alpha: 0.1)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 12);
-      
-    // Cloud 1
-    canvas.drawOval(Rect.fromLTWH(w * 0.05, h * 0.45, w * 0.35, h * 0.12), cloudPaint);
-    // Cloud 2
-    canvas.drawOval(Rect.fromLTWH(w * 0.55, h * 0.35, w * 0.4, h * 0.15), cloudPaint);
-    // Cloud 3
-    canvas.drawOval(Rect.fromLTWH(-w * 0.1, h * 0.65, w * 0.4, h * 0.1), cloudPaint);
-  }
-
-  @override
-  bool shouldRepaint(_MountainPainter old) =>
-      old.progress != progress || old.glowOpacity != glowOpacity;
 }
 
-
-// ── Compact version dùng cho HomeScreen ──────────────────────────────────────
-
-/// Version nhỏ gọn hơn để embed trong HomeScreen card.
 class MountainProgressCard extends StatelessWidget {
   final int completedLessons;
   final int totalLessons;

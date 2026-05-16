@@ -30,11 +30,11 @@ def create_topic(db: Session, topic: ShadowingTopicCreate):
 
     if topic.segments:
         for seg in topic.segments:
-            db.add(ShadowingSegment(**seg.model_dump(), topic_id=db_topic.id))
+            db.add(ShadowingSegment(**seg.model_dump(exclude={'topic_id'}), topic_id=db_topic.id))
 
     if topic.vocabularies:
         for vocab in topic.vocabularies:
-            db.add(Vocabulary(**vocab.model_dump(), topic_id=db_topic.id))
+            db.add(Vocabulary(**vocab.model_dump(exclude={'topic_id', 'lesson_id'}), topic_id=db_topic.id))
 
     db.commit()
     db.refresh(db_topic)
@@ -64,11 +64,11 @@ def update_topic(db: Session, topic_id: int, topic: ShadowingTopicCreate):
 
     if topic.segments:
         for seg in topic.segments:
-            db.add(ShadowingSegment(**seg.model_dump(), topic_id=topic_id))
+            db.add(ShadowingSegment(**seg.model_dump(exclude={'topic_id'}), topic_id=topic_id))
 
     if topic.vocabularies:
         for vocab in topic.vocabularies:
-            db.add(Vocabulary(**vocab.model_dump(), topic_id=topic_id))
+            db.add(Vocabulary(**vocab.model_dump(exclude={'topic_id', 'lesson_id'}), topic_id=topic_id))
 
     db.commit()
     db.refresh(db_topic)

@@ -4,9 +4,10 @@ import 'package:flutter_application_1/features/admin/presentation/widgets/admin_
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
 class AdminTopicsPage extends StatefulWidget {
-  const AdminTopicsPage({super.key, required this.api});
+  const AdminTopicsPage({super.key, required this.api, this.initialLessonId});
 
   final AdminApiService api;
+  final int? initialLessonId;
 
   @override
   State<AdminTopicsPage> createState() => _AdminTopicsPageState();
@@ -17,11 +18,24 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
   String? _error;
   List<Map<String, dynamic>> _lessons = [];
   List<Map<String, dynamic>> _topics = [];
+  List<Map<String, dynamic>> _allTopics = [];
+  int? _selectedLessonId;
 
   @override
   void initState() {
     super.initState();
+    _selectedLessonId = widget.initialLessonId;
     _loadData();
+  }
+
+  void _applyFilter() {
+    if (_selectedLessonId == null) {
+      _topics = _allTopics;
+    } else if (_selectedLessonId == -1) {
+      _topics = _allTopics.where((t) => t['lesson_id'] == null).toList();
+    } else {
+      _topics = _allTopics.where((t) => t['lesson_id'] == _selectedLessonId).toList();
+    }
   }
 
   Future<void> _loadData() async {
@@ -35,8 +49,9 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       final topics = await widget.api.fetchTopics();
       if (!mounted) return;
       setState(() {
-        _lessons = lessons;
-        _topics = topics;
+        _lessons = lessons..sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
+        _allTopics = topics..sort((a, b) => (a['id'] as int).compareTo(b['id'] as int));
+        _applyFilter();
         _isLoading = false;
       });
     } catch (e) {
@@ -71,38 +86,39 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     final titleController = TextEditingController(
       text: (topic?['title'] ?? '').toString(),
     );
-    final imageController = TextEditingController(
-      text: (topic?['image_url'] ?? '').toString(),
-    );
-    final audioController = TextEditingController(
-      text: (topic?['full_audio_url'] ?? '').toString(),
-    );
-    final scriptController = TextEditingController(
-      text: (topic?['full_script_ja'] ?? '').toString(),
-    );
-    final durationController = TextEditingController(
-      text: (topic?['total_duration'] ?? '').toString(),
-    );
-
     String? level = topic?['level']?.toString();
     String? lessonId = topic?['lesson_id']?.toString();
-    final segments = _normalizeRows(
-      topic?['segments'],
-      [
-        'order_index',
-        'start_time',
-        'end_time',
-        'kanji_content',
-        'furigana',
-        'romaji',
-        'sino_vietnamese',
-        'translation_vi',
-      ],
-    );
-    final vocabularies = _normalizeRows(
-      topic?['vocabularies'],
-      ['word', 'reading', 'meaning', 'example'],
-    );
+
+    // Chỉ giữ 3 trường cần thiết cho mỗi câu
+    final rawSegments = topic?['segments'];
+    final segments = <Map<String, String>>[];
+    if (rawSegments is List && rawSegments.isNotEmpty) {
+      for (final s in rawSegments) {
+        final m = Map<String, dynamic>.from(s as Map);
+        segments.add({
+          'kanji_content': (m['kanji_content'] ?? '').toString(),
+          'furigana': (m['furigana'] ?? '').toString(),
+          'translation_vi': (m['translation_vi'] ?? '').toString(),
+          'order_index': (m['order_index'] ?? '').toString(),
+          'romaji': (m['romaji'] ?? '').toString(),
+          'sino_vietnamese': (m['sino_vietnamese'] ?? '').toString(),
+          'start_time': (m['start_time'] ?? '').toString(),
+          'end_time': (m['end_time'] ?? '').toString(),
+        });
+      }
+    }
+    if (segments.isEmpty) {
+      segments.add({
+        'kanji_content': '',
+        'furigana': '',
+        'translation_vi': '',
+        'order_index': '1',
+        'romaji': '',
+        'sino_vietnamese': '',
+        'start_time': '',
+        'end_time': '',
+      });
+    }
 
     final saved = await showDialog<bool>(
       context: context,
@@ -110,188 +126,162 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(topic == null
-                  ? 'Them shadowing topic'
-                  : 'Chinh sua shadowing topic'),
+              title: Text(
+                topic == null ? 'Thêm Shadowing Topic' : 'Chỉnh sửa Shadowing Topic',
+                style: const TextStyle(fontWeight: FontWeight.w800),
+              ),
               content: SizedBox(
-                width: 960,
+                width: 760,
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // ── Tên chủ đề + Cấp độ ─────────────────────
                       _twoColumn(
                         TextField(
                           controller: titleController,
                           decoration: const InputDecoration(
-                            labelText: 'Tieu de',
+                            labelText: 'Tên chủ đề',
+                            hintText: 'VD: Chào hỏi cơ bản',
                             border: OutlineInputBorder(),
                           ),
                         ),
                         DropdownButtonFormField<String>(
                           value: level,
                           decoration: const InputDecoration(
-                            labelText: 'Cap do',
+                            labelText: 'Cấp độ JLPT',
                             border: OutlineInputBorder(),
                           ),
                           items: const ['N5', 'N4', 'N3', 'N2', 'N1']
-                              .map(
-                                (value) => DropdownMenuItem<String>(
-                                  value: value,
-                                  child: Text(value),
-                                ),
-                              )
+                              .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                               .toList(),
-                          onChanged: (value) =>
-                              setDialogState(() => level = value),
+                          onChanged: (v) => setDialogState(() => level = v),
                         ),
                       ),
                       const SizedBox(height: 12),
-                      _twoColumn(
-                        DropdownButtonFormField<String?>(
-                          value: lessonId,
-                          decoration: const InputDecoration(
-                            labelText: 'Gan vao lesson',
-                            border: OutlineInputBorder(),
-                          ),
-                          items: [
-                            const DropdownMenuItem<String?>(
-                              value: null,
-                              child: Text('Khong chon lesson'),
-                            ),
-                            ..._lessons.map(
-                              (lesson) => DropdownMenuItem<String?>(
-                                value: lesson['id'].toString(),
-                                child: Text(
-                                  '${lesson['chapter_name'] ?? 'Khong ten'} (${lesson['level'] ?? 'N/A'})',
-                                ),
-                              ),
-                            ),
-                          ],
-                          onChanged: (value) =>
-                              setDialogState(() => lessonId = value),
-                        ),
-                        TextField(
-                          controller: durationController,
-                          keyboardType: const TextInputType.numberWithOptions(
-                              decimal: true),
-                          decoration: const InputDecoration(
-                            labelText: 'Thoi luong',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      _twoColumn(
-                        TextField(
-                          controller: imageController,
-                          decoration: const InputDecoration(
-                            labelText: 'Image URL',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                        TextField(
-                          controller: audioController,
-                          decoration: const InputDecoration(
-                            labelText: 'Audio URL',
-                            border: OutlineInputBorder(),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      TextField(
-                        controller: scriptController,
-                        maxLines: 4,
+
+                      // ── Gán vào lesson ───────────────────────────
+                      DropdownButtonFormField<String?>(
+                        isExpanded: true,
+                        value: _lessons.any((l) => l['id'].toString() == lessonId) ? lessonId : null,
                         decoration: const InputDecoration(
-                          labelText: 'Full script JA',
+                          labelText: 'Gán vào Lesson (tuỳ chọn)',
                           border: OutlineInputBorder(),
                         ),
+                        items: [
+                          const DropdownMenuItem<String?>(
+                            value: null,
+                            child: Text('Không chọn lesson'),
+                          ),
+                          ..._lessons.map(
+                            (lesson) => DropdownMenuItem<String?>(
+                              value: lesson['id'].toString(),
+                              child: Text(
+                                '${lesson['chapter_name'] ?? 'Không tên'} (${lesson['level'] ?? 'N/A'})',
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ),
+                        ],
+                        onChanged: (v) => setDialogState(() => lessonId = v),
                       ),
                       const SizedBox(height: 20),
-                      _sectionTitle(
-                        'Segments',
-                        onAdd: () => setDialogState(
-                          () => segments.add(
-                            {
-                              'order_index': '${segments.length + 1}',
-                              'start_time': '',
-                              'end_time': '',
-                              'kanji_content': '',
-                              'furigana': '',
-                              'romaji': '',
-                              'sino_vietnamese': '',
-                              'translation_vi': '',
-                            },
+
+                      // ── Danh sách câu Shadowing ──────────────────
+                      Row(
+                        children: [
+                          const Text(
+                            'Các câu Shadowing',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              color: AdminPalette.textPrimary,
+                            ),
                           ),
-                        ),
+                          const Spacer(),
+                          TextButton.icon(
+                            onPressed: () => setDialogState(() {
+                              segments.add({
+                                'kanji_content': '',
+                                'furigana': '',
+                                'translation_vi': '',
+                                'order_index': '${segments.length + 1}',
+                                'romaji': '',
+                                'sino_vietnamese': '',
+                                'start_time': '',
+                                'end_time': '',
+                              });
+                            }),
+                            icon: const Icon(Icons.add_rounded),
+                            label: const Text('Thêm câu'),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 10),
+
                       ...List.generate(segments.length, (index) {
-                        final segment = segments[index];
-                        return _ItemEditorCard(
-                          title: 'Segment ${index + 1}',
-                          onRemove: segments.length == 1
-                              ? null
-                              : () => setDialogState(
-                                  () => segments.removeAt(index)),
-                          child: Column(
-                            children: [
-                              _threeColumn(
-                                _smallField(segment, 'order_index', 'Order'),
-                                _smallField(segment, 'start_time', 'Start'),
-                                _smallField(segment, 'end_time', 'End'),
-                              ),
-                              const SizedBox(height: 10),
-                              _twoColumn(
-                                _smallField(segment, 'kanji_content', 'Kanji'),
-                                _smallField(segment, 'furigana', 'Furigana'),
-                              ),
-                              const SizedBox(height: 10),
-                              _twoColumn(
-                                _smallField(segment, 'romaji', 'Romaji'),
-                                _smallField(
-                                    segment, 'sino_vietnamese', 'Han Viet'),
-                              ),
-                              const SizedBox(height: 10),
-                              _smallField(segment, 'translation_vi',
-                                  'Nghia tieng Viet'),
-                            ],
+                        final seg = segments[index];
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(14),
+                          decoration: BoxDecoration(
+                            color: AdminPalette.surfaceMuted,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(color: AdminPalette.borderSoft),
                           ),
-                        );
-                      }),
-                      const SizedBox(height: 20),
-                      _sectionTitle(
-                        'Vocabularies',
-                        onAdd: () => setDialogState(
-                          () => vocabularies.add(
-                            {
-                              'word': '',
-                              'reading': '',
-                              'meaning': '',
-                              'example': '',
-                            },
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 10),
-                      ...List.generate(vocabularies.length, (index) {
-                        final vocabulary = vocabularies[index];
-                        return _ItemEditorCard(
-                          title: 'Vocabulary ${index + 1}',
-                          onRemove: vocabularies.length == 1
-                              ? null
-                              : () => setDialogState(
-                                  () => vocabularies.removeAt(index)),
                           child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              _twoColumn(
-                                _smallField(vocabulary, 'word', 'Word'),
-                                _smallField(vocabulary, 'reading', 'Reading'),
+                              Row(
+                                children: [
+                                  Text(
+                                    'Câu ${index + 1}',
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      color: AdminPalette.textPrimary,
+                                    ),
+                                  ),
+                                  const Spacer(),
+                                  if (segments.length > 1)
+                                    IconButton(
+                                      onPressed: () => setDialogState(() => segments.removeAt(index)),
+                                      icon: const Icon(Icons.delete_outline_rounded),
+                                      tooltip: 'Xoá câu này',
+                                    ),
+                                ],
                               ),
-                              const SizedBox(height: 10),
-                              _smallField(vocabulary, 'meaning', 'Meaning'),
-                              const SizedBox(height: 10),
-                              _smallField(vocabulary, 'example', 'Example'),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                initialValue: seg['kanji_content'],
+                                onChanged: (v) => seg['kanji_content'] = v,
+                                decoration: const InputDecoration(
+                                  labelText: '漢字 — Câu gốc (có Kanji)',
+                                  hintText: 'VD: 日本語を勉強しています',
+                                  border: OutlineInputBorder(),
+                                ),
+                                style: const TextStyle(fontSize: 16),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                initialValue: seg['furigana'],
+                                onChanged: (v) => seg['furigana'] = v,
+                                decoration: const InputDecoration(
+                                  labelText: 'Furigana — Phiên âm Hiragana',
+                                  hintText: 'VD: にほんごをべんきょうしています',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              TextFormField(
+                                initialValue: seg['translation_vi'],
+                                onChanged: (v) => seg['translation_vi'] = v,
+                                decoration: const InputDecoration(
+                                  labelText: 'Dịch nghĩa tiếng Việt',
+                                  hintText: 'VD: Tôi đang học tiếng Nhật.',
+                                  border: OutlineInputBorder(),
+                                ),
+                              ),
                             ],
                           ),
                         );
@@ -303,11 +293,11 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Huy'),
+                  child: const Text('Huỷ'),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Luu'),
+                  child: const Text('Lưu'),
                 ),
               ],
             );
@@ -322,42 +312,26 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       'title': titleController.text.trim(),
       'level': level,
       'lesson_id': int.tryParse(lessonId ?? ''),
-      'image_url': imageController.text.trim().isEmpty
-          ? null
-          : imageController.text.trim(),
-      'full_audio_url': audioController.text.trim().isEmpty
-          ? null
-          : audioController.text.trim(),
-      'full_script_ja': scriptController.text.trim().isEmpty
-          ? null
-          : scriptController.text.trim(),
-      'total_duration': double.tryParse(durationController.text.trim()),
+      'image_url': null,
+      'full_audio_url': null,
+      'full_script_ja': null,
+      'total_duration': null,
+      'vocabularies': [],
       'segments': segments
-          .where(
-              (segment) => (segment['kanji_content'] ?? '').trim().isNotEmpty)
-          .map(
-            (segment) => {
-              'order_index': int.tryParse(segment['order_index'] ?? '') ?? 1,
-              'start_time': double.tryParse(segment['start_time'] ?? ''),
-              'end_time': double.tryParse(segment['end_time'] ?? ''),
-              'kanji_content': _nullable(segment['kanji_content']),
-              'furigana': _nullable(segment['furigana']),
-              'romaji': _nullable(segment['romaji']),
-              'sino_vietnamese': _nullable(segment['sino_vietnamese']),
-              'translation_vi': _nullable(segment['translation_vi']),
-            },
-          )
-          .toList(),
-      'vocabularies': vocabularies
-          .where((vocabulary) => (vocabulary['word'] ?? '').trim().isNotEmpty)
-          .map(
-            (vocabulary) => {
-              'word': (vocabulary['word'] ?? '').trim(),
-              'reading': _nullable(vocabulary['reading']),
-              'meaning': (vocabulary['meaning'] ?? '').trim(),
-              'example': _nullable(vocabulary['example']),
-            },
-          )
+          .where((s) => (s['kanji_content'] ?? '').trim().isNotEmpty)
+          .toList()
+          .asMap()
+          .entries
+          .map((e) => {
+                'order_index': e.key + 1,
+                'kanji_content': _nullable(e.value['kanji_content']),
+                'furigana': _nullable(e.value['furigana']),
+                'translation_vi': _nullable(e.value['translation_vi']),
+                'romaji': null,
+                'sino_vietnamese': null,
+                'start_time': null,
+                'end_time': null,
+              })
           .toList(),
     };
 
@@ -371,10 +345,12 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong the luu topic: $e')),
+        SnackBar(content: Text('Không thể lưu topic: $e')),
       );
     }
   }
+
+
 
   Future<void> _deleteTopic(Map<String, dynamic> topic) async {
     final confirmed = await showDialog<bool>(
@@ -391,7 +367,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
-            style: FilledButton.styleFrom(backgroundColor: AppColors.errorRed),
+            style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
             child: const Text('Xoa'),
           ),
         ],
@@ -480,13 +456,56 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminSectionHeader(
-            title: 'Shadowing topics',
-            subtitle: 'Quan ly topic, segment va vocabulary cho bai shadowing.',
-            action: AdminPrimaryButton(
-              label: 'Them topic',
-              onPressed: _openTopicDialog,
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: AdminSectionHeader(
+                  title: 'Shadowing topics',
+                  subtitle: 'Quan ly topic, segment va vocabulary cho bai shadowing.',
+                ),
+              ),
+              SizedBox(
+                width: 280,
+                child: DropdownButtonFormField<int?>(
+                  isExpanded: true,
+                  value: (_selectedLessonId == null || _selectedLessonId == -1 || _lessons.any((l) => l['id'] == _selectedLessonId)) ? _selectedLessonId : null,
+                  decoration: const InputDecoration(
+                    labelText: 'Loc theo lesson',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: [
+                    const DropdownMenuItem<int?>(
+                      value: null,
+                      child: Text('Tat ca topic'),
+                    ),
+                    const DropdownMenuItem<int?>(
+                      value: -1,
+                      child: Text('Topic doc lap (Khong thuoc lesson)'),
+                    ),
+                    ..._lessons.map(
+                      (lesson) => DropdownMenuItem<int?>(
+                        value: lesson['id'] as int,
+                        child: Text(
+                          (lesson['chapter_name'] ?? 'Khong ten').toString(),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedLessonId = value;
+                      _applyFilter();
+                    });
+                  },
+                ),
+              ),
+              const SizedBox(width: 12),
+              AdminPrimaryButton(
+                label: 'Them topic',
+                onPressed: _openTopicDialog,
+              ),
+            ],
           ),
           const SizedBox(height: 18),
           Expanded(child: _buildBody()),
@@ -503,7 +522,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     if (_error != null) {
       return Center(
           child:
-              Text(_error!, style: const TextStyle(color: AppColors.errorRed)));
+              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
     }
 
     if (_topics.isEmpty) {
@@ -519,7 +538,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       itemBuilder: (context, index) {
         final topic = _topics[index];
         final segments = (topic['segments'] as List?) ?? const [];
-        final vocabularies = (topic['vocabularies'] as List?) ?? const [];
 
         return Container(
           decoration: BoxDecoration(
@@ -572,8 +590,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                             'Lesson ${topic['lesson_id'] ?? '-'}'),
                         _metaChip(Icons.list_alt_rounded,
                             '${segments.length} segments'),
-                        _metaChip(Icons.translate_rounded,
-                            '${vocabularies.length} vocab'),
                         _metaChip(Icons.schedule_rounded,
                             '${topic['total_duration'] ?? '-'}'),
                       ],
@@ -644,7 +660,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: AdminPalette.textSecondary),
+          Icon(icon, size: 14, color: AdminPalette.textMuted),
           const SizedBox(width: 6),
           Text(
             label,

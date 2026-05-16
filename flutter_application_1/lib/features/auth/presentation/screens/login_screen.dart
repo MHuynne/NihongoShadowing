@@ -27,9 +27,11 @@ class _LoginScreenState extends State<LoginScreen> {
         setState(() => _isLoading = false);
       }
     } on FirebaseAuthException catch (e) {
-      if (mounted) setState(() => _errorMessage = AuthService.getVietnameseError(e));
+      if (mounted)
+        setState(() => _errorMessage = AuthService.getVietnameseError(e));
     } catch (e) {
-      if (mounted) setState(() => _errorMessage = 'Lỗi Google: ${e.toString()}');
+      if (mounted)
+        setState(() => _errorMessage = 'Lỗi Google: ${e.toString()}');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -49,10 +51,7 @@ class _LoginScreenState extends State<LoginScreen> {
             left: 0,
             right: 0,
             height: screenHeight * 0.55,
-            child: Image.asset(
-              'assets/images/fuji_bg.png',
-              fit: BoxFit.cover,
-            ),
+            child: Image.asset('assets/images/fuji_bg.png', fit: BoxFit.cover),
           ),
 
           // ── Top Bar (IRASSHAI + Close Icon) ────────────────────────────
@@ -70,10 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       letterSpacing: 2.0,
                       color: Color(0xFF0F172A),
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.close, color: Color(0xFF0F172A), size: 24),
                   ),
                 ],
               ),
@@ -108,7 +103,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                   const SizedBox(height: 12),
-                  
+
                   // Subtitle
                   const Text(
                     'Begin your journey to fluency with\nthe modern Sensei.',
@@ -118,13 +113,16 @@ class _LoginScreenState extends State<LoginScreen> {
                       height: 1.5,
                     ),
                   ),
-                  
+
                   const SizedBox(height: 40),
 
                   // Lỗi (nếu có)
                   if (_errorMessage != null) ...[
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: Colors.red.shade50,
                         borderRadius: BorderRadius.circular(12),
@@ -132,12 +130,19 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       child: Row(
                         children: [
-                          Icon(Icons.error_outline, color: Colors.red.shade400, size: 18),
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red.shade400,
+                            size: 18,
+                          ),
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
                               _errorMessage!,
-                              style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+                              style: TextStyle(
+                                color: Colors.red.shade700,
+                                fontSize: 13,
+                              ),
                             ),
                           ),
                         ],
@@ -165,7 +170,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ? const SizedBox(
                               width: 20,
                               height: 20,
-                              child: CircularProgressIndicator(strokeWidth: 2.5),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                              ),
                             )
                           : Image.network(
                               'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/120px-Google_%22G%22_logo.svg.png',

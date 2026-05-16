@@ -7,7 +7,7 @@ load_dotenv()
 
 # Import all models here so SQLAlchemy knows them before create_all
 import models 
-from models import shadowing_topic, shadowing_segment, shadowing_result, lesson, user_progress
+from models import shadowing_topic, shadowing_segment, shadowing_result, lesson, user_progress, category
 
 # Create all database tables
 Base.metadata.create_all(bind=engine)
@@ -23,6 +23,9 @@ from routers import user_progress as router_progress
 from routers import dictionary as router_dictionary
 from routers import roleplay as router_roleplay
 from routers import admin as router_admin
+from routers import upload as router_upload
+from routers import category as router_category
+from routers import segments as router_segments
 
 app = FastAPI(
     title="Japanese Learning Backend API",
@@ -31,6 +34,11 @@ app = FastAPI(
 )
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+
+import os
+os.makedirs("static/uploads", exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Cấu hình CORS để cho phép Flutter Web (và các client khác) truy cập API
 app.add_middleware(
@@ -52,6 +60,9 @@ app.include_router(router_progress.router)
 app.include_router(router_dictionary.router)
 app.include_router(router_roleplay.router)
 app.include_router(router_admin.router)
+app.include_router(router_upload.router)
+app.include_router(router_category.router)
+app.include_router(router_segments.router)
 
 @app.get("/")
 def read_root():

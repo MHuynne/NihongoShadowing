@@ -17,10 +17,19 @@ import 'package:flutter_application_1/features/roadmap/presentation/screens/less
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 
 class ShadowingScreen extends StatefulWidget {
-  final int topicId;
-  final int lessonId; // ← THÊM
+  final int? segmentId;  // Standalone: 1 segment được chọn từ danh sách
+  final int? topicId;   // Roadmap flow: tất cả segments của topic
+  final int lessonId;   // 0 nếu standalone
   final int testErrors;
-  const ShadowingScreen({super.key, required this.topicId, required this.lessonId, this.testErrors = 0});
+
+  const ShadowingScreen({
+    super.key,
+    this.segmentId,
+    this.topicId,
+    this.lessonId = 0,
+    this.testErrors = 0,
+  }) : assert(segmentId != null || topicId != null,
+           'Phải truyền segmentId hoặc topicId');
 
   @override
   State<ShadowingScreen> createState() => _ShadowingScreenState();
@@ -44,6 +53,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   final _audioRecorder = AudioRecorder();
   final _audioPlayer  = createSampleAudioPlayer();  // Web: dart:html | Native: audioplayers
   String? _recordedFilePath;
+  String _topicAudioUrl = '';  // full_audio_url của topic (nếu có)
 
   ShadowingFeedbackModel? _dynamicFeedback;
   String _errorWord = "";
@@ -57,59 +67,95 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
   Future<void> _fetchTopicData() async {
     try {
-      String apiUrl = 'http://localhost:8000/shadowing/topics/${widget.topicId}';
-      try {
-        if (!kIsWeb) {
-          if (defaultTargetPlatform == TargetPlatform.android) {
-             apiUrl = 'http://10.0.2.2:8000/shadowing/topics/${widget.topicId}';
-          }
+      final String apiUrl;
+
+      if (widget.segmentId != null) {
+        // Standalone: lấy 1 segment
+        apiUrl = '${_baseUrl()}/shadowing/segments/${widget.segmentId}';
+        final response = await http.get(Uri.parse(apiUrl));
+        if (response.statusCode == 200) {
+          final seg = json.decode(utf8.decode(response.bodyBytes));
+          setState(() {
+            _sentences = [
+              ShadowingSentenceModel(
+                title: seg['title'] ?? '',
+                kanji: seg['kanji_content'] ?? '',
+                furiganaHtml: seg['furigana'] ?? '',
+                romaji: seg['romaji'] ?? '',
+                hanViet: seg['sino_vietnamese'] ?? '',
+                meaning: seg['translation_vi'] ?? '',
+              )
+            ];
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Lỗi tải dữ liệu. HTTP ${response.statusCode}';
+            _isLoading = false;
+          });
         }
-      } catch (_) {}
-
-      final response = await http.get(Uri.parse(apiUrl));
-      if (response.statusCode == 200) {
-        final data = json.decode(utf8.decode(response.bodyBytes));
-        final List<dynamic> segmentsData = data['segments'] ?? [];
-        
-        segmentsData.sort((a, b) => (a['order_index'] ?? 0).compareTo(b['order_index'] ?? 0));
-        
-        List<ShadowingSentenceModel> parsedSentences = segmentsData.map((seg) {
-          return ShadowingSentenceModel(
-            kanji: seg['kanji_content'] ?? '',
-            furiganaHtml: seg['furigana'] ?? '',
-            romaji: seg['romaji'] ?? '',
-            hanViet: seg['sino_vietnamese'] ?? '',
-            meaning: seg['translation_vi'] ?? '',
-          );
-        }).toList();
-
-        if (parsedSentences.isEmpty) {
-          parsedSentences.add(ShadowingSentenceModel(
-             kanji: 'ごめんなさい！',
-             furiganaHtml: '',
-             romaji: 'Gomen nasai',
-             hanViet: '',
-             meaning: 'Bài học này chưa được nhập liệu câu nào trên admin nhé!',
-          ));
-        }
-
-        setState(() {
-          _sentences = parsedSentences;
-          _isLoading = false;
-        });
-
       } else {
-        setState(() {
-          _errorMessage = "Lỗi tải dữ liệu. HTTP ${response.statusCode}";
-          _isLoading = false;
-        });
+        // Roadmap: lấy tất cả segments của topic
+        apiUrl = '${_baseUrl()}/shadowing/topics/${widget.topicId}';
+        final response = await http.get(Uri.parse(apiUrl));
+        if (response.statusCode == 200) {
+          final data = json.decode(utf8.decode(response.bodyBytes));
+          final List<dynamic> segmentsData = data['segments'] ?? [];
+          segmentsData.sort((a, b) =>
+              (a['order_index'] ?? 0).compareTo(b['order_index'] ?? 0));
+
+          List<ShadowingSentenceModel> parsed = segmentsData.map((seg) {
+            return ShadowingSentenceModel(
+              title: seg['title'] ?? '',
+              kanji: seg['kanji_content'] ?? '',
+              furiganaHtml: seg['furigana'] ?? '',
+              romaji: seg['romaji'] ?? '',
+              hanViet: seg['sino_vietnamese'] ?? '',
+              meaning: seg['translation_vi'] ?? '',
+              startTime: (seg['start_time'] as num?)?.toDouble() ?? 0.0,
+              endTime: (seg['end_time'] as num?)?.toDouble() ?? 0.0,
+            );
+          }).toList();
+
+          // Lưu full_audio_url của topic để dùng khi phát đoạn
+          final rawUrl = (data['full_audio_url'] ?? '').toString();
+          _topicAudioUrl = rawUrl.startsWith('http') ? rawUrl
+              : (rawUrl.isEmpty ? '' : '${_baseUrl()}$rawUrl');
+
+          if (parsed.isEmpty) {
+            parsed.add(ShadowingSentenceModel(
+              kanji: 'ごめんなさい！',
+              furiganaHtml: '',
+              romaji: 'Gomen nasai',
+              hanViet: '',
+              meaning: 'Bài học này chưa được nhập liệu câu nào!',
+            ));
+          }
+          setState(() {
+            _sentences = parsed;
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Lỗi tải dữ liệu. HTTP ${response.statusCode}';
+            _isLoading = false;
+          });
+        }
       }
     } catch (e) {
       setState(() {
-        _errorMessage = "Không thể kết nối API: $e";
+        _errorMessage = 'Không thể kết nối API: $e';
         _isLoading = false;
       });
     }
+  }
+
+  String _baseUrl() {
+    if (kIsWeb) return 'http://127.0.0.1:8000';
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      return 'http://10.0.2.2:8000';
+    }
+    return 'http://127.0.0.1:8000';
   }
 
   @override
@@ -123,7 +169,6 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   Future<void> _playSample() async {
     final speed = _currentSpeed;
     if (_isPlayingSample) {
-      // Đang phát → bấm lại thì dừng
       await _audioPlayer.stop();
       setState(() => _isPlayingSample = false);
       return;
@@ -131,38 +176,40 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
     final sentence = _sentences[_currentIndex];
     final text = sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji;
-    if (text.isEmpty) return;
+    if (text.isEmpty && _topicAudioUrl.isEmpty) return;
 
     setState(() => _isPlayingSample = true);
 
     try {
-      String apiUrl = 'http://localhost:8000/tts/sample';
-      if (!kIsWeb) {
-        try {
-          if (defaultTargetPlatform == TargetPlatform.android) {
-            apiUrl = 'http://10.0.2.2:8000/tts/sample';
-          }
-        } catch (_) {}
+      // ── Ưu tiên: topic có full_audio_url → phát đoạn start→end ──
+      if (_topicAudioUrl.isNotEmpty) {
+        await _audioPlayer.playUrlFromTo(
+          _topicAudioUrl,
+          sentence.startTime,
+          sentence.endTime,
+          onComplete: () {
+            if (mounted) setState(() => _isPlayingSample = false);
+          },
+        );
+        return;
       }
 
+      // ── Fallback: gọi TTS API realtime ──────────────────────────
+      if (text.isEmpty) return;
       final response = await http.post(
-        Uri.parse(apiUrl),
+        Uri.parse('${_baseUrl()}/tts/sample'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'text': text, 'speed': speed, 'voice_gender': 'female'}),
       );
-
       if (response.statusCode == 200) {
-        final mp3Bytes = response.bodyBytes;
-
-        // SampleAudioPlayer tự chọn đúng implementation theo platform
         await _audioPlayer.play(
-          mp3Bytes,
+          response.bodyBytes,
           onComplete: () {
             if (mounted) setState(() => _isPlayingSample = false);
           },
         );
       } else {
-        throw Exception('TTS API ${response.statusCode}');
+        throw Exception('TTS API');
       }
     } catch (e) {
       debugPrint('[PlaySample] Error: $e');
@@ -410,24 +457,31 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         ? 0.0
         : ((totalSentences - failedCount) / totalSentences) * 100.0;
 
-    // Lưu kết quả shadowing vào backend
-    await ProgressService.saveShadowingResult(widget.lessonId, shadowingScore);
-
-    // Đánh dấu bài học hoàn thành → mở khoá bài kế tiếp trên Roadmap
-    await ProgressService.markLessonCompleted(widget.lessonId);
+    if (widget.lessonId != 0) {
+      // Lưu kết quả shadowing vào backend
+      await ProgressService.saveShadowingResult(widget.lessonId, shadowingScore);
+      // Đánh dấu bài học hoàn thành → mở khoá bài kế tiếp trên Roadmap
+      await ProgressService.markLessonCompleted(widget.lessonId);
+    }
 
     if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LessonSummaryScreen(
-          testErrors: widget.testErrors,
-          shadowingErrors: failedCount,
-          lessonId: widget.lessonId,
-          shadowingScore: shadowingScore,
+
+    if (widget.lessonId == 0) {
+      // Standalone mode: chỉ pop về màn hình trước
+      Navigator.of(context).pop();
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => LessonSummaryScreen(
+            testErrors: widget.testErrors,
+            shadowingErrors: failedCount,
+            lessonId: widget.lessonId,
+            shadowingScore: shadowingScore,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   @override
@@ -482,6 +536,9 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
               totalCount: _sentences.length,
               isBlindMode: _isBlindMode,
               onModeChanged: _toggleMode,
+              segmentTitle: _sentences.isNotEmpty
+                  ? _sentences[_currentIndex].title
+                  : null,
             ),
             
             Expanded(
