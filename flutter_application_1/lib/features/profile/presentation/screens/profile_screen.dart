@@ -1,8 +1,13 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -107,7 +112,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ? user!.displayName!.trim()
           : '',
     );
-    final photoController = TextEditingController(text: user?.photoURL ?? '');
+    var selectedPhotoUrl = user?.photoURL ?? '';
+    String? selectedPhotoName;
+    var isUploadingAvatar = false;
     var selectedLevel = targetLevel;
 
     final saved = await showModalBottomSheet<bool>(
@@ -147,11 +154,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'Display name',
                     icon: Icons.badge_outlined,
                   ),
-                  const SizedBox(height: 12),
-                  _ProfileTextField(
-                    controller: photoController,
-                    label: 'Avatar image URL',
-                    icon: Icons.image_outlined,
+                  const SizedBox(height: 16),
+                  _AvatarPicker(
+                    photoUrl: selectedPhotoUrl,
+                    fileName: selectedPhotoName,
+                    isUploading: isUploadingAvatar,
+                    displayName: nameController.text,
+                    onPick: () async {
+                      setSheetState(() => isUploadingAvatar = true);
+                      try {
+                        final uploadedUrl = await _pickAndUploadAvatar();
+                        if (uploadedUrl == null) {
+                          return;
+                        }
+                        setSheetState(() {
+                          selectedPhotoUrl = uploadedUrl.url;
+                          selectedPhotoName = uploadedUrl.fileName;
+                        });
+                      } catch (e) {
+                        _showSnack('Could not upload avatar: $e');
+                      } finally {
+                        setSheetState(() => isUploadingAvatar = false);
+                      }
+                    },
+                    onRemove: selectedPhotoUrl.trim().isEmpty
+                        ? null
+                        : () {
+                            setSheetState(() {
+                              selectedPhotoUrl = '';
+                              selectedPhotoName = null;
+                            });
+                          },
                   ),
                   const SizedBox(height: 16),
                   Text(
@@ -202,7 +235,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         try {
                           await _auth.updateProfile(
                             displayName: nameController.text,
-                            photoUrl: photoController.text,
+                            photoUrl: selectedPhotoUrl,
                           );
                           final prefs = await SharedPreferences.getInstance();
                           await prefs.setString(
@@ -231,13 +264,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     nameController.dispose();
-    photoController.dispose();
 
     if (saved == true && mounted) {
       _showSnack('Profile updated.');
       await _refresh();
       setState(() {});
     }
+  }
+
+  Future<_UploadedAvatar?> _pickAndUploadAvatar() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      withData: true,
+    );
+    if (result == null || result.files.isEmpty) return null;
+
+    final file = result.files.single;
+    final bytes = file.bytes;
+    if (bytes == null || bytes.isEmpty) {
+      throw Exception('Could not read selected image.');
+    }
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConfig.baseUrl}/upload/'),
+    );
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: file.name,
+      ),
+    );
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    final payload = json.decode(utf8.decode(response.bodyBytes));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final detail = payload is Map<String, dynamic> ? payload['detail'] : null;
+      throw Exception(detail ?? 'HTTP ${response.statusCode}');
+    }
+
+    final rawUrl = payload['url']?.toString();
+    if (rawUrl == null || rawUrl.isEmpty) {
+      throw Exception('Upload response did not include an image URL.');
+    }
+
+    final absoluteUrl =
+        rawUrl.startsWith('http') ? rawUrl : '${ApiConfig.baseUrl}$rawUrl';
+    return _UploadedAvatar(url: absoluteUrl, fileName: file.name);
   }
 
   Future<void> _sendVerificationEmail() async {
@@ -425,6 +501,16 @@ class _ProfileData {
       stats: _ProfileStats.empty(),
     );
   }
+}
+
+class _UploadedAvatar {
+  final String url;
+  final String fileName;
+
+  const _UploadedAvatar({
+    required this.url,
+    required this.fileName,
+  });
 }
 
 class _ProfileStats {
@@ -1294,6 +1380,101 @@ class _ProfileTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.border(context)),
         ),
+      ),
+    );
+  }
+}
+
+class _AvatarPicker extends StatelessWidget {
+  final String photoUrl;
+  final String? fileName;
+  final bool isUploading;
+  final String displayName;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  const _AvatarPicker({
+    required this.photoUrl,
+    required this.fileName,
+    required this.isUploading,
+    required this.displayName,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoUrl.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill(context),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 58,
+              height: 58,
+              child: _Avatar(
+                photoUrl: hasPhoto ? photoUrl : null,
+                displayName:
+                    displayName.trim().isEmpty ? 'Learner' : displayName.trim(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fileName ??
+                      (hasPhoto ? 'Current avatar' : 'No avatar selected'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.primaryText(context),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'JPG, PNG, or WebP',
+                  style: TextStyle(
+                    color: AppColors.tertiaryText(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (isUploading)
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            )
+          else ...[
+            IconButton(
+              tooltip: 'Choose image',
+              onPressed: onPick,
+              icon: const Icon(Icons.photo_library_outlined),
+            ),
+            if (hasPhoto)
+              IconButton(
+                tooltip: 'Remove avatar',
+                onPressed: onRemove,
+                icon: const Icon(Icons.close_rounded),
+              ),
+          ],
+        ],
       ),
     );
   }
