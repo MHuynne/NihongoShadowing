@@ -1,56 +1,389 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
+import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
   @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  static const _targetLevelKey = 'profile_target_level';
+
+  final _auth = AuthService();
+  Future<_ProfileData>? _profileFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileFuture = _loadProfileData();
+  }
+
+  Future<_ProfileData> _loadProfileData() async {
+    final prefs = await SharedPreferences.getInstance();
+    final targetLevel = prefs.getString(_targetLevelKey) ?? 'N3';
+    final progress = await ProgressService.getAllProgress();
+    return _ProfileData(
+      targetLevel: targetLevel,
+      stats: _ProfileStats.fromProgress(progress),
+    );
+  }
+
+  Future<void> _refresh() async {
+    setState(() {
+      _profileFuture = _loadProfileData();
+    });
+    await _profileFuture;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final user = AuthService().currentUser;
-    final displayName = (user?.displayName?.trim().isNotEmpty ?? false)
-        ? user!.displayName!.trim()
-        : 'Alex Sora';
-    final email = user?.email ?? 'alex.sora@example.com';
+    final user = _auth.currentUser;
 
     return Scaffold(
       backgroundColor: AppColors.scaffoldBackground(context),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
-          child: Column(
-            children: [
-              _ProfileHeader(
-                displayName: displayName,
-                email: email,
+        child: FutureBuilder<_ProfileData>(
+          future: _profileFuture,
+          builder: (context, snapshot) {
+            final data = snapshot.data ?? _ProfileData.empty();
+            final isLoading =
+                snapshot.connectionState == ConnectionState.waiting;
+
+            return RefreshIndicator(
+              color: AppColors.toriiRed,
+              onRefresh: _refresh,
+              child: SingleChildScrollView(
+                physics: const AlwaysScrollableScrollPhysics(),
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
+                child: Column(
+                  children: [
+                    _ProfileHeader(
+                      user: user,
+                      targetLevel: data.targetLevel,
+                      streakDays: data.stats.streakDays,
+                      isLoading: isLoading,
+                    ),
+                    const SizedBox(height: 22),
+                    _ExperienceCard(stats: data.stats),
+                    const SizedBox(height: 14),
+                    _StatsGrid(stats: data.stats),
+                    const SizedBox(height: 18),
+                    _ActivityHistoryCard(stats: data.stats),
+                    const SizedBox(height: 18),
+                    _AccountActions(
+                      user: user,
+                      onEditProfile: () => _showEditProfileSheet(
+                        user: user,
+                        targetLevel: data.targetLevel,
+                      ),
+                      onVerifyEmail: _sendVerificationEmail,
+                      onResetPassword: () => _sendPasswordReset(user?.email),
+                      onChangePassword: _showChangePasswordDialog,
+                      onDeleteAccount: _confirmDeleteAccount,
+                      onSignOut: () => _confirmSignOut(context),
+                    ),
+                  ],
+                ),
               ),
-              const SizedBox(height: 22),
-              const _ExperienceCard(),
-              const SizedBox(height: 14),
-              const _StatsGrid(),
-              const SizedBox(height: 18),
-              const _ActivityHistoryCard(),
-              const SizedBox(height: 18),
-              _AccountActions(
-                onSignOut: () => _confirmSignOut(context),
-              ),
-            ],
-          ),
+            );
+          },
         ),
       ),
     );
+  }
+
+  Future<void> _showEditProfileSheet({
+    required User? user,
+    required String targetLevel,
+  }) async {
+    final nameController = TextEditingController(
+      text: user?.displayName?.trim().isNotEmpty == true
+          ? user!.displayName!.trim()
+          : '',
+    );
+    final photoController = TextEditingController(text: user?.photoURL ?? '');
+    var selectedLevel = targetLevel;
+
+    final saved = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.surface(context),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 20,
+                right: 20,
+                top: 20,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 20,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _SheetHandle(),
+                  const SizedBox(height: 18),
+                  Text(
+                    'Edit profile',
+                    style: TextStyle(
+                      color: AppColors.primaryText(context),
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  _ProfileTextField(
+                    controller: nameController,
+                    label: 'Display name',
+                    icon: Icons.badge_outlined,
+                  ),
+                  const SizedBox(height: 12),
+                  _ProfileTextField(
+                    controller: photoController,
+                    label: 'Avatar image URL',
+                    icon: Icons.image_outlined,
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Target JLPT level',
+                    style: TextStyle(
+                      color: AppColors.secondaryText(context),
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: ['N5', 'N4', 'N3', 'N2', 'N1'].map((level) {
+                      final selected = selectedLevel == level;
+                      return ChoiceChip(
+                        label: Text(level),
+                        selected: selected,
+                        selectedColor: AppColors.lightPinkBackground,
+                        checkmarkColor: AppColors.toriiRed,
+                        labelStyle: TextStyle(
+                          color: selected
+                              ? AppColors.toriiRed
+                              : AppColors.primaryText(context),
+                          fontWeight: FontWeight.w900,
+                        ),
+                        onSelected: (_) {
+                          setSheetState(() => selectedLevel = level);
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.toriiRed,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                      ),
+                      onPressed: () async {
+                        if (nameController.text.trim().isEmpty) {
+                          _showSnack('Display name is required.');
+                          return;
+                        }
+
+                        try {
+                          await _auth.updateProfile(
+                            displayName: nameController.text,
+                            photoUrl: photoController.text,
+                          );
+                          final prefs = await SharedPreferences.getInstance();
+                          await prefs.setString(
+                            _targetLevelKey,
+                            selectedLevel,
+                          );
+                          if (sheetContext.mounted) {
+                            Navigator.of(sheetContext).pop(true);
+                          }
+                        } on FirebaseAuthException catch (e) {
+                          _showSnack(AuthService.getVietnameseError(e));
+                        } catch (e) {
+                          _showSnack('Could not update profile: $e');
+                        }
+                      },
+                      icon: const Icon(Icons.save_outlined),
+                      label: const Text('Save changes'),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    nameController.dispose();
+    photoController.dispose();
+
+    if (saved == true && mounted) {
+      _showSnack('Profile updated.');
+      await _refresh();
+      setState(() {});
+    }
+  }
+
+  Future<void> _sendVerificationEmail() async {
+    try {
+      await _auth.sendEmailVerification();
+      _showSnack('Verification email sent.');
+    } on FirebaseAuthException catch (e) {
+      _showSnack(AuthService.getVietnameseError(e));
+    } catch (e) {
+      _showSnack('Could not send verification email: $e');
+    }
+  }
+
+  Future<void> _sendPasswordReset(String? email) async {
+    if (email == null || email.trim().isEmpty) {
+      _showSnack('This account has no email address.');
+      return;
+    }
+
+    try {
+      await _auth.sendPasswordResetEmail(email);
+      _showSnack('Password reset email sent.');
+    } on FirebaseAuthException catch (e) {
+      _showSnack(AuthService.getVietnameseError(e));
+    } catch (e) {
+      _showSnack('Could not send reset email: $e');
+    }
+  }
+
+  Future<void> _showChangePasswordDialog() async {
+    final controller = TextEditingController();
+    final confirmController = TextEditingController();
+
+    final changed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Change password'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: controller,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'New password',
+                prefixIcon: Icon(Icons.lock_outline),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: confirmController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: 'Confirm password',
+                prefixIcon: Icon(Icons.lock_reset_outlined),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.toriiRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () async {
+              final password = controller.text.trim();
+              if (password.length < 6) {
+                _showSnack('Password must be at least 6 characters.');
+                return;
+              }
+              if (password != confirmController.text.trim()) {
+                _showSnack('Passwords do not match.');
+                return;
+              }
+
+              try {
+                await _auth.updatePassword(password);
+                if (context.mounted) Navigator.of(context).pop(true);
+              } on FirebaseAuthException catch (e) {
+                _showSnack(AuthService.getVietnameseError(e));
+              } catch (e) {
+                _showSnack('Could not change password: $e');
+              }
+            },
+            child: const Text('Update'),
+          ),
+        ],
+      ),
+    );
+
+    controller.dispose();
+    confirmController.dispose();
+    if (changed == true) _showSnack('Password updated.');
+  }
+
+  Future<void> _confirmDeleteAccount() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete account?'),
+        content: const Text(
+          'This removes your Firebase account from this device session. You may need to sign in again recently before Firebase allows deletion.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.errorRed,
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Delete'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      await _auth.deleteAccount();
+    } on FirebaseAuthException catch (e) {
+      _showSnack(AuthService.getVietnameseError(e));
+    } catch (e) {
+      _showSnack('Could not delete account: $e');
+    }
   }
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final shouldSignOut = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Dang xuat?'),
-        content: const Text('Ban se quay lai man hinh dang nhap.'),
+        title: const Text('Sign out?'),
+        content: const Text('You will return to the login screen.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Huy'),
+            child: const Text('Cancel'),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
@@ -58,29 +391,209 @@ class ProfileScreen extends StatelessWidget {
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Dang xuat'),
+            child: const Text('Sign out'),
           ),
         ],
       ),
     );
 
     if (shouldSignOut == true && context.mounted) {
-      await AuthService().signOut();
+      await _auth.signOut();
     }
+  }
+
+  void _showSnack(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(message)));
+  }
+}
+
+class _ProfileData {
+  final String targetLevel;
+  final _ProfileStats stats;
+
+  const _ProfileData({
+    required this.targetLevel,
+    required this.stats,
+  });
+
+  factory _ProfileData.empty() {
+    return _ProfileData(
+      targetLevel: 'N3',
+      stats: _ProfileStats.empty(),
+    );
+  }
+}
+
+class _ProfileStats {
+  final int totalXp;
+  final int lessonsDone;
+  final int flashcardsDone;
+  final int studyMinutes;
+  final int averageAccuracy;
+  final int streakDays;
+  final List<int> xpLast7Days;
+
+  const _ProfileStats({
+    required this.totalXp,
+    required this.lessonsDone,
+    required this.flashcardsDone,
+    required this.studyMinutes,
+    required this.averageAccuracy,
+    required this.streakDays,
+    required this.xpLast7Days,
+  });
+
+  factory _ProfileStats.empty() {
+    return const _ProfileStats(
+      totalXp: 0,
+      lessonsDone: 0,
+      flashcardsDone: 0,
+      studyMinutes: 0,
+      averageAccuracy: 0,
+      streakDays: 0,
+      xpLast7Days: [0, 0, 0, 0, 0, 0, 0],
+    );
+  }
+
+  factory _ProfileStats.fromProgress(List<Map<String, dynamic>> progress) {
+    if (progress.isEmpty) return _ProfileStats.empty();
+
+    var lessonsDone = 0;
+    var flashcardsDone = 0;
+    var studyMinutes = 0;
+    var totalXp = 0;
+    final scores = <double>[];
+    final xpByDay = <DateTime, int>{};
+    final activeDays = <DateTime>{};
+
+    for (final item in progress) {
+      final flashcardDone = item['flashcard_done'] == true;
+      final lessonCompleted = item['lesson_completed'] == true;
+      final testScore = _asDouble(item['test_score']);
+      final shadowingScore = _asDouble(item['shadowing_score']);
+      final updatedAt = _parseDate(item['updated_at']);
+      final day = updatedAt == null ? null : _dateOnly(updatedAt);
+
+      if (flashcardDone) {
+        flashcardsDone++;
+        studyMinutes += 5;
+        totalXp += 20;
+      }
+      if (testScore != null) {
+        scores.add(testScore);
+        studyMinutes += 8;
+        totalXp += testScore.round();
+      }
+      if (shadowingScore != null) {
+        scores.add(shadowingScore);
+        studyMinutes += 10;
+        totalXp += shadowingScore.round();
+      }
+      if (lessonCompleted) {
+        lessonsDone++;
+        totalXp += 120;
+      }
+      if (day != null &&
+          (flashcardDone || testScore != null || shadowingScore != null)) {
+        activeDays.add(day);
+        xpByDay[day] = (xpByDay[day] ?? 0) +
+            _xpForRecord(
+              flashcardDone: flashcardDone,
+              lessonCompleted: lessonCompleted,
+              testScore: testScore,
+              shadowingScore: shadowingScore,
+            );
+      }
+    }
+
+    final now = _dateOnly(DateTime.now());
+    final xpLast7Days = List.generate(7, (index) {
+      final day = now.subtract(Duration(days: 6 - index));
+      return xpByDay[day] ?? 0;
+    });
+
+    return _ProfileStats(
+      totalXp: totalXp,
+      lessonsDone: lessonsDone,
+      flashcardsDone: flashcardsDone,
+      studyMinutes: studyMinutes,
+      averageAccuracy: scores.isEmpty
+          ? 0
+          : (scores.reduce((a, b) => a + b) / scores.length).round(),
+      streakDays: _streakFromDays(activeDays),
+      xpLast7Days: xpLast7Days,
+    );
+  }
+
+  static int _xpForRecord({
+    required bool flashcardDone,
+    required bool lessonCompleted,
+    required double? testScore,
+    required double? shadowingScore,
+  }) {
+    return (flashcardDone ? 20 : 0) +
+        (lessonCompleted ? 120 : 0) +
+        (testScore?.round() ?? 0) +
+        (shadowingScore?.round() ?? 0);
+  }
+
+  static int _streakFromDays(Set<DateTime> activeDays) {
+    if (activeDays.isEmpty) return 0;
+    var cursor = _dateOnly(DateTime.now());
+    if (!activeDays.contains(cursor)) {
+      final yesterday = cursor.subtract(const Duration(days: 1));
+      if (!activeDays.contains(yesterday)) return 0;
+      cursor = yesterday;
+    }
+
+    var streak = 0;
+    while (activeDays.contains(cursor)) {
+      streak++;
+      cursor = cursor.subtract(const Duration(days: 1));
+    }
+    return streak;
+  }
+
+  static DateTime _dateOnly(DateTime value) {
+    return DateTime(value.year, value.month, value.day);
+  }
+
+  static DateTime? _parseDate(dynamic value) {
+    if (value == null) return null;
+    return DateTime.tryParse(value.toString())?.toLocal();
+  }
+
+  static double? _asDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
   }
 }
 
 class _ProfileHeader extends StatelessWidget {
-  final String displayName;
-  final String email;
+  final User? user;
+  final String targetLevel;
+  final int streakDays;
+  final bool isLoading;
 
   const _ProfileHeader({
-    required this.displayName,
-    required this.email,
+    required this.user,
+    required this.targetLevel,
+    required this.streakDays,
+    required this.isLoading,
   });
 
   @override
   Widget build(BuildContext context) {
+    final displayName = (user?.displayName?.trim().isNotEmpty ?? false)
+        ? user!.displayName!.trim()
+        : 'Learner';
+    final email = user?.email ?? 'No email';
+    final photoUrl = user?.photoURL;
+
     return Column(
       children: [
         Stack(
@@ -88,9 +601,9 @@ class _ProfileHeader extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           children: [
             Container(
-              width: 92,
-              height: 92,
-              padding: const EdgeInsets.all(10),
+              width: 96,
+              height: 96,
+              padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
                 color: AppColors.surface(context),
                 borderRadius: BorderRadius.circular(28),
@@ -103,32 +616,8 @@ class _ProfileHeader extends StatelessWidget {
                 ],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: Stack(
-                  fit: StackFit.expand,
-                  children: [
-                    Image.asset(
-                      'assets/images/fuji_bg.png',
-                      fit: BoxFit.cover,
-                      alignment: Alignment.center,
-                    ),
-                    DecoratedBox(
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.78),
-                      ),
-                    ),
-                    const Center(
-                      child: Text(
-                        '東京',
-                        style: TextStyle(
-                          color: AppColors.toriiRed,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                borderRadius: BorderRadius.circular(22),
+                child: _Avatar(photoUrl: photoUrl, displayName: displayName),
               ),
             ),
             Positioned(
@@ -136,19 +625,14 @@ class _ProfileHeader extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
                 decoration: BoxDecoration(
-                  color: AppColors.toriiRed,
+                  color: user?.emailVerified == true
+                      ? AppColors.progressTeal
+                      : AppColors.warningYellow,
                   borderRadius: BorderRadius.circular(999),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.toriiRed.withValues(alpha: 0.25),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
                 ),
-                child: const Text(
-                  'PRO',
-                  style: TextStyle(
+                child: Text(
+                  user?.emailVerified == true ? 'VERIFIED' : 'UNVERIFIED',
+                  style: const TextStyle(
                     color: Colors.white,
                     fontSize: 9,
                     fontWeight: FontWeight.w900,
@@ -173,15 +657,12 @@ class _ProfileHeader extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(
-              Icons.school_outlined,
-              color: AppColors.toriiRed,
-              size: 14,
-            ),
+            const Icon(Icons.school_outlined,
+                color: AppColors.toriiRed, size: 14),
             const SizedBox(width: 5),
             Text(
-              'JLPT N3 Aspirant',
-              style: TextStyle(
+              'JLPT $targetLevel Aspirant',
+              style: const TextStyle(
                 color: AppColors.toriiRed,
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
@@ -200,14 +681,11 @@ class _ProfileHeader extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(
-                Icons.local_fire_department_rounded,
-                color: AppColors.warningYellow,
-                size: 16,
-              ),
+              const Icon(Icons.local_fire_department_rounded,
+                  color: AppColors.warningYellow, size: 16),
               const SizedBox(width: 6),
               Text(
-                '84 Days',
+                isLoading ? 'Loading...' : '$streakDays day streak',
                 style: TextStyle(
                   color: AppColors.primaryText(context),
                   fontSize: 12,
@@ -232,8 +710,69 @@ class _ProfileHeader extends StatelessWidget {
   }
 }
 
+class _Avatar extends StatelessWidget {
+  final String? photoUrl;
+  final String displayName;
+
+  const _Avatar({
+    required this.photoUrl,
+    required this.displayName,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (photoUrl != null && photoUrl!.trim().isNotEmpty) {
+      return Image.network(
+        photoUrl!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _InitialsAvatar(displayName: displayName),
+      );
+    }
+    return _InitialsAvatar(displayName: displayName);
+  }
+}
+
+class _InitialsAvatar extends StatelessWidget {
+  final String displayName;
+
+  const _InitialsAvatar({required this.displayName});
+
+  @override
+  Widget build(BuildContext context) {
+    final initials = displayName
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((part) => part.isNotEmpty)
+        .take(2)
+        .map((part) => part[0].toUpperCase())
+        .join();
+
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [AppColors.lightPinkBackground, AppColors.lightTealGreen],
+        ),
+      ),
+      child: Center(
+        child: Text(
+          initials.isEmpty ? 'U' : initials,
+          style: const TextStyle(
+            color: AppColors.toriiRed,
+            fontSize: 28,
+            fontWeight: FontWeight.w900,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ExperienceCard extends StatelessWidget {
-  const _ExperienceCard();
+  final _ProfileStats stats;
+
+  const _ExperienceCard({required this.stats});
 
   @override
   Widget build(BuildContext context) {
@@ -275,7 +814,7 @@ class _ExperienceCard extends StatelessWidget {
                           ),
                           const SizedBox(height: 7),
                           Text(
-                            '15,400 XP',
+                            '${stats.totalXp} XP',
                             style: TextStyle(
                               color: AppColors.primaryText(context),
                               fontSize: 24,
@@ -288,7 +827,7 @@ class _ExperienceCard extends StatelessWidget {
                     Container(
                       width: 58,
                       height: 58,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: AppColors.lightPinkBackground,
                         shape: BoxShape.circle,
                       ),
@@ -310,7 +849,9 @@ class _ExperienceCard extends StatelessWidget {
 }
 
 class _StatsGrid extends StatelessWidget {
-  const _StatsGrid();
+  final _ProfileStats stats;
+
+  const _StatsGrid({required this.stats});
 
   @override
   Widget build(BuildContext context) {
@@ -321,33 +862,40 @@ class _StatsGrid extends StatelessWidget {
       childAspectRatio: 1.45,
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
-      children: const [
+      children: [
         _StatTile(
-          icon: Icons.menu_book_outlined,
-          label: 'KANJI MASTERED',
-          value: '450',
+          icon: Icons.style_outlined,
+          label: 'FLASHCARDS DONE',
+          value: '${stats.flashcardsDone}',
           accent: AppColors.toriiRed,
         ),
         _StatTile(
           icon: Icons.schedule_rounded,
           label: 'STUDY TIME',
-          value: '120 hrs',
+          value: _formatStudyTime(stats.studyMinutes),
           accent: AppColors.matcha,
         ),
         _StatTile(
           icon: Icons.check_circle_outline_rounded,
           label: 'LESSONS DONE',
-          value: '68',
+          value: '${stats.lessonsDone}',
           accent: AppColors.goldAccent,
         ),
         _StatTile(
           icon: Icons.trending_up_rounded,
           label: 'ACCURACY',
-          value: '92%',
+          value: '${stats.averageAccuracy}%',
           accent: AppColors.progressTeal,
         ),
       ],
     );
+  }
+
+  static String _formatStudyTime(int minutes) {
+    if (minutes < 60) return '${minutes}m';
+    final hours = minutes ~/ 60;
+    final remain = minutes % 60;
+    return remain == 0 ? '${hours}h' : '${hours}h ${remain}m';
   }
 }
 
@@ -412,10 +960,14 @@ class _StatTile extends StatelessWidget {
 }
 
 class _ActivityHistoryCard extends StatelessWidget {
-  const _ActivityHistoryCard();
+  final _ProfileStats stats;
+
+  const _ActivityHistoryCard({required this.stats});
 
   @override
   Widget build(BuildContext context) {
+    final totalWeekXp = stats.xpLast7Days.fold<int>(0, (a, b) => a + b);
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(20),
@@ -467,9 +1019,9 @@ class _ActivityHistoryCard extends StatelessWidget {
                   color: AppColors.lightPinkBackground,
                   borderRadius: BorderRadius.circular(999),
                 ),
-                child: const Text(
-                  '+12% vs LW',
-                  style: TextStyle(
+                child: Text(
+                  '$totalWeekXp XP',
+                  style: const TextStyle(
                     color: AppColors.toriiRed,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
@@ -483,6 +1035,7 @@ class _ActivityHistoryCard extends StatelessWidget {
             height: 170,
             child: CustomPaint(
               painter: _ActivityChartPainter(
+                values: stats.xpLast7Days,
                 barColor: AppColors.toriiRed,
                 mutedColor: AppColors.lightPinkBackground,
                 gridColor: AppColors.divider(context),
@@ -498,12 +1051,14 @@ class _ActivityHistoryCard extends StatelessWidget {
 }
 
 class _ActivityChartPainter extends CustomPainter {
+  final List<int> values;
   final Color barColor;
   final Color mutedColor;
   final Color gridColor;
   final Color textColor;
 
   const _ActivityChartPainter({
+    required this.values,
     required this.barColor,
     required this.mutedColor,
     required this.gridColor,
@@ -512,11 +1067,17 @@ class _ActivityChartPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final values = [0.42, 0.34, 0.55, 0.28, 0.48, 0.92, 0.62];
-    final days = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+    final safeValues = values.length == 7 ? values : [0, 0, 0, 0, 0, 0, 0];
+    final maxValue = safeValues.fold<int>(0, (a, b) => a > b ? a : b);
+    final today = DateTime.now();
+    final days = List.generate(7, (index) {
+      final day = today.subtract(Duration(days: 6 - index));
+      const names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+      return names[day.weekday - 1];
+    });
     const bottomLabelHeight = 24.0;
     final chartHeight = size.height - bottomLabelHeight;
-    final slotWidth = size.width / values.length;
+    final slotWidth = size.width / safeValues.length;
     final barWidth = slotWidth * 0.54;
     final radius = Radius.circular(barWidth / 2);
 
@@ -528,19 +1089,18 @@ class _ActivityChartPainter extends CustomPainter {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), gridPaint);
     }
 
-    _drawKana(canvas, size, chartHeight);
-
-    for (var i = 0; i < values.length; i++) {
+    for (var i = 0; i < safeValues.length; i++) {
+      final normalized = maxValue == 0 ? 0.06 : safeValues[i] / maxValue;
       final left = slotWidth * i + (slotWidth - barWidth) / 2;
-      final height = chartHeight * values[i];
+      final height = chartHeight * normalized.clamp(0.06, 1.0);
       final top = chartHeight - height;
       final rect = Rect.fromLTWH(left, top, barWidth, height);
-      final isPeak = i == 5;
+      final isPeak = safeValues[i] == maxValue && maxValue > 0;
       final paint = Paint()
         ..color = isPeak
             ? barColor
-            : Color.lerp(mutedColor, barColor, values[i] * 0.32)!
-                .withValues(alpha: isPeak ? 1 : 0.48);
+            : Color.lerp(mutedColor, barColor, normalized * 0.35)!
+                .withValues(alpha: maxValue == 0 ? 0.28 : 0.58);
 
       canvas.drawRRect(
         RRect.fromRectAndCorners(
@@ -575,33 +1135,10 @@ class _ActivityChartPainter extends CustomPainter {
     }
   }
 
-  void _drawKana(Canvas canvas, Size size, double chartHeight) {
-    final kana = [
-      ('あ', Offset(size.width * 0.28, chartHeight * 0.28), 34.0),
-      ('A', Offset(size.width * 0.42, chartHeight * 0.18), 28.0),
-      ('a', Offset(size.width * 0.51, chartHeight * 0.43), 42.0),
-      ('日', Offset(size.width * 0.72, chartHeight * 0.32), 30.0),
-    ];
-
-    for (final item in kana) {
-      final painter = TextPainter(
-        text: TextSpan(
-          text: item.$1,
-          style: TextStyle(
-            color: barColor.withValues(alpha: 0.07),
-            fontSize: item.$3,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        textDirection: TextDirection.ltr,
-      )..layout();
-      painter.paint(canvas, item.$2);
-    }
-  }
-
   @override
   bool shouldRepaint(covariant _ActivityChartPainter oldDelegate) {
-    return oldDelegate.barColor != barColor ||
+    return oldDelegate.values != values ||
+        oldDelegate.barColor != barColor ||
         oldDelegate.mutedColor != mutedColor ||
         oldDelegate.gridColor != gridColor ||
         oldDelegate.textColor != textColor;
@@ -609,12 +1146,28 @@ class _ActivityChartPainter extends CustomPainter {
 }
 
 class _AccountActions extends StatelessWidget {
+  final User? user;
+  final VoidCallback onEditProfile;
+  final VoidCallback onVerifyEmail;
+  final VoidCallback onResetPassword;
+  final VoidCallback onChangePassword;
+  final VoidCallback onDeleteAccount;
   final VoidCallback onSignOut;
 
-  const _AccountActions({required this.onSignOut});
+  const _AccountActions({
+    required this.user,
+    required this.onEditProfile,
+    required this.onVerifyEmail,
+    required this.onResetPassword,
+    required this.onChangePassword,
+    required this.onDeleteAccount,
+    required this.onSignOut,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final needsVerification = user?.emailVerified == false;
+
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
@@ -627,7 +1180,35 @@ class _AccountActions extends StatelessWidget {
           _ActionRow(
             icon: Icons.edit_outlined,
             label: 'Edit profile',
-            onTap: () {},
+            onTap: onEditProfile,
+          ),
+          if (needsVerification) ...[
+            Divider(height: 1, color: AppColors.divider(context)),
+            _ActionRow(
+              icon: Icons.mark_email_unread_outlined,
+              label: 'Verify email',
+              color: AppColors.warningYellow,
+              onTap: onVerifyEmail,
+            ),
+          ],
+          Divider(height: 1, color: AppColors.divider(context)),
+          _ActionRow(
+            icon: Icons.password_outlined,
+            label: 'Reset password by email',
+            onTap: onResetPassword,
+          ),
+          Divider(height: 1, color: AppColors.divider(context)),
+          _ActionRow(
+            icon: Icons.lock_reset_outlined,
+            label: 'Change password',
+            onTap: onChangePassword,
+          ),
+          Divider(height: 1, color: AppColors.divider(context)),
+          _ActionRow(
+            icon: Icons.delete_outline,
+            label: 'Delete account',
+            color: AppColors.errorRed,
+            onTap: onDeleteAccount,
           ),
           Divider(height: 1, color: AppColors.divider(context)),
           _ActionRow(
@@ -683,6 +1264,51 @@ class _ActionRow extends StatelessWidget {
               color: AppColors.tertiaryText(context),
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ProfileTextField extends StatelessWidget {
+  final TextEditingController controller;
+  final String label;
+  final IconData icon;
+
+  const _ProfileTextField({
+    required this.controller,
+    required this.label,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon),
+        filled: true,
+        fillColor: AppColors.inputFill(context),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: AppColors.border(context)),
+        ),
+      ),
+    );
+  }
+}
+
+class _SheetHandle extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        width: 44,
+        height: 5,
+        decoration: BoxDecoration(
+          color: AppColors.divider(context),
+          borderRadius: BorderRadius.circular(999),
         ),
       ),
     );
