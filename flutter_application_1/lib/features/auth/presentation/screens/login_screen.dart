@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
@@ -23,7 +23,10 @@ class _LoginScreenState extends State<LoginScreen> {
     });
     try {
       final result = await _authService.signInWithGoogle();
-      if (result == null && mounted) {
+      if (result != null && mounted) {
+        // Đăng nhập thành công, đóng màn hình Login để AuthGate xử lý (hiển thị MainScreen)
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      } else if (mounted) {
         setState(() => _isLoading = false);
       }
     } on FirebaseAuthException catch (e) {

@@ -1,15 +1,26 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:flutter_application_1/core/utils/sample_audio_player.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/vocabulary_test_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
+
+const _kPrimary = Color(0xFFFF4D6D);
+const _kPrimaryGradient = LinearGradient(
+  colors: [Color(0xFFFF6B4A), Color(0xFFFF4D6D)],
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+);
+const _kPrimaryLight = Color(0xFFFFEBF0);
+const _kBg = Color(0xFFF8F9FE);
+const _kTextDark = Color(0xFF1E293B);
+const _kTextGray = Color(0xFF94A3B8);
 
 class FlashcardScreen extends StatefulWidget {
   final int topicId;
-  final int lessonId; // ← THÊM: để lưu tiến độ
+  final int lessonId; 
   const FlashcardScreen({
     super.key,
     required this.topicId,
@@ -22,9 +33,9 @@ class FlashcardScreen extends StatefulWidget {
 
 class _FlashcardScreenState extends State<FlashcardScreen> {
   List<dynamic> _vocabularies = [];
+  List<dynamic> _learningQueue = [];
+  int _totalVocab = 0;
   bool _isLoading = true;
-  // Set of expanded card indices
-  final Set<int> _expandedCards = {0}; // First card expanded by default
 
   @override
   void initState() {
@@ -33,14 +44,7 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
   }
 
   Future<void> _fetchVocab() async {
-    String apiUrl = 'http://localhost:8000/shadowing/topics/${widget.topicId}';
-    try {
-      if (!kIsWeb) {
-        if (defaultTargetPlatform == TargetPlatform.android) {
-          apiUrl = 'http://10.0.2.2:8000/shadowing/topics/${widget.topicId}';
-        }
-      }
-    } catch (_) {}
+    String apiUrl = '${ApiConfig.baseUrl}/shadowing/topics/${widget.topicId}';
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -48,6 +52,8 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
         final data = json.decode(utf8.decode(response.bodyBytes));
         setState(() {
           _vocabularies = data['vocabularies'] ?? [];
+          _learningQueue = List.from(_vocabularies);
+          _totalVocab = _vocabularies.length;
           _isLoading = false;
         });
       } else {
@@ -56,6 +62,8 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
     } catch (e) {
       setState(() {
         _vocabularies = _dummyVocab();
+        _learningQueue = List.from(_vocabularies);
+        _totalVocab = _vocabularies.length;
         _isLoading = false;
       });
     }
@@ -63,172 +71,175 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
 
   List<Map<String, String>> _dummyVocab() => [
     {
+      'word': '学習',
+      'reading': 'がくしゅう (Gakushū)',
+      'meaning': 'Học tập',
+      'level': 'N3',
+    },
+    {
       'word': '希望',
-      'reading': 'きぼう',
+      'reading': 'きぼう (Kibō)',
       'meaning': 'Hy vọng, kỳ vọng',
-      'example_jp': '新しい仕事に希望を持っています。',
-      'example_vn': 'Tôi có nhiều kỳ vọng vào công việc mới.',
       'level': 'N3',
     },
     {
       'word': '景色',
-      'reading': 'けしき',
-      'meaning': 'Phong cảnh, cảnh vật',
-      'example_jp': '',
-      'example_vn': '',
-      'level': 'N3',
-    },
-    {
-      'word': '準備',
-      'reading': 'じゅんび',
-      'meaning': 'Chuẩn bị',
-      'example_jp': '',
-      'example_vn': '',
-      'level': 'N3',
-    },
-    {
-      'word': '感動',
-      'reading': 'かんどう',
-      'meaning': 'Cảm động, xúc động',
-      'example_jp': '',
-      'example_vn': '',
+      'reading': 'けしき (Keshiki)',
+      'meaning': 'Phong cảnh',
       'level': 'N3',
     },
   ];
 
-  void _toggleCard(int index) {
+  void _markNotMemorized() {
+    if (_learningQueue.isEmpty) return;
     setState(() {
-      if (_expandedCards.contains(index)) {
-        _expandedCards.remove(index);
-      } else {
-        _expandedCards.add(index);
+      // Đưa từ hiện tại xuống cuối danh sách để học lại
+      final current = _learningQueue.removeAt(0);
+      _learningQueue.add(current);
+    });
+  }
+
+  void _markMemorized() {
+    if (_learningQueue.isEmpty) return;
+    setState(() {
+      // Loại bỏ từ đã thuộc khỏi danh sách học
+      _learningQueue.removeAt(0);
+      
+      // Nếu đã thuộc hết thì chuyển sang Test
+      if (_learningQueue.isEmpty) {
+        _startTest();
       }
     });
+  }
+
+  void _startTest() async {
+    await ProgressService.markFlashcardDone(widget.lessonId);
+    if (!mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (_) => VocabularyTestScreen(
+          topicId: widget.topicId,
+          lessonId: widget.lessonId,
+          isReview: false,
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF7F8FA),
-        body: Center(
-          child: CircularProgressIndicator(color: AppColors.progressTeal),
+        backgroundColor: _kBg,
+        body: const Center(
+          child: CircularProgressIndicator(color: _kPrimary),
         ),
       );
     }
 
+    if (_totalVocab == 0 && !_isLoading) {
+      return Scaffold(
+        backgroundColor: _kBg,
+        appBar: _buildAppBar(),
+        body: Center(
+          child: Text(
+            'Chưa có từ vựng cho bài học này',
+            style: TextStyle(color: _kTextGray, fontSize: 16),
+          ),
+        ),
+      );
+    }
+
+    if (_learningQueue.isEmpty) {
+      return Scaffold(backgroundColor: _kBg, body: const Center(child: CircularProgressIndicator()));
+    }
+    final vocab = _learningQueue[0];
+
     return Scaffold(
-      backgroundColor: const Color(0xFFF7F8FA),
+      backgroundColor: _kBg,
+      appBar: _buildAppBar(),
       body: SafeArea(
         child: Column(
           children: [
-            _buildTopBar(context),
-            _buildHeading(),
+            _buildProgress(),
             Expanded(
-              child: _vocabularies.isEmpty
-                  ? _buildEmptyState()
-                  : _buildCardList(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                child: _buildFlashcard(vocab),
+              ),
             ),
-            _buildBottomActions(context),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: _buildTestButton(),
+            ),
+            const SizedBox(height: 24),
+            _buildBottomControls(),
+            const SizedBox(height: 32),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTopBar(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-      child: Row(
-        children: [
-          GestureDetector(
-            onTap: () => Navigator.of(context).maybePop(),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 20,
-              color: Color(0xFF1E293B),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Text(
-              'NihongoJP',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-                color: Color(0xFF1E293B),
-              ),
-            ),
-          ),
-          _QuickScanButton(),
-        ],
+  PreferredSizeWidget _buildAppBar() {
+    return AppBar(
+      backgroundColor: Colors.transparent,
+      elevation: 0,
+      centerTitle: true,
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back_rounded, color: _kTextDark),
+        onPressed: () => Navigator.of(context).maybePop(),
+      ),
+      title: const Text(
+        'Học từ vựng',
+        style: TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+          color: _kTextDark,
+        ),
       ),
     );
   }
 
-  Widget _buildHeading() {
+  Widget _buildProgress() {
+    final learned = _totalVocab - _learningQueue.length;
+    final progress = _totalVocab == 0 ? 0.0 : learned / _totalVocab;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 4, 20, 20),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text(
-            'Vocabulary Discovery',
-            style: TextStyle(
-              fontSize: 26,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFF1E293B),
-              letterSpacing: -0.5,
-            ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                'TIẾN ĐỘ HÔM NAY',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: _kTextGray,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              Text(
+                '$learned/$_totalVocab',
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w900,
+                  color: _kPrimary,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Khám phá từ vựng mới qua bộ lọc thông minh mỗi ngày.',
-            style: TextStyle(
-              fontSize: 13,
-              color: Colors.grey.shade500,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCardList() {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-      itemCount: _vocabularies.length,
-      itemBuilder: (context, index) {
-        final v = _vocabularies[index];
-        final isExpanded = _expandedCards.contains(index);
-        return _VocabCard(
-          word: v['word'] ?? '',
-          reading: v['reading'] ?? '',
-          meaning: v['meaning'] ?? '',
-          exampleJp: v['example_jp'] ?? '',
-          exampleVn: v['example_vn'] ?? '',
-          level: v['level'] ?? '',
-          isExpanded: isExpanded,
-          onTap: () => _toggleCard(index),
-        );
-      },
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.menu_book_rounded, size: 56, color: Colors.grey.shade300),
-          const SizedBox(height: 16),
-          Text(
-            'Chưa có từ vựng cho bài học này',
-            style: TextStyle(
-              fontSize: 15,
-              color: Colors.grey.shade400,
-              fontWeight: FontWeight.w500,
+          const SizedBox(height: 8),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              backgroundColor: _kPrimary.withValues(alpha: 0.15),
+              valueColor: const AlwaysStoppedAnimation<Color>(_kPrimary),
+              minHeight: 6,
             ),
           ),
         ],
@@ -236,326 +247,208 @@ class _FlashcardScreenState extends State<FlashcardScreen> {
     );
   }
 
-  Widget _buildBottomActions(BuildContext context) {
+  Widget _buildFlashcard(Map<String, dynamic> v) {
+    final word = v['word']?.toString() ?? '';
+    final reading = v['reading']?.toString() ?? '';
+    final meaning = v['meaning']?.toString() ?? '';
+    final level = v['level']?.toString() ?? '';
+
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 14, 20, 14),
+      width: double.infinity,
       decoration: BoxDecoration(
         color: Colors.white,
+        borderRadius: BorderRadius.circular(32),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, -4),
+            color: _kPrimary.withValues(alpha: 0.08),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
-      child: Row(
+      child: Stack(
+        fit: StackFit.expand,
         children: [
-          // Bỏ qua
-          Expanded(
-            flex: 2,
-            child: OutlinedButton.icon(
-              onPressed: () => Navigator.of(context).maybePop(),
-              icon: const Icon(Icons.close_rounded, size: 18),
-              label: const Text(
-                'Quay về',
-                style: TextStyle(fontWeight: FontWeight.w700),
-              ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF64748B),
-                side: const BorderSide(color: Color(0xFFE2E8F0), width: 1.5),
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Học ngay
-          Expanded(
-            flex: 3,
-            child: ElevatedButton.icon(
-              onPressed: () async {
-                // Lưu tiến độ flashcard trước khi chuyển màn hình
-                await ProgressService.markFlashcardDone(widget.lessonId);
-                if (!context.mounted) return;
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => VocabularyTestScreen(
-                      topicId: widget.topicId,
-                      lessonId: widget.lessonId,
-                      isReview: false,
+          // Content
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 64),
+            child: Center(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        word,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 64,
+                          fontWeight: FontWeight.w900,
+                          color: _kTextDark,
+                          height: 1.1,
+                        ),
+                      ),
                     ),
-                  ),
-                );
-              },
-              icon: const Icon(Icons.add_circle_outline_rounded, size: 18),
-              label: const Text(
-                'Học ngay',
-                style: TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
-              ),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.progressTeal,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickScanButton extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5F5),
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.auto_awesome_rounded,
-            size: 14,
-            color: AppColors.progressTeal,
-          ),
-          SizedBox(width: 5),
-          Text(
-            'QUICK SCAN',
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              color: AppColors.progressTeal,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _VocabCard extends StatefulWidget {
-  final String word;
-  final String reading;
-  final String meaning;
-  final String exampleJp;
-  final String exampleVn;
-  final String level;
-  final bool isExpanded;
-  final VoidCallback onTap;
-
-  const _VocabCard({
-    required this.word,
-    required this.reading,
-    required this.meaning,
-    required this.exampleJp,
-    required this.exampleVn,
-    required this.level,
-    required this.isExpanded,
-    required this.onTap,
-  });
-
-  @override
-  State<_VocabCard> createState() => _VocabCardState();
-}
-
-class _VocabCardState extends State<_VocabCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _fadeAnim;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 250),
-      value: widget.isExpanded ? 1.0 : 0.0,
-    );
-    _fadeAnim = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-  }
-
-  @override
-  void didUpdateWidget(covariant _VocabCard old) {
-    super.didUpdateWidget(old);
-    if (widget.isExpanded != old.isExpanded) {
-      if (widget.isExpanded) {
-        _controller.forward();
-      } else {
-        _controller.reverse();
-      }
-    }
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeInOut,
-        margin: const EdgeInsets.only(bottom: 14),
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.04),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // ── TOP ROW: level badge + audio icon
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                if (widget.level.isNotEmpty) _LevelBadge(level: widget.level),
-                _AudioButton(word: widget.word),
-              ],
-            ),
-            const SizedBox(height: 10),
-
-            // ── READING (furigana)
-            if (widget.isExpanded && widget.reading.isNotEmpty)
-              Text(
-                widget.reading,
-                style: const TextStyle(
-                  fontSize: 14,
-                  color: Color(0xFF64748B),
-                  letterSpacing: 1,
-                ),
-              ),
-
-            // ── KANJI WORD
-            Text(
-              widget.word,
-              style: const TextStyle(
-                fontSize: 44,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF1E293B),
-                height: 1.1,
-              ),
-            ),
-
-            // ── EXPANDED CONTENT
-            if (widget.isExpanded) ...[
-              const SizedBox(height: 20),
-              // Meaning section
-              _SectionLabel(label: 'Ý NGHĨA'),
-              const SizedBox(height: 4),
-              Text(
-                widget.meaning,
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF1E293B),
-                ),
-              ),
-
-              // Example section
-              if (widget.exampleJp.isNotEmpty ||
-                  widget.exampleVn.isNotEmpty) ...[
-                const SizedBox(height: 14),
-                _SectionLabel(label: 'VÍ DỤ'),
-                const SizedBox(height: 4),
-                if (widget.exampleJp.isNotEmpty)
-                  _HighlightedText(
-                    text: widget.exampleJp,
-                    highlight: widget.word,
-                  ),
-                if (widget.exampleVn.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    widget.exampleVn,
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: Color(0xFF64748B),
-                      fontStyle: FontStyle.italic,
-                      height: 1.4,
+                    const SizedBox(height: 12),
+                    if (reading.isNotEmpty)
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Text(
+                          reading,
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF7A6A6A),
+                          ),
+                        ),
+                      ),
+                    const SizedBox(height: 24),
+                    Container(
+                      width: 48,
+                      height: 2,
+                      color: _kPrimaryLight,
                     ),
-                  ),
-                ],
-              ],
-            ] else ...[
-              // ── COLLAPSED HINT
-              const SizedBox(height: 10),
-              FadeTransition(
-                opacity: _fadeAnim.drive(Tween<double>(begin: 1.0, end: 0.0)),
-                child: Row(
-                  children: const [
-                    Icon(
-                      Icons.touch_app_rounded,
-                      size: 14,
-                      color: AppColors.progressTeal,
-                    ),
-                    SizedBox(width: 6),
+                    const SizedBox(height: 24),
                     Text(
-                      'NHẤN ĐỂ XEM NGHĨA',
-                      style: TextStyle(
-                        fontSize: 11,
-                        color: AppColors.progressTeal,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.5,
+                      meaning,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: _kPrimary,
                       ),
                     ),
                   ],
                 ),
               ),
-            ],
-          ],
+            ),
+          ),
+          // Bottom Left: Level
+          if (level.isNotEmpty)
+            Positioned(
+              left: 24,
+              bottom: 24,
+              child: Text(
+                'JLPT $level',
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w800,
+                  color: _kTextGray,
+                  letterSpacing: 1.5,
+                ),
+              ),
+            ),
+          // Bottom Right: Audio Button
+          Positioned(
+            right: 16,
+            bottom: 16,
+            child: _AudioButton(word: word),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTestButton() {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: _kPrimaryGradient,
+        borderRadius: BorderRadius.circular(24),
+        boxShadow: [
+          BoxShadow(
+            color: _kPrimary.withValues(alpha: 0.3),
+            blurRadius: 16,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: ElevatedButton.icon(
+        onPressed: _startTest,
+        icon: const Icon(Icons.style_rounded, size: 20),
+        label: const Text(
+          'Bắt đầu Test Nhớ Từ Vựng',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+          ),
+        ),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.transparent,
+          foregroundColor: Colors.white,
+          shadowColor: Colors.transparent,
+          padding: const EdgeInsets.symmetric(vertical: 18),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
         ),
       ),
     );
   }
-}
 
-// ──────────────────────────────────────────────────────
-// SMALL HELPERS
-// ──────────────────────────────────────────────────────
-class _LevelBadge extends StatelessWidget {
-  final String level;
-  const _LevelBadge({required this.level});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: const Color(0xFFE8F5F5),
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Text(
-        '$level LEVEL',
-        style: const TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          color: AppColors.progressTeal,
-          letterSpacing: 0.8,
+  Widget _buildBottomControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        _buildCircleButton(
+          icon: Icons.close_rounded,
+          color: const Color(0xFF64748B),
+          label: 'CHƯA THUỘC',
+          onTap: _markNotMemorized,
         ),
-      ),
+        const SizedBox(width: 48),
+        _buildCircleButton(
+          icon: Icons.favorite_border_rounded,
+          color: _kPrimary,
+          label: 'ĐÃ THUỘC',
+          onTap: _markMemorized,
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCircleButton({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        GestureDetector(
+          onTap: onTap,
+          child: Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: color.withValues(alpha: 0.15),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
+            ),
+            child: Icon(icon, size: 28, color: color),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w800,
+            color: color,
+            letterSpacing: 0.5,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -590,14 +483,7 @@ class _AudioButtonState extends State<_AudioButton> {
     setState(() => _isPlaying = true);
 
     try {
-      String apiUrl = 'http://localhost:8000/tts/sample';
-      if (!kIsWeb) {
-        try {
-          if (defaultTargetPlatform == TargetPlatform.android) {
-            apiUrl = 'http://10.0.2.2:8000/tts/sample';
-          }
-        } catch (_) {}
-      }
+      String apiUrl = '${ApiConfig.baseUrl}/tts/sample';
 
       final response = await http.post(
         Uri.parse(apiUrl),
@@ -632,87 +518,24 @@ class _AudioButtonState extends State<_AudioButton> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        width: 38,
-        height: 38,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
-          color: _isPlaying
-              ? AppColors.progressTeal.withValues(alpha: 0.15)
-              : const Color(0xFFF1F5F9),
+          color: _isPlaying ? _kPrimaryLight : Colors.white,
           shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.05),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
         child: Icon(
           _isPlaying ? Icons.volume_up_rounded : Icons.volume_up_outlined,
-          size: 19,
-          color: _isPlaying ? AppColors.progressTeal : const Color(0xFF64748B),
+          size: 24,
+          color: _kPrimary,
         ),
-      ),
-    );
-  }
-}
-
-class _SectionLabel extends StatelessWidget {
-  final String label;
-  const _SectionLabel({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      label,
-      style: const TextStyle(
-        fontSize: 10,
-        fontWeight: FontWeight.w800,
-        color: Color(0xFF94A3B8),
-        letterSpacing: 1.2,
-      ),
-    );
-  }
-}
-
-/// Renders text with the [highlight] word in bold teal color.
-class _HighlightedText extends StatelessWidget {
-  final String text;
-  final String highlight;
-
-  const _HighlightedText({required this.text, required this.highlight});
-
-  @override
-  Widget build(BuildContext context) {
-    if (highlight.isEmpty || !text.contains(highlight)) {
-      return Text(
-        text,
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF475569),
-          height: 1.5,
-        ),
-      );
-    }
-
-    final parts = text.split(highlight);
-    final spans = <TextSpan>[];
-    for (int i = 0; i < parts.length; i++) {
-      spans.add(TextSpan(text: parts[i]));
-      if (i < parts.length - 1) {
-        spans.add(
-          TextSpan(
-            text: highlight,
-            style: const TextStyle(
-              color: AppColors.progressTeal,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        );
-      }
-    }
-
-    return RichText(
-      text: TextSpan(
-        style: const TextStyle(
-          fontSize: 14,
-          color: Color(0xFF475569),
-          height: 1.5,
-        ),
-        children: spans,
       ),
     );
   }

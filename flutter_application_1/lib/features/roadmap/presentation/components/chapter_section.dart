@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/components/lesson_node.dart';
@@ -206,7 +206,7 @@ class _ChapterSectionState extends State<ChapterSection>
           ),
           child: Center(
             child: Text(
-              '···',
+              'Â·Â·Â·',
               style: TextStyle(
                   color: AppColors.slate400,
                   fontSize: 28,

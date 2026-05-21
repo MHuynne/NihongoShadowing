@@ -9,12 +9,27 @@ from schemas.shadowing_segment import ShadowingSegmentCreate, ShadowingSegment a
 router = APIRouter(prefix="/shadowing/segments", tags=["Shadowing Segments"])
 
 
+@router.post("/bulk", response_model=List[SegSchema], status_code=status.HTTP_201_CREATED)
+def create_bulk(bodies: List[ShadowingSegmentCreate], db: Session = Depends(get_db)):
+    """Tạo nhiều segment cùng lúc (bulk insert). topic_id có thể null."""
+    created = []
+    for body in bodies:
+        data = body.model_dump()
+        seg = ShadowingSegment(**data)
+        db.add(seg)
+        db.flush()          # lấy id ngay, chưa commit
+        created.append(seg)
+    db.commit()
+    for seg in created:
+        db.refresh(seg)
+    return created
+
+
 @router.get("/all", response_model=List[SegSchema])
 def get_all_segments(db: Session = Depends(get_db)):
-    """Lấy tất cả segments (kể cả độc lập không thuộc topic), kèm categories."""
+    """Lấy tất cả segments (kể cả độc lập không thuộc topic)."""
     return (
         db.query(ShadowingSegment)
-        .options(joinedload(ShadowingSegment.categories))
         .order_by(ShadowingSegment.id)
         .all()
     )
@@ -24,7 +39,6 @@ def get_all_segments(db: Session = Depends(get_db)):
 def get_by_topic(topic_id: int, db: Session = Depends(get_db)):
     return (
         db.query(ShadowingSegment)
-        .options(joinedload(ShadowingSegment.categories))
         .filter(ShadowingSegment.topic_id == topic_id)
         .order_by(ShadowingSegment.order_index)
         .all()
@@ -33,10 +47,9 @@ def get_by_topic(topic_id: int, db: Session = Depends(get_db)):
 
 @router.get("/{seg_id}", response_model=SegSchema)
 def get_one_segment(seg_id: int, db: Session = Depends(get_db)):
-    """Lấy một segment theo id, kèm categories."""
+    """Lấy một segment theo id."""
     seg = (
         db.query(ShadowingSegment)
-        .options(joinedload(ShadowingSegment.categories))
         .filter(ShadowingSegment.id == seg_id)
         .first()
     )

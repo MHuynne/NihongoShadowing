@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class LessonModel {
   final String id;       // display ID (chuỗi dùng cho UI)

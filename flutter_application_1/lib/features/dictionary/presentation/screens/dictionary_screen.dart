@@ -1,8 +1,20 @@
-import 'dart:async';
+﻿import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/dictionary/models/dictionary_models.dart';
 import 'package:flutter_application_1/features/dictionary/services/dictionary_service.dart';
+
+const _kPrimary = Color(0xFFFF4D6D);
+const _kPrimaryGradient = LinearGradient(
+  colors: [Color(0xFFFF6B4A), Color(0xFFFF4D6D)],
+  begin: Alignment.centerLeft,
+  end: Alignment.centerRight,
+);
+const _kPrimaryLight = Color(0xFFFFEBF0);
+const _kBg = Color(0xFFF8F9FE);
+const _kTextDark = Color(0xFF1E293B);
+const _kTextGray = Color(0xFF94A3B8);
 
 class DictionaryScreen extends StatefulWidget {
   const DictionaryScreen({super.key});
@@ -25,9 +37,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
 
-  final List<String> _recentSearches = [
-    '日本語', '勉強する', '桜', '電車', '食べる', 'kawaii', 'arigatou',
-  ];
+  final List<String> _recentSearches = [];
 
   @override
   void initState() {
@@ -35,6 +45,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     _animCtrl = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 400));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
+    _loadRecentSearches();
   }
 
   @override
@@ -44,6 +55,25 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     _debounce?.cancel();
     _animCtrl.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadRecentSearches() async {
+    final prefs = await SharedPreferences.getInstance();
+    final saved = prefs.getStringList('dict_recent_searches') ?? [];
+    if (mounted) {
+      setState(() {
+        _recentSearches.clear();
+        _recentSearches.addAll(saved);
+      });
+    }
+  }
+
+  Future<void> _saveRecentSearch(String query) async {
+    _recentSearches.remove(query);     // tránh trùng
+    _recentSearches.insert(0, query);  // mới nhất lên đầu
+    if (_recentSearches.length > 10) _recentSearches.removeLast();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setStringList('dict_recent_searches', _recentSearches);
   }
 
   // ── Search logic ─────────────────────────────────────────────────────────
@@ -71,10 +101,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
       final result = await DictionaryService.search(query);
       if (!mounted) return;
       setState(() { _entries = result.entries; _isLoading = false; });
-      if (!_recentSearches.contains(query)) {
-        _recentSearches.insert(0, query);
-        if (_recentSearches.length > 10) _recentSearches.removeLast();
-      }
+      _saveRecentSearch(query);  // lưu lịch sử thực tế
       _animCtrl.forward();
     } catch (e) {
       if (!mounted) return;
@@ -106,7 +133,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [Color(0xFFF3E8FF), Color(0xFFFCF7FF), Colors.white],
+                  colors: [_kPrimaryLight, Color(0xFFFFF0F3), Colors.white],
                   stops: [0.0, 0.4, 1.0],
                 ),
               ),
@@ -161,7 +188,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
                 '辞書 • Từ điển',
                 style: TextStyle(
                   fontSize: 11,
-                  color: Color(0xFF9333EA),
+                  color: _kPrimary,
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.5,
                 ),
@@ -171,7 +198,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
-                  color: AppColors.slate800,
+                  color: _kTextDark,
                   height: 1.1,
                 ),
               ),
@@ -181,9 +208,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              gradient: const LinearGradient(
-                colors: [Color(0xFF9333EA), Color(0xFFD946EF)],
-              ),
+              gradient: _kPrimaryGradient,
               borderRadius: BorderRadius.circular(14),
             ),
             child: const Icon(Icons.translate_rounded,
@@ -205,7 +230,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF9333EA).withValues(alpha: 0.15),
+              color: _kPrimary.withValues(alpha: 0.15),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -224,7 +249,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
             prefixIcon: const Padding(
               padding: EdgeInsets.only(left: 16, right: 10),
               child: Icon(Icons.search_rounded,
-                  color: Color(0xFF9333EA), size: 24),
+                  color: _kPrimary, size: 24),
             ),
             prefixIconConstraints:
                 const BoxConstraints(minWidth: 52, minHeight: 52),
@@ -273,7 +298,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
             height: 48,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              color: const Color(0xFF9333EA),
+              color: _kPrimary,
             ),
           ),
           const SizedBox(height: 16),
@@ -316,7 +341,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
               icon: const Icon(Icons.refresh_rounded),
               label: const Text('Thử lại'),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF9333EA),
+                backgroundColor: _kPrimary,
                 foregroundColor: Colors.white,
                 padding:
                     const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
@@ -340,7 +365,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
         children: [
           Row(
             children: const [
-              Icon(Icons.history_rounded, size: 18, color: Color(0xFF9333EA)),
+              Icon(Icons.history_rounded, size: 18, color: _kPrimary),
               SizedBox(width: 6),
               Text('Tìm kiếm gần đây',
                   style: TextStyle(
@@ -350,11 +375,18 @@ class _DictionaryScreenState extends State<DictionaryScreen>
             ],
           ),
           const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: _recentSearches.map(_buildChip).toList(),
-          ),
+          if (_recentSearches.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Text('Chưa có lịch sử tìm kiếm.',
+                  style: TextStyle(color: _kTextGray, fontSize: 14)),
+            )
+          else
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: _recentSearches.map(_buildChip).toList(),
+            ),
           const SizedBox(height: 28),
           _buildTipsCard(),
         ],
@@ -368,14 +400,14 @@ class _DictionaryScreenState extends State<DictionaryScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFFF3E8FF),
+          color: _kPrimaryLight,
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
-              color: const Color(0xFF9333EA).withValues(alpha: 0.25)),
+              color: _kPrimary.withValues(alpha: 0.25)),
         ),
         child: Text(label,
             style: const TextStyle(
-                color: Color(0xFF7E22CE),
+                color: _kPrimary,
                 fontWeight: FontWeight.w600,
                 fontSize: 14)),
       ),
@@ -387,25 +419,25 @@ class _DictionaryScreenState extends State<DictionaryScreen>
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         gradient: LinearGradient(colors: [
-          const Color(0xFF9333EA).withValues(alpha: 0.07),
-          const Color(0xFFD946EF).withValues(alpha: 0.04),
+          _kPrimary.withValues(alpha: 0.07),
+          _kPrimary.withValues(alpha: 0.04),
         ]),
         borderRadius: BorderRadius.circular(20),
         border: Border.all(
-            color: const Color(0xFF9333EA).withValues(alpha: 0.15)),
+            color: _kPrimary.withValues(alpha: 0.15)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(children: const [
             Icon(Icons.tips_and_updates_rounded,
-                size: 18, color: Color(0xFF9333EA)),
+                size: 18, color: _kPrimary),
             SizedBox(width: 8),
             Text('Mẹo tìm kiếm',
                 style: TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF7E22CE))),
+                    color: _kPrimary)),
           ]),
           const SizedBox(height: 10),
           ...[
@@ -496,13 +528,13 @@ class _EntryCardState extends State<_EntryCard>
           borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: _expanded
-                ? const Color(0xFF9333EA).withValues(alpha: 0.45)
+                ? _kPrimary.withValues(alpha: 0.45)
                 : Colors.transparent,
             width: 1.5,
           ),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF9333EA)
+              color: _kPrimary
                   .withValues(alpha: _expanded ? 0.13 : 0.06),
               blurRadius: _expanded ? 18 : 10,
               offset: const Offset(0, 4),
@@ -538,7 +570,7 @@ class _EntryCardState extends State<_EntryCard>
                             entry.reading,
                             style: const TextStyle(
                               fontSize: 14,
-                              color: Color(0xFF9333EA),
+                              color: _kPrimary,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -638,7 +670,7 @@ class _EntryCardState extends State<_EntryCard>
           height: 22,
           margin: const EdgeInsets.only(top: 1),
           decoration: const BoxDecoration(
-            color: Color(0xFFF3E8FF),
+            color: _kPrimaryLight,
             shape: BoxShape.circle,
           ),
           child: Center(
@@ -646,7 +678,7 @@ class _EntryCardState extends State<_EntryCard>
                 style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
-                    color: Color(0xFF9333EA))),
+                    color: _kPrimary)),
           ),
         ),
         const SizedBox(width: 10),
@@ -660,7 +692,7 @@ class _EntryCardState extends State<_EntryCard>
                   posList.join(' · '),
                   style: const TextStyle(
                     fontSize: 11,
-                    color: Color(0xFF9333EA),
+                    color: _kPrimary,
                     fontWeight: FontWeight.w600,
                     fontStyle: FontStyle.italic,
                   ),
@@ -728,14 +760,14 @@ class _EntryCardState extends State<_EntryCard>
               padding:
                   const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
-                color: const Color(0xFFF3E8FF),
+                color: _kPrimaryLight,
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
                 w.isNotEmpty ? (r.isNotEmpty ? '$w【$r】' : w) : r,
                 style: const TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF7E22CE),
+                    color: _kPrimary,
                     fontWeight: FontWeight.w600),
               ),
             );

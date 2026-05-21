@@ -1,18 +1,12 @@
-import 'dart:convert';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+﻿import 'dart:convert';
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
+import 'package:flutter/foundation.dart';
 
 /// Service gọi API /progress — lưu tiến độ học của user theo từng lesson.
 class ProgressService {
-  // ── Base URL (tự chọn theo platform) ─────────────────────────────────
-  static String get _base {
-    if (kIsWeb) return 'http://localhost:8000';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-    return 'http://localhost:8000';
-  }
+  static String get _base => ApiConfig.baseUrl;
 
   // ── Lấy Firebase UID hiện tại ─────────────────────────────────────────
   static Future<String?> _getUid() async {

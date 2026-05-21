@@ -1,4 +1,4 @@
-// Entry point — Flutter sẽ tự chọn đúng implementation theo platform
+﻿// Entry point — Flutter sẽ tự chọn đúng implementation theo platform
 export 'sample_audio_player_stub.dart'
     if (dart.library.html) 'sample_audio_player_web.dart'
     if (dart.library.io) 'sample_audio_player_native.dart';

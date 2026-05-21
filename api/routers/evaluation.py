@@ -235,36 +235,22 @@ _recommendation_engine = RecommendationEngine()
 # SECTION 1: Audio Pre-processing
 # ==============================================================================
 
-def _trim_silence(audio_bytes: bytes, threshold: int = 500, frame_size: int = 512) -> bytes:
- 
-    if len(audio_bytes) < frame_size * 2:
+def _trim_silence(audio_bytes: bytes) -> bytes:
+    """Chuyển đổi mọi định dạng nén (OGG/WEBM/M4A) sang WAV LINEAR16 16kHz Mono bằng pydub."""
+    try:
+        from pydub import AudioSegment
+        import io
+        audio = AudioSegment.from_file(io.BytesIO(audio_bytes))
+        audio = audio.set_frame_rate(16000).set_channels(1)
+        out_buf = io.BytesIO()
+        # Dùng codec="pcm_s16le" để FFmpeg tự động scale âm thanh từ 32-bit về 16-bit chuẩn
+        # thay vì dùng .set_sample_width(2) gây vỡ tiếng (tạo tiếng xèo/noise).
+        audio.export(out_buf, format="wav", codec="pcm_s16le")
+        print(f"[AudioConvert] Chuyển đổi thành công {len(audio_bytes)} bytes sang WAV {len(out_buf.getvalue())} bytes.")
+        return out_buf.getvalue()
+    except Exception as e:
+        print(f"[AudioConvert] Failed: {e}")
         return audio_bytes
-
-    def _rms(chunk: bytes) -> float:
-        samples = struct.unpack_from(f"<{len(chunk) // 2}h", chunk)
-        return (sum(s * s for s in samples) / max(len(samples), 1)) ** 0.5
-
-    # Tìm điểm bắt đầu (trim đầu)
-    start = 0
-    while start + frame_size <= len(audio_bytes):
-        if _rms(audio_bytes[start: start + frame_size]) >= threshold:
-            break
-        start += frame_size
-
-    # Tìm điểm kết thúc (trim cuối)
-    end = len(audio_bytes)
-    while end - frame_size >= start:
-        if _rms(audio_bytes[end - frame_size: end]) >= threshold:
-            break
-        end -= frame_size
-
-    trimmed = audio_bytes[start:end]
-    if not trimmed:
-        return audio_bytes  # Toàn bộ là lặng → giữ nguyên để tránh lỗi
-
-    removed = len(audio_bytes) - len(trimmed)
-    print(f"[TrimSilence] {len(audio_bytes)} → {len(trimmed)} bytes (removed {removed} bytes)")
-    return trimmed
 
 
 # ==============================================================================
@@ -519,11 +505,13 @@ async def _ai_generate_tip(
 # Danh sách model fallback theo thứ tự ưu tiên
 # (lấy từ API: /v1beta/models — chỉ giữ model hỗ trợ generateContent)
 _GEMINI_MODELS = [
-    "gemini-2.0-flash",           # nhanh, nhưng hay bị quota
-    "gemini-2.0-flash-lite",      # nhẹ hơn
-    "gemini-2.5-flash-lite",      # mới, ổn định, free tier
-    "gemini-2.5-flash",           # mạnh hơn, free tier
-    "gemini-3.1-flash-lite",      # mới nhất, nhẹ nhất
+    "gemini-2.0-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.5-flash-lite",
+    "gemini-2.5-flash",
+    "gemini-3.1-flash-lite",
+    "gemini-flash-latest",
+    "gemini-flash-lite-latest",
 ]
 
 
@@ -579,7 +567,7 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
 
                 print(f"[Gemini] {model} HTTP {resp.status_code}")
             except Exception as e:
-                print(f"[Gemini] {model} error: {e}")
+                print(f"[Gemini] {model} error: {repr(e)}")
 
     return {}
 
@@ -698,23 +686,21 @@ async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int
     Gửi audio bytes lên Google Speech-to-Text REST API.
     Trả về (transcript, measured_pauses).
     """
-    channel_count = 1
-    opus_head_magic = b"OpusHead"
-    idx = audio_bytes.find(opus_head_magic)
-    if idx != -1 and idx + 9 < len(audio_bytes):
-        channel_count = audio_bytes[idx + 9]
-
     audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
 
+    config = {
+        "languageCode": "ja-JP",
+        "audioChannelCount": 1,
+        "alternativeLanguageCodes": [],
+        "enableAutomaticPunctuation": True,
+        "enableWordTimeOffsets": True,
+        "model": "latest_long",
+        "encoding": "LINEAR16",
+        "sampleRateHertz": 16000,
+    }
+
     payload = {
-        "config": {
-            "languageCode": "ja-JP",
-            "audioChannelCount": channel_count,
-            "alternativeLanguageCodes": [],
-            "enableAutomaticPunctuation": True,
-            "enableWordTimeOffsets": True,  # Bat tinh nang Time Offsets
-            "model": "latest_long",
-        },
+        "config": config,
         "audio": {"content": audio_b64},
     }
 
@@ -770,11 +756,20 @@ async def evaluate_voice(
     print("GOOGLE_API_KEY", GOOGLE_API_KEY)
 
     try:
+        # --- DEBUG: Lưu file âm thanh nhận được từ mobile/web ---
+        raw_audio_bytes = b""
+        if audio:
+            raw_audio_bytes = await audio.read()
+            with open("debug_raw_voice.raw", "wb") as f:
+                f.write(raw_audio_bytes)
+            with open("debug_converted_voice.wav", "wb") as f:
+                f.write(_trim_silence(raw_audio_bytes))
+
         # ----------------------------------------------------------------
         # LUỒNG 1: Azure Pronunciation Assessment
         # ----------------------------------------------------------------
-        if audio and AZURE_SPEECH_KEY:
-            audio_bytes = _trim_silence(await audio.read())
+        if audio and AZURE_SPEECH_KEY and raw_audio_bytes:
+            audio_bytes = _trim_silence(raw_audio_bytes)
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
@@ -816,8 +811,8 @@ async def evaluate_voice(
         # ----------------------------------------------------------------
         # LUỒNG 2: Google Speech REST API
         # ----------------------------------------------------------------
-        elif audio and GOOGLE_API_KEY:
-            audio_bytes = _trim_silence(await audio.read())
+        elif audio and GOOGLE_API_KEY and raw_audio_bytes:
+            audio_bytes = _trim_silence(raw_audio_bytes)
             recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
             accuracy_score, fluency_score, prosody_score = _compute_scores(expected_text, recognized_text)
             error_word = _find_error_word(expected_text, recognized_text)
@@ -891,11 +886,20 @@ async def evaluate_shadowing(
     rhythm_score    = 0
 
     try:
+        # --- DEBUG: Lưu file âm thanh nhận được từ mobile/web ---
+        raw_audio_bytes = b""
+        if audio:
+            raw_audio_bytes = await audio.read()
+            with open("debug_raw_shadowing.raw", "wb") as f:
+                f.write(raw_audio_bytes)
+            with open("debug_converted_shadowing.wav", "wb") as f:
+                f.write(_trim_silence(raw_audio_bytes))
+
         # ----------------------------------------------------------------
         # LUỒNG 1: Azure
         # ----------------------------------------------------------------
-        if audio and AZURE_SPEECH_KEY:
-            audio_bytes = _trim_silence(await audio.read())
+        if audio and AZURE_SPEECH_KEY and raw_audio_bytes:
+            audio_bytes = _trim_silence(raw_audio_bytes)
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
@@ -948,8 +952,8 @@ async def evaluate_shadowing(
         # ----------------------------------------------------------------
         # LUỒNG 2: Google STT
         # ----------------------------------------------------------------
-        elif audio and GOOGLE_API_KEY:
-            audio_bytes = _trim_silence(await audio.read())
+        elif audio and GOOGLE_API_KEY and raw_audio_bytes:
+            audio_bytes = _trim_silence(raw_audio_bytes)
             recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
             accuracy_score, fluency_score, prosody_score, rhythm_score = _compute_shadowing_scores(
                 expected_text, recognized_text

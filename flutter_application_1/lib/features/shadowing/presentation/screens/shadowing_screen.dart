@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
@@ -12,13 +12,15 @@ import 'package:flutter_application_1/features/shadowing/presentation/components
 import 'package:flutter_application_1/features/shadowing/presentation/components/shadowing_controls.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/shadowing_header.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/waveform_visualizer.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/recommendation_bottom_sheet.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/lesson_summary_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 
 class ShadowingScreen extends StatefulWidget {
   final int? segmentId;  // Standalone: 1 segment được chọn từ danh sách
-  final int? topicId;   // Roadmap flow: tất cả segments của topic
+  final int? topicId;   // Roadmap flow: tất cả segments của topic (ShadowingTopic)
+  final int? segmentTopicId; // Standalone flow: tất cả segments của SegmentTopic
   final int lessonId;   // 0 nếu standalone
   final int testErrors;
 
@@ -26,10 +28,11 @@ class ShadowingScreen extends StatefulWidget {
     super.key,
     this.segmentId,
     this.topicId,
+    this.segmentTopicId,
     this.lessonId = 0,
     this.testErrors = 0,
-  }) : assert(segmentId != null || topicId != null,
-           'Phải truyền segmentId hoặc topicId');
+  }) : assert(segmentId != null || topicId != null || segmentTopicId != null,
+           'Phải truyền segmentId, topicId hoặc segmentTopicId');
 
   @override
   State<ShadowingScreen> createState() => _ShadowingScreenState();
@@ -86,6 +89,50 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                 meaning: seg['translation_vi'] ?? '',
               )
             ];
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _errorMessage = 'Lỗi tải dữ liệu. HTTP ${response.statusCode}';
+            _isLoading = false;
+          });
+        }
+      } else if (widget.segmentTopicId != null) {
+        // Standalone topic flow: lấy tất cả segments của segment_topic
+        apiUrl = '${_baseUrl()}/segment-topics/${widget.segmentTopicId}';
+        final response = await http.get(Uri.parse(apiUrl));
+        if (response.statusCode == 200) {
+          final data = json.decode(utf8.decode(response.bodyBytes));
+          final List<dynamic> segmentsData = data['segments'] ?? [];
+          segmentsData.sort((a, b) =>
+              (a['id'] ?? 0).compareTo(b['id'] ?? 0));
+
+          List<ShadowingSentenceModel> parsed = segmentsData.map((seg) {
+            return ShadowingSentenceModel(
+              title: seg['title'] ?? '',
+              kanji: seg['kanji_content'] ?? '',
+              furiganaHtml: seg['furigana'] ?? '',
+              romaji: seg['romaji'] ?? '',
+              hanViet: seg['sino_vietnamese'] ?? '',
+              meaning: seg['translation_vi'] ?? '',
+              startTime: (seg['start_time'] as num?)?.toDouble() ?? 0.0,
+              endTime: (seg['end_time'] as num?)?.toDouble() ?? 0.0,
+            );
+          }).toList();
+
+          _topicAudioUrl = ''; // SegmentTopic không có audio chung, sẽ dùng TTS
+
+          if (parsed.isEmpty) {
+            parsed.add(ShadowingSentenceModel(
+              kanji: 'ごめんなさい！',
+              furiganaHtml: '',
+              romaji: 'Gomen nasai',
+              hanViet: '',
+              meaning: 'Chủ đề này chưa được nhập liệu câu nào!',
+            ));
+          }
+          setState(() {
+            _sentences = parsed;
             _isLoading = false;
           });
         } else {
@@ -151,11 +198,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   }
 
   String _baseUrl() {
-    if (kIsWeb) return 'http://127.0.0.1:8000';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-    return 'http://127.0.0.1:8000';
+    return ApiConfig.baseUrl;
   }
 
   @override
@@ -249,11 +292,15 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
           String? path;
           if (!kIsWeb) {
              final tempDir = await getTemporaryDirectory();
-             path = '${tempDir.path}/shadowing_record.ogg';
+             path = '${tempDir.path}/shadowing_record.wav';
           }
 
           await _audioRecorder.start(
-            const RecordConfig(encoder: AudioEncoder.opus, sampleRate: 16000, numChannels: 1), 
+            RecordConfig(
+              encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.wav, 
+              sampleRate: 16000, 
+              numChannels: 1
+            ), 
             path: path ?? ''
           );
           setState(() => _isRecording = true);
@@ -284,14 +331,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   Future<void> _uploadToAIAndGetResult() async {
      setState(() => _isEvaluating = true);
      final sentence = _sentences[_currentIndex];
-     String apiUrl = 'http://localhost:8000/evaluate/shadowing';
-      if (!kIsWeb) {
-        try {
-          if (defaultTargetPlatform == TargetPlatform.android) {
-             apiUrl = 'http://10.0.2.2:8000/evaluate/shadowing';
-          }
-        } catch (_) {}
-      }
+     String apiUrl = '${ApiConfig.baseUrl}/evaluate/shadowing';
       
       try {
         var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
@@ -315,8 +355,17 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
            }
         }
         
+        debugPrint('--- SHADOWING EVALUATE API REQUEST ---');
+        debugPrint('URL: ${request.method} ${request.url}');
+        debugPrint('Fields: ${request.fields}');
+        for (var file in request.files) {
+          debugPrint('File: ${file.field} - ${file.filename} (length: ${file.length})');
+        }
+        debugPrint('--------------------------------------');
+
         final streamedResponse = await request.send();
         final response = await http.Response.fromStream(streamedResponse);
+
         
         if (response.statusCode == 200) {
            final data = json.decode(utf8.decode(response.bodyBytes));

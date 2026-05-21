@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import 'furigana_text.dart';
 import '../../models/chat_message_model.dart';
@@ -77,8 +77,8 @@ class KeigoSuggestionCard extends StatelessWidget {
                children: const [
                  FuriganaText(
                    words: [
-                     ChatFuriganaWord('失礼', furigana: 'しつれい'),
-                     ChatFuriganaWord('いたします。'),
+                     ChatFuriganaWord('å¤±ç¤¼', furigana: 'ã—ã¤ã‚Œã„'),
+                     ChatFuriganaWord('ã„ãŸã—ã¾ã™ã€‚'),
                    ],
                  ),
                ],

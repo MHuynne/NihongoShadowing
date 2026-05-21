@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 
 class ShadowingHeader extends StatelessWidget {
@@ -79,16 +79,7 @@ class ShadowingHeader extends StatelessWidget {
               ),
             ],
           ),
-          
-          // Toggle Switch Design
-          Container(
-             decoration: BoxDecoration(
-               color: Colors.white.withOpacity(0.85),
-               borderRadius: BorderRadius.circular(20),
-               border: Border.all(color: AppColors.sunRed.withOpacity(0.2)),
-             ),
-             child: isBlindMode ? _buildBlindSwitch() : _buildNormalToggle(),
-          )
+          // Toggle Switch Design removed as requested
         ],
       ),
     );

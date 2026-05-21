@@ -1,0 +1,48 @@
+export 'package:http/http.dart' hide get, post, put, patch, delete;
+import 'package:http/http.dart' as _http;
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+
+void _logRequest(String method, Uri url) {
+  debugPrint('🌐 [API REQ] $method $url');
+}
+
+void _logResponse(String method, Uri url, _http.Response res) {
+  debugPrint('✅ [API RES] $method $url -> Status: ${res.statusCode}');
+}
+
+Future<_http.Response> get(Uri url, {Map<String, String>? headers}) async {
+  _logRequest('GET', url);
+  final res = await _http.get(url, headers: headers);
+  _logResponse('GET', url, res);
+  return res;
+}
+
+Future<_http.Response> post(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+  _logRequest('POST', url);
+  final res = await _http.post(url, headers: headers, body: body, encoding: encoding);
+  _logResponse('POST', url, res);
+  return res;
+}
+
+Future<_http.Response> put(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+  _logRequest('PUT', url);
+  final res = await _http.put(url, headers: headers, body: body, encoding: encoding);
+  _logResponse('PUT', url, res);
+  return res;
+}
+
+Future<_http.Response> patch(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+  _logRequest('PATCH', url);
+  final res = await _http.patch(url, headers: headers, body: body, encoding: encoding);
+  _logResponse('PATCH', url, res);
+  return res;
+}
+
+Future<_http.Response> delete(Uri url, {Map<String, String>? headers, Object? body, Encoding? encoding}) async {
+  _logRequest('DELETE', url);
+  final res = await _http.delete(url, headers: headers, body: body, encoding: encoding);
+  _logResponse('DELETE', url, res);
+  return res;
+}
+

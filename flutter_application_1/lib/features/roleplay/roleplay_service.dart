@@ -1,9 +1,9 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
+import 'package:flutter_application_1/core/config/api_config.dart';
 
 class RoleplayService {
-  // Đối với Android Emulator, 10.0.2.2 trỏ về localhost của máy tính
-  static const String baseUrl = 'http://10.0.2.2:8001/roleplay';
+  static String get baseUrl => '${ApiConfig.baseUrl.replaceAll('8000', '8001')}/roleplay';
 
   // 1. Tạo hoặc lấy Scenario
   Future<int> getOrCreateScenario(String title, String description) async {

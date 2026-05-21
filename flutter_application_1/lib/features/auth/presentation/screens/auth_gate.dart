@@ -1,6 +1,7 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/auth/presentation/screens/login_screen.dart';
+import 'package:flutter_application_1/features/onboarding/presentation/screens/onboarding_welcome_screen.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 
@@ -25,8 +26,8 @@ class AuthGate extends StatelessWidget {
           return const MainScreen();
         }
 
-        // Chưa đăng nhập
-        return const LoginScreen();
+        // Chưa đăng nhập -> Hiện Onboarding đầu tiên
+        return const OnboardingWelcomeScreen();
       },
     );
   }

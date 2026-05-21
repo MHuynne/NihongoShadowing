@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import '../../models/chat_message_model.dart';
 
 class FuriganaText extends StatelessWidget {

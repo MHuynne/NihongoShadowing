@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/home/presentation/components/mountain_progress_widget.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';

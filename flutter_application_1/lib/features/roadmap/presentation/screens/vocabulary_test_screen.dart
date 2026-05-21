@@ -1,11 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/flashcard_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
+
+const _kPrimary = Color(0xFFFF4D6D);
+const _kPrimaryLight = Color(0xFFFFEBF0);
+const _kBg = Color(0xFFF8F9FE);
+const _kTextDark = Color(0xFF1E293B);
+const _kTextGray = Color(0xFF94A3B8);
 
 class VocabularyTestScreen extends StatefulWidget {
   final int topicId;
@@ -43,14 +50,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
   }
 
   Future<void> _fetchVocab() async {
-      String apiUrl = 'http://localhost:8000/shadowing/topics/${widget.topicId}';
-      try {
-        if (!kIsWeb) {
-          if (defaultTargetPlatform == TargetPlatform.android) {
-             apiUrl = 'http://10.0.2.2:8000/shadowing/topics/${widget.topicId}';
-          }
-        }
-      } catch (_) {}
+      String apiUrl = '${ApiConfig.baseUrl}/shadowing/topics/${widget.topicId}';
 
       try {
         final response = await http.get(Uri.parse(apiUrl));
@@ -123,27 +123,27 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
-        backgroundColor: AppColors.backgroundLight,
-        body: Center(child: CircularProgressIndicator(color: AppColors.progressTeal)),
+        backgroundColor: _kBg,
+        body: Center(child: CircularProgressIndicator(color: _kPrimary)),
       );
     }
 
     if (_vocabularies.isEmpty) {
       return Scaffold(
-        backgroundColor: const Color(0xFFF8FAFC),
+        backgroundColor: _kBg,
         appBar: AppBar(
             elevation: 0,
             backgroundColor: Colors.transparent,
             title: const Text('Test Từ vựng',
-                style: TextStyle(color: AppColors.textDark, fontWeight: FontWeight.w800))),
+                style: TextStyle(color: _kTextDark, fontWeight: FontWeight.w800))),
         body: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.hourglass_empty_rounded, size: 64, color: AppColors.slate300),
+              Icon(Icons.hourglass_empty_rounded, size: 64, color: _kTextGray),
               const SizedBox(height: 16),
               const Text('Chưa có từ vựng để Test!',
-                  style: TextStyle(fontSize: 16, color: AppColors.slate500, fontWeight: FontWeight.w600)),
+                  style: TextStyle(fontSize: 16, color: _kTextGray, fontWeight: FontWeight.w600)),
               const SizedBox(height: 32),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -163,7 +163,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
             gradient: LinearGradient(
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
-              colors: [Color(0xFFF0FDF4), Color(0xFFDCFCE7)],
+              colors: [Color(0xFFFFF0F3), Color(0xFFFFE4E8)],
             ),
           ),
           child: Center(
@@ -175,19 +175,19 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                   Icon(
                     _score == _vocabularies.length ? Icons.emoji_events_rounded : Icons.verified_rounded, 
                     size: 100, 
-                    color: _score == _vocabularies.length ? Colors.amber : const Color(0xFF16A34A),
+                    color: _score == _vocabularies.length ? Colors.amber : _kPrimary,
                   ),
                   const SizedBox(height: 24),
-                  const Text('Kết Quả Bài Test', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: Color(0xFF166534))),
+                  const Text('Kết Quả Bài Test', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _kPrimary)),
                   const SizedBox(height: 16),
                   Text(
                     '$_score / ${_vocabularies.length}',
-                    style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: Color(0xFF15803D)),
+                    style: const TextStyle(fontSize: 54, fontWeight: FontWeight.w900, color: _kPrimary),
                   ),
                   const SizedBox(height: 12),
                   Text(
                     _score == _vocabularies.length ? 'Tuyệt vời, điểm Tối đa!' : 'Cố gắng cải thiện nhé học giả!',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF166534)),
+                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _kPrimary),
                   ),
                   const SizedBox(height: 48),
                   _buildNavigateNextButton(),
@@ -203,17 +203,17 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
     final currentVocab = _vocabularies[_currentIndex];
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8FAFC),
+      backgroundColor: _kBg,
       appBar: AppBar(
         title: Text(
            widget.isReview ? 'Review: Câu ${_currentIndex + 1}/${_vocabularies.length}' : 'Test Từ Vựng (${_currentIndex + 1}/${_vocabularies.length})', 
-           style: const TextStyle(fontSize: 16, color: AppColors.textDark, fontWeight: FontWeight.w800, letterSpacing: 0.5)
+           style: const TextStyle(fontSize: 16, color: _kTextDark, fontWeight: FontWeight.w800, letterSpacing: 0.5)
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
         automaticallyImplyLeading: false,
         leading: IconButton(
-          icon: const Icon(Icons.close_rounded, size: 24, color: AppColors.slate500),
+          icon: const Icon(Icons.close_rounded, size: 24, color: _kTextGray),
           tooltip: 'Thoát',
           onPressed: () {
             Navigator.pushReplacement(
@@ -235,16 +235,16 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                 borderRadius: BorderRadius.circular(10),
                 child: LinearProgressIndicator(
                   value: (_currentIndex) / _vocabularies.length,
-                  backgroundColor: AppColors.slate200,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.progressTeal),
+                  backgroundColor: _kPrimaryLight,
+                  valueColor: const AlwaysStoppedAnimation<Color>(_kPrimary),
                   minHeight: 10,
                 ),
               ),
             ),
             
             Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -262,11 +262,11 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                       child: Column(
                         children: [
                           const Text('Nghĩa của từ dưới đây là gì?', 
-                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: AppColors.slate400, letterSpacing: 0.5)),
+                            style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _kTextGray, letterSpacing: 0.5)),
                           const SizedBox(height: 20),
                           Text(
                             currentVocab['word'] ?? '',
-                            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: Color(0xFF0F4C75), height: 1.1),
+                            style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w900, color: _kTextDark, height: 1.1),
                             textAlign: TextAlign.center,
                           ),
                           const SizedBox(height: 12),
@@ -274,11 +274,11 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                             Container(
                               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
                               decoration: BoxDecoration(
-                                color: const Color(0xFFF1F5F9),
+                                color: _kPrimaryLight,
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: Text(currentVocab['reading'], 
-                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: AppColors.slate500)),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _kPrimary)),
                             ),
                         ],
                       ),
@@ -289,24 +289,24 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                     // Sinh ra các Đáp án
                     ..._currentOptions.map((option) {
                       Color bgColor = Colors.white;
-                      Color textColor = AppColors.textDark;
-                      Color borderColor = AppColors.slate200;
+                      Color textColor = _kTextDark;
+                      Color borderColor = const Color(0xFFE2E8F0);
                       IconData? trailIcon;
                       
                       if (_isAnswered) {
                          if (option == currentVocab['meaning']) { // Luôn tô xanh đáp án đúng
-                           bgColor = AppColors.successGreenLight;
-                           textColor = AppColors.successGreen;
-                           borderColor = AppColors.successGreen;
+                           bgColor = const Color(0xFFF0FDF4);
+                           textColor = const Color(0xFF16A34A);
+                           borderColor = const Color(0xFF16A34A);
                            trailIcon = Icons.check_circle;
                          } else if (option == _selectedAnswer) { // Tô đỏ nếu đang chọn sai
-                           bgColor = Colors.red.withValues(alpha: 0.1);
-                           textColor = Colors.red;
-                           borderColor = Colors.red;
+                           bgColor = _kPrimaryLight;
+                           textColor = _kPrimary;
+                           borderColor = _kPrimary;
                            trailIcon = Icons.cancel;
                          } else {
-                           bgColor = AppColors.slate50;
-                           textColor = AppColors.slate400;
+                           bgColor = const Color(0xFFF8FAFC);
+                           textColor = _kTextGray;
                          }
                       }
 
@@ -351,8 +351,8 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
                 decoration: BoxDecoration(
                   color: _selectedAnswer == _vocabularies[_currentIndex]['meaning']
-                      ? AppColors.successGreenLight
-                      : Colors.red.shade50,
+                      ? const Color(0xFFDCFCE7)
+                      : _kPrimaryLight,
                   boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 10, offset: Offset(0, -4))],
                 ),
                 child: Column(
@@ -365,8 +365,8 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                               ? Icons.check_circle_rounded
                               : Icons.cancel_rounded,
                           color: _selectedAnswer == _vocabularies[_currentIndex]['meaning']
-                              ? AppColors.successGreen
-                              : Colors.red,
+                              ? const Color(0xFF16A34A)
+                              : _kPrimary,
                           size: 22,
                         ),
                         const SizedBox(width: 8),
@@ -378,8 +378,8 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                             fontWeight: FontWeight.w700,
                             fontSize: 14,
                             color: _selectedAnswer == _vocabularies[_currentIndex]['meaning']
-                                ? AppColors.successGreen
-                                : Colors.red.shade700,
+                                ? const Color(0xFF16A34A)
+                                : _kPrimary,
                           ),
                         ),
                       ],
@@ -388,8 +388,8 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _selectedAnswer == _vocabularies[_currentIndex]['meaning']
-                            ? AppColors.progressTeal
-                            : Colors.red.shade400,
+                            ? const Color(0xFF16A34A)
+                            : _kPrimary,
                         foregroundColor: Colors.white,
                         minimumSize: const Size(double.infinity, 52),
                         elevation: 0,
@@ -428,11 +428,11 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
   Widget _buildNavigateNextButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.textDark,
+        backgroundColor: _kPrimary,
         foregroundColor: Colors.white,
         minimumSize: const Size(double.infinity, 60),
         elevation: 8,
-        shadowColor: AppColors.textDark.withValues(alpha: 0.4),
+        shadowColor: _kPrimary.withValues(alpha: 0.4),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
       ),
       onPressed: () async {

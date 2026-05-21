@@ -1,16 +1,16 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 
-const _kBg      = Color(0xFFF4F6F9);
+const _kBg      = Color(0xFFF8F9FE); // Light background with soft tint
 const _kSurface = Colors.white;
-const _kOnSurface = Color(0xFF1E293B);
-const _kSubtext   = Color(0xFF64748B);
-const _kPrimary   = Color(0xFFFF5238);
+const _kOnSurface = Color(0xFF2D3142); // Softer dark text
+const _kSubtext   = Color(0xFF9098A9);
+const _kPrimary   = Color(0xFFFF4D6D); // Sakura Pink / Dark Cherry Blossom
 
 
 class ShadowingTopicListScreen extends StatefulWidget {
@@ -25,8 +25,8 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   bool _isLoading = true;
   String? _error;
 
-  /// Tất cả segments từ API
-  List<Map<String, dynamic>> _segments = [];
+  /// Tất cả segment topics từ API
+  List<Map<String, dynamic>> _topics = [];
 
   /// Danh sách categories từ DB (thêm "Tất cả" ở đầu)
   List<String> _categoryNames = ['Tất cả'];
@@ -48,26 +48,26 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     });
 
     try {
-      // Gọi song song: segments + categories
+      // Gọi song song: topics + categories
       final results = await Future.wait([
-        http.get(Uri.parse('$_base/shadowing/segments/all')),
+        http.get(Uri.parse('$_base/segment-topics/')),
         http.get(Uri.parse('$_base/categories/')),
       ]);
 
-      final segRes = results[0];
+      final topicRes = results[0];
       final catRes = results[1];
 
-      if (segRes.statusCode != 200) {
-        throw Exception('Lỗi tải segments: HTTP ${segRes.statusCode}');
+      if (topicRes.statusCode != 200) {
+        throw Exception('Lỗi tải topics: HTTP ${topicRes.statusCode}');
       }
       if (catRes.statusCode != 200) {
         throw Exception('Lỗi tải categories: HTTP ${catRes.statusCode}');
       }
 
-      final List<dynamic> rawSegs = json.decode(utf8.decode(segRes.bodyBytes));
+      final List<dynamic> rawTopics = json.decode(utf8.decode(topicRes.bodyBytes));
       final List<dynamic> rawCats = json.decode(utf8.decode(catRes.bodyBytes));
 
-      final segs = rawSegs
+      final topics = rawTopics
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
 
@@ -79,7 +79,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
 
       if (mounted) {
         setState(() {
-          _segments = segs;
+          _topics = topics;
           _categoryNames = ['Tất cả', ...catNames];
           _isLoading = false;
         });
@@ -94,11 +94,11 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     }
   }
 
-  /// Filter segments theo category đang chọn
-  List<Map<String, dynamic>> get _filteredSegments {
-    if (_selectedCategory == 'Tất cả') return _segments;
-    return _segments.where((seg) {
-      final cats = (seg['categories'] as List?) ?? [];
+  /// Filter topics theo category đang chọn
+  List<Map<String, dynamic>> get _filteredTopics {
+    if (_selectedCategory == 'Tất cả') return _topics;
+    return _topics.where((topic) {
+      final cats = (topic['categories'] as List?) ?? [];
       return cats.any((c) =>
           (c as Map)['name']?.toString() == _selectedCategory);
     }).toList();
@@ -117,9 +117,9 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                 _buildTopBar(),
                 Expanded(
                   child: _isLoading
-                      ? Center(
+                      ? const Center(
                           child: CircularProgressIndicator(
-                              color: AppColors.toriiRed))
+                              color: _kPrimary))
                       : _error != null
                           ? _buildError()
                           : _buildScrollBody(),
@@ -199,7 +199,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   // ── Scroll body ──────────────────────────────────────────────────────────────
 
   Widget _buildScrollBody() {
-    final filtered = _filteredSegments;
+    final filtered = _filteredTopics;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
@@ -290,7 +290,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
             ),
           )
         else
-          ...filtered.map((seg) => _buildSegmentCard(seg)),
+          ...filtered.map((topic) => _buildTopicCard(topic)),
       ],
     );
   }
@@ -329,25 +329,15 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  // ── Segment card ─────────────────────────────────────────────────────────────
+  // ── Topic card ─────────────────────────────────────────────────────────────
 
-  Widget _buildSegmentCard(Map<String, dynamic> seg) {
-    final title = (seg['title'] ?? '').toString().trim();
-    final kanji = (seg['kanji_content'] ?? '').toString();
-    final romaji = (seg['romaji'] ?? '').toString();
-    final meaning = (seg['translation_vi'] ?? '').toString();
-
-    // Tiêu đề hiển thị: ưu tiên title, fallback sang kanji/romaji
-    final displayTitle = title.isNotEmpty
-        ? title
-        : (kanji.isNotEmpty ? kanji : romaji);
-    // Sub-title: nếu có title riêng thì show kanji bên dưới
-    final displaySub = title.isNotEmpty
-        ? (kanji.isNotEmpty ? kanji : meaning)
-        : meaning;
+  Widget _buildTopicCard(Map<String, dynamic> topic) {
+    final title = (topic['title'] ?? '').toString().trim();
+    final description = (topic['description'] ?? '').toString();
+    final segmentsCount = (topic['segments'] as List?)?.length ?? 0;
 
     // Categories chips
-    final cats = (seg['categories'] as List?) ?? [];
+    final cats = (topic['categories'] as List?) ?? [];
     final catNames =
         cats.map((c) => (c as Map)['name']?.toString() ?? '').toList();
 
@@ -358,7 +348,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           context,
           MaterialPageRoute(
             builder: (_) => ShadowingScreen(
-              segmentId: seg['id'] as int,
+              segmentTopicId: topic['id'] as int,
             ),
           ),
         ),
@@ -385,16 +375,16 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                 child: Stack(
                   fit: StackFit.expand,
                   children: [
-                    if (seg['image_url'] != null && seg['image_url'].toString().isNotEmpty)
+                    if (topic['image_url'] != null && topic['image_url'].toString().isNotEmpty)
                       Image.network(
-                        seg['image_url'].toString().startsWith('http') 
-                          ? seg['image_url'].toString() 
-                          : '${ApiConfig.baseUrl}${seg['image_url']}',
+                        topic['image_url'].toString().startsWith('http') 
+                          ? topic['image_url'].toString() 
+                          : '${ApiConfig.baseUrl}${topic['image_url']}',
                         fit: BoxFit.cover,
-                        errorBuilder: (_, __, ___) => _buildGradientFallback(title, kanji),
+                        errorBuilder: (_, __, ___) => _buildGradientFallback(title, ''),
                       )
                     else
-                      _buildGradientFallback(title, kanji),
+                      _buildGradientFallback(title, ''),
 
                     // ID badge góc trái
                     Positioned(
@@ -408,7 +398,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                           boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
                         ),
                         child: Text(
-                          '#${seg['id']}',
+                          '$segmentsCount segments',
                           style: const TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
@@ -443,7 +433,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                   children: [
                     // Title (tiêu đề chính)
                     Text(
-                      displayTitle,
+                      title.isNotEmpty ? title : 'Chưa có tiêu đề',
                       style: const TextStyle(
                         fontSize: 17,
                         fontWeight: FontWeight.w800,
@@ -454,16 +444,16 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                       overflow: TextOverflow.ellipsis,
                     ),
 
-                    if (displaySub.isNotEmpty) ...[
+                    if (description.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        displaySub,
+                        description,
                         style: const TextStyle(
                           fontSize: 13,
                           color: _kSubtext,
                           fontWeight: FontWeight.w500,
                         ),
-                        maxLines: 1,
+                        maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
@@ -525,7 +515,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           style: TextStyle(
             fontSize: title.isNotEmpty ? 18 : 24,
             fontWeight: FontWeight.w800,
-            color: AppColors.toriiRed.withValues(alpha: 0.35),
+            color: _kPrimary.withValues(alpha: 0.35),
             letterSpacing: title.isNotEmpty ? 0 : 1,
           ),
         ),

@@ -10,9 +10,9 @@ class Category(Base):
     name = Column(String(100), nullable=False, unique=True)       # vd: "Giao tiếp", "Du lịch", "Công việc"
     description = Column(String(255), nullable=True)
 
-    # Sử dụng string reference và lazy import để tránh circular import
-    segments = relationship(
-        "ShadowingSegment",
-        secondary="segment_categories",   # tên bảng (string) – SQLAlchemy tự resolve
+    # Many-to-many với SegmentTopic
+    segment_topics = relationship(
+        "SegmentTopic",
+        secondary="segment_topic_categories",
         back_populates="categories",
     )

@@ -1,12 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
+﻿import 'package:flutter/material.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/components/chapter_section.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/components/roadmap_header.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
 
 class RoadmapScreen extends StatefulWidget {
   const RoadmapScreen({super.key});
@@ -18,14 +18,7 @@ class RoadmapScreen extends StatefulWidget {
 class _RoadmapScreenState extends State<RoadmapScreen> {
   late Future<RoadmapModel> futureRoadmap;
 
-  // ── Base URL ────────────────────────────────────────────────────────────
-  static String get _base {
-    if (kIsWeb) return 'http://localhost:8000';
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-    return 'http://localhost:8000';
-  }
+  static String get _base => ApiConfig.baseUrl;
 
   @override
   void initState() {

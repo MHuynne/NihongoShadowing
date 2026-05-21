@@ -1,4 +1,4 @@
-import 'sample_audio_player.dart';
+﻿import 'sample_audio_player.dart';
 
 /// Stub — không bao giờ được dùng thực tế (chỉ để Dart analyzer vui)
 class StubSampleAudioPlayer implements SampleAudioPlayer {

@@ -1,4 +1,4 @@
-class ShadowingSentenceModel {
+﻿class ShadowingSentenceModel {
   final String title;
   final String kanji;
   final String furiganaHtml;

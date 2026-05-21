@@ -1,4 +1,4 @@
-// ⚠️ FILE NÀY ĐƯỢC TẠO TỰ ĐỘNG BỞI FlutterFire CLI.
+﻿// ⚠️ FILE NÀY ĐƯỢC TẠO TỰ ĐỘNG BỞI FlutterFire CLI.
 //
 // HƯỚNG DẪN:
 // 1. Cài FlutterFire CLI:

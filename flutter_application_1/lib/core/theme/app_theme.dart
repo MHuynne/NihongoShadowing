@@ -19,7 +19,6 @@ class AppTheme {
       ),
       dividerColor: AppColors.slate100,
       cardColor: AppColors.itemBackground,
-      fontFamily: 'Inter',
       textTheme: const TextTheme(
         bodyMedium: TextStyle(color: AppColors.slate900),
         bodyLarge: TextStyle(color: AppColors.slate900),
@@ -45,7 +44,6 @@ class AppTheme {
       ),
       dividerColor: AppColors.borderDark,
       cardColor: AppColors.surfaceDark,
-      fontFamily: 'Inter',
       textTheme: const TextTheme(
         bodyMedium: TextStyle(color: AppColors.slate100),
         bodyLarge: TextStyle(color: AppColors.slate100),
