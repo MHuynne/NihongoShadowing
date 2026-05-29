@@ -1,7 +1,6 @@
-﻿import 'dart:typed_data';
+import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
@@ -38,8 +37,8 @@ class _AdminSegmentsPageState extends State<AdminSegmentsPage>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AdminSectionHeader(
-            title: 'Segments & Categories',
-            subtitle: 'Segment độc lập (không gắn topic) và danh mục phân loại nội dung.',
+            title: 'Phân đoạn & Danh mục',
+            subtitle: 'Câu Shadowing độc lập (không thuộc chủ đề) và danh mục phân loại.',
           ),
           const SizedBox(height: 8),
           TabBar(
@@ -48,9 +47,9 @@ class _AdminSegmentsPageState extends State<AdminSegmentsPage>
             unselectedLabelColor: AdminPalette.textMuted,
             indicatorColor: AdminPalette.sidebarSelectedForeground,
             tabs: const [
-              Tab(text: 'Shadowing Segments', icon: Icon(Icons.view_list_rounded, size: 18)),
-              Tab(text: 'Segment Topics', icon: Icon(Icons.folder_copy_rounded, size: 18)),
-              Tab(text: 'Categories', icon: Icon(Icons.label_rounded, size: 18)),
+              Tab(text: 'Câu Shadowing', icon: Icon(Icons.view_list_rounded, size: 18)),
+              Tab(text: 'Chủ đề Shadowing', icon: Icon(Icons.folder_copy_rounded, size: 18)),
+              Tab(text: 'Danh mục', icon: Icon(Icons.label_rounded, size: 18)),
             ],
           ),
           const SizedBox(height: 12),
@@ -129,7 +128,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
         builder: (ctx, setDS) {
           return AlertDialog(
             title: Text(
-              isEditing ? 'Chỉnh sửa Segment' : 'Thêm Segment mới',
+              isEditing ? 'Chỉnh sửa câu Shadowing' : 'Thêm câu Shadowing mới',
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
             content: SizedBox(
@@ -143,7 +142,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     TextFormField(
                       controller: titleCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Tiêu đề bài Segment',
+                        labelText: 'Tiêu đề câu',
                         hintText: 'VD: Chào hỏi cơ bản',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.title_rounded),
@@ -155,14 +154,14 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     DropdownButtonFormField<int>(
                       value: selectedTopicId,
                       decoration: const InputDecoration(
-                        labelText: 'Gắn vào Segment Topic (Tuỳ chọn)',
+                        labelText: 'Gắn vào chủ đề Shadowing (Tùy chọn)',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.topic_outlined),
                       ),
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
-                          child: Text('— Không gắn Topic —'),
+                          child: Text('— Không gắn chủ đề —'),
                         ),
                         ..._segmentTopics.map(
                           (t) => DropdownMenuItem<int>(
@@ -215,7 +214,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Huỷ'),
+                child: const Text('Hủy'),
               ),
               FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
@@ -253,7 +252,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
       await _loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Đã lưu segment!')));
+          const SnackBar(content: Text('Đã lưu câu Shadowing!')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -280,7 +279,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
         builder: (ctx, setDS) {
           return AlertDialog(
             title: const Text(
-              'Thêm nhiều Segment cùng lúc',
+              'Thêm nhiều câu Shadowing cùng lúc',
               style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
             ),
             content: SizedBox(
@@ -295,7 +294,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     child: DropdownButtonFormField<int>(
                       value: bulkSelectedTopicId,
                       decoration: const InputDecoration(
-                        labelText: 'Gắn tất cả vào Segment Topic (Tuỳ chọn)',
+                        labelText: 'Gắn tất cả vào chủ đề Shadowing (Tùy chọn)',
                         border: OutlineInputBorder(),
                         prefixIcon: Icon(Icons.topic_outlined),
                         isDense: true,
@@ -303,7 +302,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
-                          child: Text('— Không gắn Topic —'),
+                          child: Text('— Không gắn chủ đề —'),
                         ),
                         ..._segmentTopics.map(
                           (t) => DropdownMenuItem<int>(
@@ -328,7 +327,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                       children: const [
                         SizedBox(width: 32), // số thứ tự
                         SizedBox(width: 8),
-                        Expanded(flex: 3, child: Text('漢字 (câu gốc)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 3, child: Text('漢字 (Câu gốc)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
                         SizedBox(width: 8),
                         Expanded(flex: 3, child: Text('Furigana', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
                         SizedBox(width: 8),
@@ -406,7 +405,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                             ),
                             // Delete row
                             IconButton(
-                              tooltip: 'Xoá dòng này',
+                              tooltip: 'Xóa dòng này',
                               onPressed: rows.length > 1
                                   ? () => setDS(() {
                                         rows.removeAt(i);
@@ -440,12 +439,12 @@ class _SegmentsTabState extends State<_SegmentsTab> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(ctx).pop(false),
-                child: const Text('Huỷ'),
+                child: const Text('Hủy'),
               ),
               FilledButton.icon(
                 onPressed: () => Navigator.of(ctx).pop(true),
                 icon: const Icon(Icons.save_rounded, size: 18),
-                label: Text('Lưu ${rows.length} segment'),
+                label: Text('Lưu ${rows.length} câu'),
               ),
             ],
           );
@@ -487,7 +486,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
       await _loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Đã thêm ${payloads.length} segment!')),
+        SnackBar(content: Text('Đã thêm ${payloads.length} câu Shadowing!')),
       );
     } catch (e) {
       if (!mounted) return;
@@ -527,17 +526,17 @@ class _SegmentsTabState extends State<_SegmentsTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xoá segment?'),
+        title: const Text('Xóa câu Shadowing?'),
         content: Text(
-            'Segment "${seg['kanji_content'] ?? 'ID ${seg['id']}'}" sẽ bị xoá vĩnh viễn.'),
+            'Câu Shadowing "${seg['kanji_content'] ?? 'ID ${seg['id']}'}" sẽ bị xóa vĩnh viễn.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Huỷ')),
+              child: const Text('Hủy')),
           FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Xoá')),
+              child: const Text('Xóa')),
         ],
       ),
     );
@@ -548,7 +547,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Không thể xoá: $e')));
+          .showSnackBar(SnackBar(content: Text('Không thể xóa: $e')));
     }
   }
 
@@ -565,14 +564,14 @@ class _SegmentsTabState extends State<_SegmentsTab> {
       children: [
         Row(
           children: [
-            Text('${_segments.length} segments',
+            Text('${_segments.length} câu Shadowing',
                 style: const TextStyle(color: AdminPalette.textMuted)),
             const Spacer(),
-            // ── Thêm nhiều segment cùng lúc ──
+            // ── Thêm nhiều câu Shadowing cùng lúc ──
             OutlinedButton.icon(
               onPressed: _openBulkDialog,
               icon: const Icon(Icons.playlist_add_rounded, size: 18),
-              label: const Text('Thêm nhiều'),
+              label: const Text('Thêm nhiều câu'),
               style: OutlinedButton.styleFrom(
                 foregroundColor: AdminPalette.sidebarSelectedForeground,
                 side: BorderSide(
@@ -586,7 +585,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
             ),
             const SizedBox(width: 10),
             AdminPrimaryButton(
-              label: 'Thêm 1 segment',
+              label: 'Thêm 1 câu',
               onPressed: _openSegmentDialog,
             ),
           ],
@@ -595,8 +594,8 @@ class _SegmentsTabState extends State<_SegmentsTab> {
         if (_segments.isEmpty)
           const Expanded(
             child: AdminEmptyState(
-              title: 'Chưa có segment nào',
-              subtitle: 'Thêm segment mới để dùng trong các bài Shadowing.',
+              title: 'Chưa có câu Shadowing nào',
+              subtitle: 'Thêm câu Shadowing mới để luyện nghe nói.',
             ),
           )
         else
@@ -700,7 +699,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                             icon: const Icon(Icons.edit_outlined, size: 18),
                           ),
                           IconButton(
-                            tooltip: 'Xoá',
+                            tooltip: 'Xóa',
                             onPressed: () => _deleteSegment(seg),
                             icon: const Icon(Icons.delete_outline_rounded,
                                 size: 18, color: Colors.redAccent),
@@ -775,7 +774,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isEditing ? 'Chỉnh sửa Category' : 'Thêm Category mới'),
+        title: Text(isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'),
         content: SizedBox(
           width: 420,
           child: Column(
@@ -784,7 +783,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
               TextField(
                 controller: nameCtrl,
                 decoration: const InputDecoration(
-                    labelText: 'Tên category (vd: Giao tiếp)',
+                    labelText: 'Tên danh mục (vd: Giao tiếp)',
                     border: OutlineInputBorder()),
               ),
               const SizedBox(height: 12),
@@ -792,7 +791,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
                 controller: descCtrl,
                 maxLines: 2,
                 decoration: const InputDecoration(
-                    labelText: 'Mô tả (tuỳ chọn)',
+                    labelText: 'Mô tả (tùy chọn)',
                     border: OutlineInputBorder()),
               ),
             ],
@@ -801,7 +800,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Huỷ')),
+              child: const Text('Hủy')),
           FilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
               child: const Text('Lưu')),
@@ -825,7 +824,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
       await _loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Đã lưu category!')));
+          .showSnackBar(const SnackBar(content: Text('Đã lưu danh mục!')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -837,16 +836,16 @@ class _CategoriesTabState extends State<_CategoriesTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xoá category?'),
-        content: Text('Category "${cat['name']}" sẽ bị xoá khỏi tất cả segment topics liên quan.'),
+        title: const Text('Xóa danh mục?'),
+        content: Text('Danh mục "${cat['name']}" sẽ bị xóa khỏi tất cả segment topics liên quan.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Huỷ')),
+              child: const Text('Hủy')),
           FilledButton(
               style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
               onPressed: () => Navigator.of(ctx).pop(true),
-              child: const Text('Xoá')),
+              child: const Text('Xóa')),
         ],
       ),
     );
@@ -857,7 +856,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Không thể xoá: $e')));
+          .showSnackBar(SnackBar(content: Text('Không thể xóa: $e')));
     }
   }
 
@@ -874,11 +873,11 @@ class _CategoriesTabState extends State<_CategoriesTab> {
       children: [
         Row(
           children: [
-            Text('${_categories.length} categories',
+            Text('${_categories.length} danh mục',
                 style: const TextStyle(color: AdminPalette.textMuted)),
             const Spacer(),
             AdminPrimaryButton(
-              label: 'Thêm category',
+              label: 'Thêm danh mục',
               onPressed: _openCategoryDialog,
             ),
           ],
@@ -887,8 +886,8 @@ class _CategoriesTabState extends State<_CategoriesTab> {
         if (_categories.isEmpty)
           const Expanded(
             child: AdminEmptyState(
-              title: 'Chưa có category nào',
-              subtitle: 'Thêm các category như Giao tiếp, Du lịch, Công việc để phân loại nội dung.',
+              title: 'Chưa có danh mục nào',
+              subtitle: 'Thêm các danh mục như Giao tiếp, Du lịch, Công việc để phân loại nội dung.',
             ),
           )
         else
@@ -950,7 +949,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
                         icon: const Icon(Icons.edit_outlined, size: 18),
                       ),
                       IconButton(
-                        tooltip: 'Xoá',
+                        tooltip: 'Xóa',
                         onPressed: () => _deleteCategory(cat),
                         icon: const Icon(Icons.delete_outline_rounded,
                             size: 18, color: Colors.redAccent),
@@ -1037,7 +1036,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setDS) => AlertDialog(
           title: Text(
-            isEditing ? 'Sửa Segment Topic' : 'Tạo Segment Topic mới',
+            isEditing ? 'Sửa chủ đề Shadowing' : 'Tạo chủ đề Shadowing mới',
             style: const TextStyle(fontWeight: FontWeight.w800),
           ),
           content: SizedBox(
@@ -1050,7 +1049,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                   TextFormField(
                     controller: titleCtrl,
                     decoration: const InputDecoration(
-                      labelText: 'Tiêu đề Topic *',
+                      labelText: 'Tiêu đề chủ đề *',
                       hintText: 'VD: Giao tiếp hàng ngày',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.folder_copy_rounded),
@@ -1061,7 +1060,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                     controller: descCtrl,
                     maxLines: 2,
                     decoration: const InputDecoration(
-                      labelText: 'Mô tả (tuỳ chọn)',
+                      labelText: 'Mô tả (tùy chọn)',
                       border: OutlineInputBorder(),
                       prefixIcon: Icon(Icons.description_outlined),
                     ),
@@ -1168,13 +1167,13 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                   ),
                   const SizedBox(height: 20),
                   const Text(
-                    'Phân loại (Categories)',
+                    'Phân loại (Danh mục)',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
                   ),
                   const SizedBox(height: 8),
                   if (_categories.isEmpty)
                     const Text(
-                      'Chưa có category. Hãy tạo trong tab Categories.',
+                      'Chưa có danh mục. Hãy tạo trong tab Danh mục.',
                       style: TextStyle(color: Colors.grey),
                     )
                   else
@@ -1208,7 +1207,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Huỷ'),
+              child: const Text('Hủy'),
             ),
             FilledButton(
               onPressed: () => Navigator.of(ctx).pop(true),
@@ -1239,7 +1238,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
       await _loadData();
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(const SnackBar(content: Text('Đã lưu Segment Topic!')));
+          .showSnackBar(const SnackBar(content: Text('Đã lưu chủ đề Shadowing!')));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
@@ -1251,16 +1250,16 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Xoá Segment Topic?'),
-        content: Text('"${topic['title']}" sẽ bị xoá. Segments sẽ bị gỡ khỏi topic.'),
+        title: const Text('Xóa chủ đề Shadowing?'),
+        content: Text('"${topic['title']}" sẽ bị xóa. Các câu Shadowing sẽ bị gỡ khỏi chủ đề.'),
         actions: [
           TextButton(
               onPressed: () => Navigator.of(ctx).pop(false),
-              child: const Text('Huỷ')),
+              child: const Text('Hủy')),
           FilledButton(
             style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
             onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Xoá'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -1272,7 +1271,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text('Không thể xoá: $e')));
+          .showSnackBar(SnackBar(content: Text('Không thể xóa: $e')));
     }
   }
 
@@ -1298,7 +1297,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    'Segments của: ${topic['title']}',
+                    'Các câu của: ${topic['title']}',
                     style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -1312,7 +1311,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '\${assignedIds.length} segment đang thuộc topic này',
+                    '${assignedIds.length} câu đang thuộc chủ đề này',
                     style: const TextStyle(color: AdminPalette.textMuted, fontSize: 12),
                   ),
                   const SizedBox(height: 12),
@@ -1320,7 +1319,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                     child: available.isEmpty
                         ? const Center(
                             child: Text(
-                              'Không có segment nào để gán.\nTạo segment ở tab Shadowing Segments trước.',
+                              'Không có câu Shadowing nào để gán.\nTạo câu ở tab Câu Shadowing trước.',
                               textAlign: TextAlign.center,
                               style: TextStyle(color: Colors.grey),
                             ),
@@ -1369,7 +1368,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                           Text(
                                             (seg['kanji_content'] ??
                                                     seg['title'] ??
-                                                    'ID $segId')
+                                                    'Câu $segId')
                                                 .toString(),
                                             style: const TextStyle(
                                               fontWeight: FontWeight.w700,
@@ -1482,8 +1481,8 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
         if (_topics.isEmpty)
           const Expanded(
             child: AdminEmptyState(
-              title: 'Chưa có Segment Topic nào',
-              subtitle: 'Tạo topic để nhóm segments theo chủ đề.\nMỗi topic thuộc nhiều categories.',
+              title: 'Chưa có chủ đề Shadowing nào',
+              subtitle: 'Tạo chủ đề để nhóm các câu theo chủ đề.\nMỗi chủ đề thuộc nhiều danh mục.',
             ),
           )
         else
@@ -1549,7 +1548,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                   ),
                                 const SizedBox(height: 4),
                                 Text(
-                                  'ID: ${topic['id']}  •  ${segs.length} segments',
+                                  'ID: ${topic['id']}  •  ${segs.length} câu',
                                   style: const TextStyle(
                                       color: AdminPalette.textSecondary,
                                       fontSize: 11),
@@ -1558,7 +1557,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                             ),
                           ),
                           IconButton(
-                            tooltip: 'Quản lý Segments',
+                            tooltip: 'Quản lý các câu',
                             onPressed: () => _openManageSegmentsDialog(topic),
                             icon: const Icon(
                                 Icons.playlist_add_check_rounded,
@@ -1571,7 +1570,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                             icon: const Icon(Icons.edit_outlined, size: 18),
                           ),
                           IconButton(
-                            tooltip: 'Xoá',
+                            tooltip: 'Xóa',
                             onPressed: () => _deleteTopic(topic),
                             icon: const Icon(Icons.delete_outline_rounded,
                                 size: 18, color: Colors.redAccent),
@@ -1615,7 +1614,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Segments:',
+                              const Text('Các câu:',
                                   style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
@@ -1632,7 +1631,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                         child: Text(
                                           ((s as Map)['kanji_content'] ??
                                                   s['title'] ??
-                                                  'Segment ${s['id']}')
+                                                  'Câu ${s['id']}')
                                               .toString(),
                                           style: const TextStyle(
                                               fontSize: 12,
@@ -1646,7 +1645,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                 Padding(
                                   padding: const EdgeInsets.only(top: 3),
                                   child: Text(
-                                      '... và ${segs.length - 3} segment khác',
+                                      '... và ${segs.length - 3} câu khác',
                                       style: const TextStyle(
                                           fontSize: 11,
                                           color: AdminPalette.textMuted)),

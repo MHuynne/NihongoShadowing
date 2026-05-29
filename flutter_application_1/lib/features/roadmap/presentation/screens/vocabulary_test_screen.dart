@@ -50,14 +50,14 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
   }
 
   Future<void> _fetchVocab() async {
-      String apiUrl = '${ApiConfig.baseUrl}/shadowing/topics/${widget.topicId}';
+      String apiUrl = '${ApiConfig.baseUrl}/vocabularies/?lesson_id=${widget.lessonId}';
 
       try {
         final response = await http.get(Uri.parse(apiUrl));
         if (response.statusCode == 200) {
-          final data = json.decode(utf8.decode(response.bodyBytes));
+          final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
           setState(() {
-            _vocabularies = data['vocabularies'] ?? [];
+            _vocabularies = data;
             _vocabularies.shuffle(); // Đảo trộn list từ
             _isLoading = false;
           });

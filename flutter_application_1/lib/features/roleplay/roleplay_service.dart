@@ -3,7 +3,7 @@ import 'package:flutter_application_1/core/network/app_http_client.dart' as http
 import 'package:flutter_application_1/core/config/api_config.dart';
 
 class RoleplayService {
-  static String get baseUrl => '${ApiConfig.baseUrl.replaceAll('8000', '8001')}/roleplay';
+  static String get baseUrl => '${ApiConfig.baseUrl}/roleplay';
 
   // 1. Tạo hoặc lấy Scenario
   Future<int> getOrCreateScenario(String title, String description) async {

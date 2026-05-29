@@ -27,6 +27,7 @@ from routers import upload as router_upload
 from routers import category as router_category
 from routers import segments as router_segments
 from routers import segment_topic as router_segment_topic
+from routers import user_profile as router_profile
 
 app = FastAPI(
     title="Japanese Learning Backend API",
@@ -65,6 +66,7 @@ app.include_router(router_upload.router)
 app.include_router(router_category.router)
 app.include_router(router_segments.router)
 app.include_router(router_segment_topic.router)
+app.include_router(router_profile.router)
 
 @app.get("/")
 def read_root():

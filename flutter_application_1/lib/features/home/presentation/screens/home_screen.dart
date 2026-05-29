@@ -10,6 +10,8 @@ import 'package:flutter_application_1/core/network/app_http_client.dart' as http
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
+import 'package:flutter_application_1/core/services/user_prefs_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -55,10 +57,20 @@ class _HomeScreenState extends State<HomeScreen> {
       final flashcard = all.where((p) => p['flashcard_done'] == true).length;
       final shadowing = all.where((p) => p['shadowing_passed'] == true).length;
 
+      // Ưu tiên dùng level do người dùng tự chọn (lưu trong SharedPreferences)
       String level = 'N5';
-      if (completed >= 25) level = 'N4';
-      if (completed >= 50) level = 'N3';
-      if (completed >= 75) level = 'N2';
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final savedLevel = await UserPrefsService().getLevel(uid);
+        if (savedLevel != null && savedLevel.isNotEmpty) {
+          level = savedLevel;
+        } else {
+          // Fallback: tính theo số bài đã hoàn thành
+          if (completed >= 25) level = 'N4';
+          if (completed >= 50) level = 'N3';
+          if (completed >= 75) level = 'N2';
+        }
+      }
 
       if (mounted) {
         setState(() {

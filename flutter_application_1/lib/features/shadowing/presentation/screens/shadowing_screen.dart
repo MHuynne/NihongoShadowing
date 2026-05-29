@@ -201,6 +201,40 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     return ApiConfig.baseUrl;
   }
 
+  Widget _buildSegmentProgressBar() {
+    if (_sentences.isEmpty) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 8.0),
+      child: Row(
+        children: List.generate(_sentences.length, (index) {
+          Color color;
+          if (index < _currentIndex) {
+            if (_failedSentences.contains(index)) {
+              color = Colors.orange;
+            } else {
+              color = const Color(0xFF16A34A); // Success green
+            }
+          } else if (index == _currentIndex) {
+            color = AppColors.sunRed; // Active
+          } else {
+            color = const Color(0xFFE2E8F0); // Unreached grey
+          }
+
+          return Expanded(
+            child: Container(
+              height: 6,
+              margin: const EdgeInsets.symmetric(horizontal: 3.0),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          );
+        }),
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _audioRecorder.dispose();
@@ -398,6 +432,8 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
               bool hasWordError = _dynamicFeedback!.wordsAnalysis.any((w) => !w.isCorrect);
               if ((data['accuracy'] ?? 0) < 90 || hasWordError || _errorWord.isNotEmpty) {
                 _failedSentences.add(_currentIndex);
+              } else {
+                _failedSentences.remove(_currentIndex);
               }
 
               _isEvaluating = false;
@@ -581,19 +617,19 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
             child: Column(
               children: [
                 ShadowingHeader(
-              currentIndex: _currentIndex + 1,
-              totalCount: _sentences.length,
-              isBlindMode: _isBlindMode,
-              onModeChanged: _toggleMode,
-              segmentTitle: _sentences.isNotEmpty
-                  ? _sentences[_currentIndex].title
-                  : null,
-            ),
-            
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
-                  children: [
+                  currentIndex: _currentIndex + 1,
+                  totalCount: _sentences.length,
+                  isBlindMode: _isBlindMode,
+                  onModeChanged: _toggleMode,
+                  segmentTitle: _sentences.isNotEmpty
+                      ? _sentences[_currentIndex].title
+                      : null,
+                ),
+                _buildSegmentProgressBar(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
                     const SizedBox(height: 24),
                     
                     if (!_isBlindMode && !_showFeedback) 

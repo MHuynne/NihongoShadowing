@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
+import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 
 // ─── Data model ──────────────────────────────────────────────────────────────
 
@@ -87,6 +88,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   _ProfileSummary? _summary;
   bool _isLoading = true;
   String? _error;
+  String _jlptLevel = 'N5'; // Level đã chọn của người dùng
 
   static String get _base => ApiConfig.baseUrl;
 
@@ -94,17 +96,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _fetchSummary();
+    _loadLevel();
+  }
+
+  Future<void> _loadLevel() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) return;
+    final level = await UserPrefsService().getLevel(uid);
+    if (mounted && level != null) {
+      setState(() => _jlptLevel = level);
+    }
   }
 
   Future<void> _fetchSummary() async {
     setState(() { _isLoading = true; _error = null; });
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'mock_user_id';
       final res = await http.get(
         Uri.parse('$_base/progress/summary'),
         headers: {
           'Content-Type': 'application/json',
-          if (uid != null) 'X-Firebase-UID': uid,
+          'X-Firebase-UID': uid,
         },
       );
       if (res.statusCode == 200) {
@@ -137,7 +149,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
             child: Column(
               children: [
-                _ProfileHeader(displayName: displayName, email: email),
+                _ProfileHeader(displayName: displayName, email: email, jlptLevel: _jlptLevel),
                 const SizedBox(height: 22),
                 // XP card — real data
                 _XpCard(xp: _summary?.totalXp ?? 0, isLoading: _isLoading),
@@ -152,7 +164,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   error: _error,
                 ),
                 const SizedBox(height: 18),
-                _AccountActions(onSignOut: () => _confirmSignOut(context)),
+                _AccountActions(
+                  onSignOut: () => _confirmSignOut(context),
+                ),
               ],
             ),
           ),
@@ -160,6 +174,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
   }
+
+  // _openLevelSelection đã bị tắt — level không cho phép thay đổi từ Profile nữa.
+  // Level được chọn trong onboarding và chỉ hiển thị tại đây.
 
   Future<void> _confirmSignOut(BuildContext context) async {
     final ok = await showDialog<bool>(
@@ -177,7 +194,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         ],
       ),
     );
-    if (ok == true && context.mounted) await AuthService().signOut();
+    if (ok == true && context.mounted) {
+      try {
+        await AuthService().signOut();
+      } catch (e) {
+        debugPrint('Error signing out: $e');
+      }
+      if (context.mounted) {
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
+    }
   }
 }
 
@@ -186,7 +212,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
 class _ProfileHeader extends StatelessWidget {
   final String displayName;
   final String email;
-  const _ProfileHeader({required this.displayName, required this.email});
+  final String jlptLevel;
+  const _ProfileHeader({required this.displayName, required this.email, required this.jlptLevel});
+
+  Color get _levelColor {
+    switch (jlptLevel) {
+      case 'N4': return const Color(0xFF2196F3);
+      case 'N3': return const Color(0xFFFF9800);
+      case 'N2': return const Color(0xFFE91E63);
+      case 'N1': return const Color(0xFF9C27B0);
+      default:   return AppColors.toriiRed; // N5
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -229,9 +266,9 @@ class _ProfileHeader extends StatelessWidget {
             style: TextStyle(color: AppColors.primaryText(context), fontSize: 26, fontWeight: FontWeight.w900)),
         const SizedBox(height: 4),
         Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-          const Icon(Icons.school_outlined, color: AppColors.toriiRed, size: 14),
+          Icon(Icons.school_outlined, color: _levelColor, size: 14),
           const SizedBox(width: 5),
-          const Text('JLPT Learner', style: TextStyle(color: AppColors.toriiRed, fontSize: 12, fontWeight: FontWeight.w700)),
+          Text('$jlptLevel Learner', style: TextStyle(color: _levelColor, fontSize: 12, fontWeight: FontWeight.w700)),
         ]),
         const SizedBox(height: 8),
         Text(email, maxLines: 1, overflow: TextOverflow.ellipsis,

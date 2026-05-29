@@ -1,5 +1,4 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
@@ -247,7 +246,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                                     IconButton(
                                       onPressed: () => setDialogState(() => segments.removeAt(index)),
                                       icon: const Icon(Icons.delete_outline_rounded),
-                                      tooltip: 'Xoá câu này',
+                                      tooltip: 'Xóa câu này',
                                     ),
                                 ],
                               ),
@@ -293,7 +292,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Huỷ'),
+                  child: const Text('Hủy'),
                 ),
                 FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -356,19 +355,19 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xoa topic?'),
+        title: const Text('Xóa topic?'),
         content: Text(
-          'Topic "${topic['title'] ?? ''}" se bi xoa cung cac segment va vocabulary lien quan.',
+          'Topic "${topic['title'] ?? ''}" sẽ bị xóa cùng các segment và vocabulary liên quan.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Huy'),
+            child: const Text('Hủy'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
-            child: const Text('Xoa'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -382,7 +381,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong the xoa topic: $e')),
+        SnackBar(content: Text('Không thể xóa topic: $e')),
       );
     }
   }
@@ -460,8 +459,8 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
             children: [
               Expanded(
                 child: AdminSectionHeader(
-                  title: 'Shadowing topics',
-                  subtitle: 'Quan ly topic, segment va vocabulary cho bai shadowing.',
+                  title: 'Shadowing Topics',
+                  subtitle: 'Quản lý topic, segment và vocabulary cho bài Shadowing.',
                 ),
               ),
               SizedBox(
@@ -470,23 +469,23 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                   isExpanded: true,
                   value: (_selectedLessonId == null || _selectedLessonId == -1 || _lessons.any((l) => l['id'] == _selectedLessonId)) ? _selectedLessonId : null,
                   decoration: const InputDecoration(
-                    labelText: 'Loc theo lesson',
+                    labelText: 'Lọc theo lesson',
                     border: OutlineInputBorder(),
                   ),
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('Tat ca topic'),
+                      child: Text('Tất cả topic'),
                     ),
                     const DropdownMenuItem<int?>(
                       value: -1,
-                      child: Text('Topic doc lap (Khong thuoc lesson)'),
+                      child: Text('Topic độc lập (Không thuộc lesson)'),
                     ),
                     ..._lessons.map(
                       (lesson) => DropdownMenuItem<int?>(
                         value: lesson['id'] as int,
                         child: Text(
-                          (lesson['chapter_name'] ?? 'Khong ten').toString(),
+                          (lesson['chapter_name'] ?? 'Không tên').toString(),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -502,7 +501,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
               ),
               const SizedBox(width: 12),
               AdminPrimaryButton(
-                label: 'Them topic',
+                label: 'Thêm topic',
                 onPressed: _openTopicDialog,
               ),
             ],
@@ -527,8 +526,8 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
 
     if (_topics.isEmpty) {
       return const AdminEmptyState(
-        title: 'Chua co topic shadowing nao',
-        subtitle: 'Them topic moi de nguoi hoc co noi dung luyen nghe noi.',
+        title: 'Chưa có topic shadowing nào',
+        subtitle: 'Thêm topic mới để người học có nội dung luyện nghe nói.',
       );
     }
 
@@ -570,7 +569,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                       children: [
                         Expanded(
                           child: Text(
-                            (topic['title'] ?? 'Khong ten').toString(),
+                            (topic['title'] ?? 'Không tên').toString(),
                             style: const TextStyle(
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
@@ -613,12 +612,12 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
               Column(
                 children: [
                   IconButton(
-                    tooltip: 'Sua',
+                    tooltip: 'Sửa',
                     onPressed: () => _openTopicDialog(topic),
                     icon: const Icon(Icons.edit_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Xoa',
+                    tooltip: 'Xóa',
                     onPressed: () => _deleteTopic(topic),
                     icon: const Icon(Icons.delete_outline_rounded),
                   ),

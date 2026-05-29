@@ -1,4 +1,4 @@
-﻿import 'dart:convert';
+import 'dart:convert';
 import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
@@ -9,8 +9,8 @@ class ProgressService {
   static String get _base => ApiConfig.baseUrl;
 
   // ── Lấy Firebase UID hiện tại ─────────────────────────────────────────
-  static Future<String?> _getUid() async {
-    return FirebaseAuth.instance.currentUser?.uid;
+  static Future<String> _getUid() async {
+    return FirebaseAuth.instance.currentUser?.uid ?? 'mock_user_id';
   }
 
   // ── Headers chung (kèm X-Firebase-UID) ───────────────────────────────
@@ -18,7 +18,7 @@ class ProgressService {
     final uid = await _getUid();
     return {
       'Content-Type': 'application/json',
-      if (uid != null) 'X-Firebase-UID': uid,
+      'X-Firebase-UID': uid,
     };
   }
 

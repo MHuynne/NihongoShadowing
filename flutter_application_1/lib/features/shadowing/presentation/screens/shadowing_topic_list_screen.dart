@@ -1,10 +1,12 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 
 const _kBg      = Color(0xFFF8F9FE); // Light background with soft tint
 const _kSurface = Colors.white;
@@ -25,6 +27,9 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   bool _isLoading = true;
   String? _error;
 
+  /// Level đã chọn của user (từ onboarding)
+  String _userLevel = 'N5';
+
   /// Tất cả segment topics từ API
   List<Map<String, dynamic>> _topics = [];
 
@@ -36,7 +41,18 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchData();
+    _loadLevelAndData();
+  }
+
+  Future<void> _loadLevelAndData() async {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final level = await UserPrefsService().getLevel(uid);
+      if (mounted && level != null) {
+        setState(() => _userLevel = level);
+      }
+    }
+    await _fetchData();
   }
 
   String get _base => ApiConfig.baseUrl;
@@ -94,10 +110,18 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     }
   }
 
-  /// Filter topics theo category đang chọn
+  /// Filter topics theo category đang chọn và level đã chọn
   List<Map<String, dynamic>> get _filteredTopics {
-    if (_selectedCategory == 'Tất cả') return _topics;
-    return _topics.where((topic) {
+    // Lọc theo level trước
+    final byLevel = _topics.where((topic) {
+      final topicLevel = (topic['level'] ?? '').toString();
+      // Nếu topic chưa gán level thì hiển thị cho tất cả (null/empty = không lọc)
+      return topicLevel.isEmpty || topicLevel == _userLevel;
+    }).toList();
+
+    // Tiếp theo lọc theo category
+    if (_selectedCategory == 'Tất cả') return byLevel;
+    return byLevel.where((topic) {
       final cats = (topic['categories'] as List?) ?? [];
       return cats.any((c) =>
           (c as Map)['name']?.toString() == _selectedCategory);
@@ -135,6 +159,16 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   // ── Top bar ─────────────────────────────────────────────────────────────────
 
   Widget _buildTopBar() {
+    // Màu badge theo level
+    Color levelColor;
+    switch (_userLevel) {
+      case 'N4': levelColor = const Color(0xFF2196F3); break;
+      case 'N3': levelColor = const Color(0xFFFF9800); break;
+      case 'N2': levelColor = const Color(0xFF9C27B0); break;
+      case 'N1': levelColor = const Color(0xFFE91E63); break;
+      default:   levelColor = const Color(0xFF4CAF50); // N5
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: _kSurface,
@@ -165,14 +199,37 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                     color: _kPrimary, size: 22),
               ),
               const SizedBox(width: 12),
-              const Text(
-                'Shadowing',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: _kPrimary,
-                  letterSpacing: -0.4,
-                ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Shadowing',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: _kPrimary,
+                      letterSpacing: -0.4,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  // Level badge — chỉ hiển thị, không cho thay đổi
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: levelColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
+                      border: Border.all(color: levelColor.withValues(alpha: 0.3)),
+                    ),
+                    child: Text(
+                      'Cấp độ: $_userLevel',
+                      style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.w700,
+                        color: levelColor,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -187,7 +244,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.tune_rounded,
                   color: _kPrimary, size: 20),
-              onPressed: _fetchData,
+              onPressed: _loadLevelAndData,
               tooltip: 'Tải lại',
             ),
           ),
@@ -217,9 +274,9 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           ),
         ),
         const SizedBox(height: 6),
-        const Text(
-          'Chọn chủ đề bạn muốn luyện tập hôm nay.',
-          style: TextStyle(
+        Text(
+          'Chủ đề luyện tập cấp độ $_userLevel — chọn bài bạn muốn luyện hôm nay.',
+          style: const TextStyle(
             fontSize: 14,
             color: _kSubtext,
             fontWeight: FontWeight.w500,

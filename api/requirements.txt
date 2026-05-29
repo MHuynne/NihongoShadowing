@@ -13,5 +13,6 @@ selenium
 webdriver-manager
 beautifulsoup4
 janome
+
 pykakasi
 google-generativeai

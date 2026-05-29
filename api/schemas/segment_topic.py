@@ -27,6 +27,7 @@ class SegmentTopicBase(BaseModel):
     title: str
     description: Optional[str] = None
     image_url: Optional[str] = None
+    level: Optional[str] = None  # e.g. N5, N4, N3, N2, N1
 
 
 class SegmentTopicCreate(SegmentTopicBase):

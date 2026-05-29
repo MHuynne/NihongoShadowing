@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 
@@ -59,7 +59,7 @@ class _LessonNodeState extends State<LessonNode>
           children: [
             // Badge phía trên node
             if (widget.lesson.status == LessonStatus.inProgress)
-              _InProgressBadge(title: widget.lesson.title),
+              _InProgressBadge(progress: widget.lesson.progress),
             if (widget.lesson.status == LessonStatus.completed)
               const _CompletedBadge(),
 
@@ -234,14 +234,15 @@ class _NodeLabel extends StatelessWidget {
 }
 
 class _InProgressBadge extends StatelessWidget {
-  final String title;
-  const _InProgressBadge({required this.title});
+  final double? progress;
+  const _InProgressBadge({super.key, this.progress});
 
   @override
   Widget build(BuildContext context) {
+    final int percent = progress != null ? (progress! * 100).round() : 0;
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.toriiRed,
         borderRadius: BorderRadius.circular(20),
@@ -253,16 +254,16 @@ class _InProgressBadge extends StatelessWidget {
           )
         ],
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'ĐANG HỌC',
-            style: TextStyle(
+            percent > 0 ? 'ĐANG HỌC ($percent%)' : 'ĐANG HỌC',
+            style: const TextStyle(
               color: Colors.white,
               fontSize: 10,
               fontWeight: FontWeight.w800,
-              letterSpacing: 1,
+              letterSpacing: 0.5,
             ),
           ),
         ],

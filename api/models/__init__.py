@@ -5,3 +5,5 @@ from .category import Category                                             # cat
 from .shadowing_result import ShadowingResult
 from .vocabulary import Vocabulary
 from .segment_topic import SegmentTopic, segment_topic_category_table
+from .user_profile import UserProfile
+

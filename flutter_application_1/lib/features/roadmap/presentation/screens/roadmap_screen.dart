@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
@@ -7,6 +7,7 @@ import 'package:flutter_application_1/features/roadmap/presentation/components/c
 import 'package:flutter_application_1/features/roadmap/presentation/components/roadmap_header.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
+import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 
 class RoadmapScreen extends StatefulWidget {
   const RoadmapScreen({super.key});
@@ -17,22 +18,41 @@ class RoadmapScreen extends StatefulWidget {
 
 class _RoadmapScreenState extends State<RoadmapScreen> {
   late Future<RoadmapModel> futureRoadmap;
+  String? _userLevel; // level đã chọn khi onboarding
 
   static String get _base => ApiConfig.baseUrl;
 
   @override
   void initState() {
     super.initState();
-    futureRoadmap = _fetchRoadmap();
+    _initRoadmap();
+  }
+
+  Future<void> _initRoadmap() async {
+    // Load level trước, rồi mới fetch roadmap
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      final level = await UserPrefsService().getLevel(uid);
+      if (mounted) {
+        setState(() => _userLevel = level ?? 'N5');
+      }
+    } else {
+      _userLevel = 'N5';
+    }
+    if (mounted) {
+      setState(() {
+        futureRoadmap = _fetchRoadmap();
+      });
+    }
   }
 
   Future<RoadmapModel> _fetchRoadmap() async {
     try {
       // ── Firebase UID ──────────────────────────────────────────────────
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = FirebaseAuth.instance.currentUser?.uid ?? 'mock_user_id';
       final headers = <String, String>{
         'Content-Type': 'application/json',
-        if (uid != null) 'X-Firebase-UID': uid,
+        'X-Firebase-UID': uid,
       };
 
       // ── Gọi song song: danh sách lessons + tiến độ user ──────────────
@@ -136,9 +156,15 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
 
       // ── Build chapters ────────────────────────────────────────────────
       List<ChapterModel> chapters = [];
-      final sortedLevels = levelOrder
+
+      // Chỉ lấy các level mà user đã chọn
+      final selectedLevel = _userLevel;
+      final filteredLevels = selectedLevel != null
+          ? [selectedLevel]  // chỉ hiển thị đúng level đã chọn
+          : levelOrder.where((l) => grouped.containsKey(l)).toList();
+
+      final sortedLevels = filteredLevels
           .where((l) => grouped.containsKey(l))
-          .followedBy(grouped.keys.where((k) => !levelOrder.contains(k)))
           .toList();
 
       for (final level in sortedLevels) {
@@ -242,7 +268,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
               final roadmap = snapshot.data!;
               return RefreshIndicator(
                 onRefresh: () async {
-                  setState(() => futureRoadmap = _fetchRoadmap());
+                  await _initRoadmap();
                 },
                 color: AppColors.toriiRed,
                 child: CustomScrollView(
@@ -253,6 +279,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
                         progress: roadmap.totalProgress,
                         completed: roadmap.completedLessons,
                         total: roadmap.totalLessons,
+                        levelBadge: _userLevel,
                       ),
                     ),
                     SliverPadding(

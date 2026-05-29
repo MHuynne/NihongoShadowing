@@ -1,5 +1,4 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
@@ -85,7 +84,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(isEditing ? 'Chinh sua tu vung' : 'Them tu vung'),
+              title: Text(isEditing ? 'Chỉnh sửa từ vựng' : 'Thêm từ vựng'),
               content: SizedBox(
                 width: 600,
                 child: SingleChildScrollView(
@@ -100,19 +99,19 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                               isExpanded: true,
                               value: _lessons.any((l) => l['id'].toString() == lessonIdValue) ? lessonIdValue : null,
                               decoration: const InputDecoration(
-                                labelText: 'Gan vao lesson',
+                                labelText: 'Gán vào Lesson',
                                 border: OutlineInputBorder(),
                               ),
                               items: [
                                 const DropdownMenuItem<String?>(
                                   value: null,
-                                  child: Text('Khong chon'),
+                                  child: Text('Không chọn'),
                                 ),
                                 ..._lessons.map(
                                   (lesson) => DropdownMenuItem<String?>(
                                     value: lesson['id'].toString(),
                                     child: Text(
-                                      '${lesson['chapter_name'] ?? 'Khong ten'} (${lesson['level'] ?? 'N/A'})',
+                                      '${lesson['chapter_name'] ?? 'Không tên'} (${lesson['level'] ?? 'N/A'})',
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -128,19 +127,19 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                               isExpanded: true,
                               value: _topics.any((t) => t['id'].toString() == topicIdValue) ? topicIdValue : null,
                               decoration: const InputDecoration(
-                                labelText: 'Gan vao Shadowing Topic',
+                                labelText: 'Gán vào Shadowing Topic',
                                 border: OutlineInputBorder(),
                               ),
                               items: [
                                 const DropdownMenuItem<String?>(
                                   value: null,
-                                  child: Text('Khong chon'),
+                                  child: Text('Không chọn'),
                                 ),
                                 ..._topics.map(
                                   (topic) => DropdownMenuItem<String?>(
                                     value: topic['id'].toString(),
                                     child: Text(
-                                      '${topic['title'] ?? 'Khong ten'}',
+                                      '${topic['title'] ?? 'Không tên'}',
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
@@ -156,7 +155,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                       Row(
                         children: [
                           const Text(
-                            'Danh sach tu vung',
+                            'Danh sách từ vựng',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w800,
@@ -177,7 +176,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                                 });
                               },
                               icon: const Icon(Icons.add_rounded),
-                              label: const Text('Them tu nua'),
+                              label: const Text('Thêm từ nữa'),
                             ),
                         ],
                       ),
@@ -198,7 +197,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                               Row(
                                 children: [
                                   Text(
-                                    'Tu vung ${index + 1}',
+                                    'Từ vựng ${index + 1}',
                                     style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       color: AdminPalette.textPrimary,
@@ -220,7 +219,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                               Row(
                                 children: [
                                   Expanded(
-                                    child: _smallField(voc, 'word', 'Tu / Kanji'),
+                                    child: _smallField(voc, 'word', 'Từ / Kanji'),
                                   ),
                                   const SizedBox(width: 12),
                                   Expanded(
@@ -229,9 +228,9 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                                 ],
                               ),
                               const SizedBox(height: 10),
-                              _smallField(voc, 'meaning', 'Nghia'),
+                              _smallField(voc, 'meaning', 'Nghĩa'),
                               const SizedBox(height: 10),
-                              _smallField(voc, 'example', 'Vi du'),
+                              _smallField(voc, 'example', 'Ví dụ'),
                             ],
                           ),
                         );
@@ -243,11 +242,30 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Huy'),
+                  child: const Text('Hủy'),
                 ),
                 FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Luu'),
+                  onPressed: () {
+                    for (int i = 0; i < vocabularies.length; i++) {
+                      final voc = vocabularies[i];
+                      final word = voc['word']!.trim();
+                      final meaning = voc['meaning']!.trim();
+                      if (word.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Vui lòng nhập Từ / Kanji ở dòng số ${i + 1}')),
+                        );
+                        return;
+                      }
+                      if (meaning.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Vui lòng nhập Nghĩa ở dòng số ${i + 1}')),
+                        );
+                        return;
+                      }
+                    }
+                    Navigator.of(dialogContext).pop(true);
+                  },
+                  child: const Text('Lưu'),
                 ),
               ],
             );
@@ -288,7 +306,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong the luu tu vung: $e')),
+        SnackBar(content: Text('Không thể lưu từ vựng: $e')),
       );
     }
   }
@@ -308,19 +326,19 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xoa tu vung?'),
+        title: const Text('Xóa từ vựng?'),
         content: Text(
-          'Tu "${vocabulary['word'] ?? ''}" se bi xoa khoi he thong.',
+          'Từ "${vocabulary['word'] ?? ''}" sẽ bị xóa khỏi hệ thống.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Huy'),
+            child: const Text('Hủy'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
-            child: const Text('Xoa'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -334,7 +352,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong the xoa tu vung: $e')),
+        SnackBar(content: Text('Không thể xóa từ vựng: $e')),
       );
     }
   }
@@ -349,9 +367,9 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
             children: [
               Expanded(
                 child: const AdminSectionHeader(
-                  title: 'Tu vung',
+                  title: 'Từ vựng',
                   subtitle:
-                      'Quan ly kho tu vung dung cho lesson va shadowing topic.',
+                      'Quản lý kho từ vựng dùng cho lesson và shadowing topic.',
                 ),
               ),
               SizedBox(
@@ -360,19 +378,19 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                   isExpanded: true,
                   value: _lessons.any((l) => l['id'] == _selectedLessonId) ? _selectedLessonId : null,
                   decoration: const InputDecoration(
-                    labelText: 'Loc theo lesson',
+                    labelText: 'Lọc theo lesson',
                     border: OutlineInputBorder(),
                   ),
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('Tat ca lesson'),
+                      child: Text('Tất cả lesson'),
                     ),
                     ..._lessons.map(
                       (lesson) => DropdownMenuItem<int?>(
                         value: lesson['id'] as int,
                         child: Text(
-                          (lesson['chapter_name'] ?? 'Khong ten').toString(),
+                          (lesson['chapter_name'] ?? 'Không tên').toString(),
                           overflow: TextOverflow.ellipsis,
                         ),
                       ),
@@ -386,7 +404,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
               ),
               const SizedBox(width: 12),
               AdminPrimaryButton(
-                label: 'Them tu vung',
+                label: 'Thêm từ vựng',
                 onPressed: _openVocabularyDialog,
               ),
             ],
@@ -411,8 +429,8 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
 
     if (_vocabularies.isEmpty) {
       return const AdminEmptyState(
-        title: 'Chua co tu vung nao',
-        subtitle: 'Ban co the them tu vung truc tiep cho lesson hoac topic.',
+        title: 'Chưa có từ vựng nào',
+        subtitle: 'Bạn có thể thêm từ vựng trực tiếp cho lesson hoặc topic.',
       );
     }
 
@@ -426,10 +444,10 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
             DataColumn(label: Text('ID')),
             DataColumn(label: Text('Word')),
             DataColumn(label: Text('Reading')),
-            DataColumn(label: Text('Meaning')),
+            DataColumn(label: Text('Nghĩa')),
             DataColumn(label: Text('Lesson')),
             DataColumn(label: Text('Topic')),
-            DataColumn(label: Text('Hanh dong')),
+            DataColumn(label: Text('Hành động')),
           ],
           rows: _vocabularies
               .map(

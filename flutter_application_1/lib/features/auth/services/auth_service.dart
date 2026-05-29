@@ -1,4 +1,4 @@
-﻿import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -129,10 +129,16 @@ class AuthService {
   // ── Đăng xuất (xóa token cache) ───────────────────────────────────────
   Future<void> signOut() async {
     await _clearToken();
-    await Future.wait([
-      _googleSignIn.signOut(),
-      _auth.signOut(),
-    ]);
+    try {
+      await _googleSignIn.signOut();
+    } catch (e) {
+      // Bỏ qua lỗi nếu Google Sign-In không được hỗ trợ trên nền tảng hiện tại (ví dụ: Windows) hoặc lỗi mạng
+    }
+    try {
+      await _auth.signOut();
+    } catch (e) {
+      // Bỏ qua lỗi nếu Firebase signOut thất bại
+    }
   }
 
   // ── Chuyển đổi FirebaseAuthException → thông báo tiếng Việt ───────────
