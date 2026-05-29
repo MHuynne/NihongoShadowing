@@ -126,6 +126,59 @@ class AuthService {
     await _auth.sendPasswordResetEmail(email: email);
   }
 
+  Future<void> updateProfile({
+    required String displayName,
+    String? photoUrl,
+  }) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user.',
+      );
+    }
+
+    await user.updateDisplayName(displayName.trim());
+    await user.updatePhotoURL(
+      (photoUrl == null || photoUrl.trim().isEmpty) ? null : photoUrl.trim(),
+    );
+    await user.reload();
+  }
+
+  Future<void> sendEmailVerification() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user.',
+      );
+    }
+    await user.sendEmailVerification();
+  }
+
+  Future<void> updatePassword(String newPassword) async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user.',
+      );
+    }
+    await user.updatePassword(newPassword);
+  }
+
+  Future<void> deleteAccount() async {
+    final user = _auth.currentUser;
+    if (user == null) {
+      throw FirebaseAuthException(
+        code: 'no-current-user',
+        message: 'No signed-in user.',
+      );
+    }
+    await _clearToken();
+    await user.delete();
+  }
+
   // ── Đăng xuất (xóa token cache) ───────────────────────────────────────
   Future<void> signOut() async {
     await _clearToken();
