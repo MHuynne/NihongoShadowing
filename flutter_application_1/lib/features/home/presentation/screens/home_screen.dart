@@ -6,9 +6,12 @@ import 'package:flutter_application_1/features/home/presentation/components/moun
 import 'package:flutter_application_1/features/home/presentation/components/quick_access_grid.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
+import 'package:flutter_application_1/core/services/user_prefs_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -39,10 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
       // Get total lessons count to be accurate
       int totalLessonsCount = 25;
       try {
-        String base = 'http://localhost:8000';
-        if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-          base = 'http://10.0.2.2:8000';
-        }
+        String base = ApiConfig.baseUrl;
         final res = await http.get(Uri.parse('$base/lessons/?limit=200'));
         if (res.statusCode == 200) {
           final List<dynamic> data = json.decode(utf8.decode(res.bodyBytes));
@@ -57,10 +57,20 @@ class _HomeScreenState extends State<HomeScreen> {
       final flashcard = all.where((p) => p['flashcard_done'] == true).length;
       final shadowing = all.where((p) => p['shadowing_passed'] == true).length;
 
+      // Ưu tiên dùng level do người dùng tự chọn (lưu trong SharedPreferences)
       String level = 'N5';
-      if (completed >= 25) level = 'N4';
-      if (completed >= 50) level = 'N3';
-      if (completed >= 75) level = 'N2';
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        final savedLevel = await UserPrefsService().getLevel(uid);
+        if (savedLevel != null && savedLevel.isNotEmpty) {
+          level = savedLevel;
+        } else {
+          // Fallback: tính theo số bài đã hoàn thành
+          if (completed >= 25) level = 'N4';
+          if (completed >= 50) level = 'N3';
+          if (completed >= 75) level = 'N2';
+        }
+      }
 
       if (mounted) {
         setState(() {
@@ -102,7 +112,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F6F9), // Light background like image
+      backgroundColor: const Color(0xFFF8F9FE), // Light background like image
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -110,7 +120,7 @@ class _HomeScreenState extends State<HomeScreen> {
             HomeHeader(user: dummyUser),
             Expanded(
               child: RefreshIndicator(
-                color: const Color(0xFFFF5238),
+                color: const Color(0xFFFF4D6D),
                 onRefresh: _loadProgress,
                 child: SingleChildScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
@@ -123,7 +133,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? const SizedBox(
                               height: 180,
                               child: Center(
-                                child: CircularProgressIndicator(color: Color(0xFFFF5238)),
+                                child: CircularProgressIndicator(color: Color(0xFFFF4D6D)),
                               ),
                             )
                           : MountainProgressWidget(
@@ -145,8 +155,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 24),
                       _buildDailyGoalCard(),
 
-                      const SizedBox(height: 24),
-                      _buildConsistencyCard(dummyUser),
+
                     ],
                   ),
                 ),
@@ -171,20 +180,20 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.menu_book_rounded, color: Color(0xFFFF5238), size: 20),
+                  const Icon(Icons.menu_book_rounded, color: Color(0xFFFF4D6D), size: 20),
                   const SizedBox(width: 8),
                   const Text(
                     'Tiến độ lộ trình',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w800,
-                      color: Color(0xFFFF5238),
+                      color: Color(0xFFFF4D6D),
                     ),
                   ),
                 ],
               ),
               const Text(
-                'Overall Progress',
+                'Tổng quan',
                 style: TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.w600),
               ),
             ],
@@ -201,8 +210,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: Color(0xFFFFE4E1), shape: BoxShape.circle),
-                child: const Text('N5', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF5238))),
+                decoration: const BoxDecoration(color: Color(0xFFFFEBF0), shape: BoxShape.circle),
+                child: const Text('N5', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF4D6D))),
               ),
               const SizedBox(width: 8),
               Container(
@@ -238,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
             RichText(
               text: TextSpan(
                 text: '$current',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFFF5238)),
+                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFFF4D6D)),
                 children: [
                   TextSpan(text: ' / $total bài', style: const TextStyle(color: Colors.black38)),
                 ],
@@ -252,7 +261,7 @@ class _HomeScreenState extends State<HomeScreen> {
           child: LinearProgressIndicator(
             value: pct,
             backgroundColor: const Color(0xFFF1F5F9),
-            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF5238)),
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4D6D)),
             minHeight: 6,
           ),
         ),
@@ -280,13 +289,13 @@ class _HomeScreenState extends State<HomeScreen> {
                     BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
                   ],
                 ),
-                child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFFFF5238), size: 24),
+                child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFFFF4D6D), size: 24),
               ),
-              const Text('IN PROGRESS', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFFF5238), fontSize: 12)),
+              const Text('ĐANG HỌC', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFFF4D6D), fontSize: 12)),
             ],
           ),
           const SizedBox(height: 16),
-          const Text('DAILY GOAL', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black38)),
+          const Text('MỤC TIÊU NGÀY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black38)),
           const Text('Hoàn thành 1 bài học', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
           const SizedBox(height: 20),
           GestureDetector(
@@ -310,93 +319,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildConsistencyCard(UserModel user) {
-    int streakDays = user.streakDays;
-    int nextMilestone = ((streakDays ~/ 14) + 1) * 14;
 
-    // Lấy mốc ngày hôm nay (loại bỏ giờ/phút/giây)
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    
-    // Sinh ra danh sách 14 ngày (từ 13 ngày trước -> hôm nay)
-    List<DateTime> last14Days = List.generate(14, (i) => today.subtract(Duration(days: 13 - i)));
-    
-    // Tạo Set các ngày user đã học để tra cứu nhanh O(1)
-    final activeSet = user.activeDates.map((d) => DateTime(d.year, d.month, d.day)).toSet();
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(24),
-      decoration: _cardDecoration(),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text('CONSISTENCY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black45)),
-              Row(
-                children: [
-                  const Icon(Icons.local_fire_department, color: Color(0xFFFFB300), size: 14),
-                  const SizedBox(width: 4),
-                  Text('${streakDays}d', style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 12, color: Color(0xFF1E293B))),
-                ],
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          // Top row (days 13 days ago -> 7 days ago)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(7, (i) => _buildStreakSquare(last14Days[i], activeSet, today)),
-          ),
-          const SizedBox(height: 16),
-          // Bottom row (days 6 days ago -> today)
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(7, (i) => _buildStreakSquare(last14Days[i + 7], activeSet, today)),
-          ),
-          const SizedBox(height: 20),
-          Center(
-            child: Text(
-              'NEXT MILESTONE: $nextMilestone DAYS',
-              style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black38),
-            ),
-          )
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStreakSquare(DateTime date, Set<DateTime> activeSet, DateTime today) {
-    bool isActive = activeSet.contains(date);
-    bool isToday = date == today;
-
-    Color color;
-    BoxBorder? border;
-
-    if (isActive) {
-      // Đã điểm danh (Học)
-      color = const Color(0xFFFF5238);
-    } else if (isToday) {
-      // Hôm nay chưa học (Nhưng có thể học)
-      color = Colors.white;
-      border = Border.all(color: const Color(0xFFE2E8F0));
-    } else {
-      // Quá khứ bỏ lỡ
-      color = const Color(0xFFFFEBEE); // Màu hồng nhạt / xám
-    }
-
-    return Container(
-      width: 32,
-      height: 32,
-      decoration: BoxDecoration(
-        color: color,
-        border: border,
-        borderRadius: BorderRadius.circular(8),
-      ),
-    );
-  }
 
   BoxDecoration _cardDecoration() {
     return BoxDecoration(

@@ -1,4 +1,4 @@
-class ChatFuriganaWord {
+﻿class ChatFuriganaWord {
   final String text;
   final String? furigana;
 

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 
 class ShadowingHeader extends StatelessWidget {
@@ -6,6 +6,7 @@ class ShadowingHeader extends StatelessWidget {
   final int totalCount;
   final bool isBlindMode;
   final ValueChanged<bool> onModeChanged;
+  final String? segmentTitle;  // Tiêu đề hiển thị của segment đang luyện
 
   const ShadowingHeader({
     super.key,
@@ -13,6 +14,7 @@ class ShadowingHeader extends StatelessWidget {
     required this.totalCount,
     required this.isBlindMode,
     required this.onModeChanged,
+    this.segmentTitle,
   });
 
   @override
@@ -62,20 +64,22 @@ class ShadowingHeader extends StatelessWidget {
                       color: AppColors.textDark,
                     ),
                   ),
+                  if (segmentTitle != null && segmentTitle!.isNotEmpty)
+                    Text(
+                      segmentTitle!,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.sunRed.withValues(alpha: 0.75),
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                 ],
               ),
             ],
           ),
-          
-          // Toggle Switch Design
-          Container(
-             decoration: BoxDecoration(
-               color: Colors.white.withOpacity(0.85),
-               borderRadius: BorderRadius.circular(20),
-               border: Border.all(color: AppColors.sunRed.withOpacity(0.2)),
-             ),
-             child: isBlindMode ? _buildBlindSwitch() : _buildNormalToggle(),
-          )
+          // Toggle Switch Design removed as requested
         ],
       ),
     );

@@ -1,4 +1,4 @@
-class UserModel {
+﻿class UserModel {
   final String name;
   final String avatarUrl;
   final int streakDays;

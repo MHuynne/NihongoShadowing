@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 
 class MountainProgressWidget extends StatelessWidget {
   final int completedLessons;
@@ -94,7 +94,7 @@ class MountainProgressWidget extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
-                          color: const Color(0xFFFF5238),
+                          color: const Color(0xFFFF4D6D),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -149,7 +149,7 @@ class MountainProgressWidget extends StatelessWidget {
                       value: progress,
                       strokeWidth: 8,
                       backgroundColor: Colors.white.withValues(alpha: 0.2),
-                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF5238)),
+                      valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF4D6D)),
                       strokeCap: StrokeCap.round,
                     ),
                   ),

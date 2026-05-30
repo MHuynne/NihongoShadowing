@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
@@ -71,7 +70,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
             const SizedBox(height: 10),
             const Text(
-              'Khong tai duoc tong quan admin',
+              'Không thể tải được tổng quan Admin',
               style: TextStyle(
                 fontWeight: FontWeight.w800,
                 color: AdminPalette.textPrimary,
@@ -85,7 +84,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
             ),
             const SizedBox(height: 16),
             AdminPrimaryButton(
-              label: 'Thu lai',
+              label: 'Thử lại',
               icon: Icons.refresh_rounded,
               onPressed: _loadOverview,
             ),
@@ -108,9 +107,9 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
         const AdminSectionHeader(
-          title: 'Tong quan noi dung',
+          title: 'Tổng quan nội dung',
           subtitle:
-              'So lieu duoc doc truc tiep tu backend FastAPI va MySQL Laragon.',
+              'Số liệu được đọc trực tiếp từ backend FastAPI và MySQL Laragon.',
         ),
         const SizedBox(height: 18),
         Wrap(
@@ -118,42 +117,42 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
           runSpacing: 16,
           children: [
             _StatCard(
-              label: 'Lessons',
+              label: 'Bài học',
               value: '${counts['lessons'] ?? 0}',
               icon: Icons.menu_book_rounded,
               color: AdminPalette.lessonAccent,
               backgroundColor: AdminPalette.lessonSurface,
             ),
             _StatCard(
-              label: 'Topics',
+              label: 'Chủ đề',
               value: '${counts['topics'] ?? 0}',
               icon: Icons.graphic_eq_rounded,
               color: AdminPalette.topicAccent,
               backgroundColor: AdminPalette.topicSurface,
             ),
             _StatCard(
-              label: 'Vocabularies',
+              label: 'Từ vựng',
               value: '${counts['vocabularies'] ?? 0}',
               icon: Icons.translate_rounded,
               color: AdminPalette.vocabularyAccent,
               backgroundColor: AdminPalette.vocabularySurface,
             ),
             _StatCard(
-              label: 'Scenarios',
+              label: 'Kịch bản nhập vai',
               value: '${counts['scenarios'] ?? 0}',
               icon: Icons.forum_rounded,
               color: AdminPalette.roleplayAccent,
               backgroundColor: AdminPalette.roleplaySurface,
             ),
             _StatCard(
-              label: 'Sessions',
+              label: 'Lượt học',
               value: '${counts['sessions'] ?? 0}',
               icon: Icons.history_rounded,
               color: AdminPalette.neutralAccent,
               backgroundColor: AdminPalette.neutralSurface,
             ),
             _StatCard(
-              label: 'Results',
+              label: 'Kết quả học',
               value: '${counts['shadowing_results'] ?? 0}',
               icon: Icons.analytics_rounded,
               color: AdminPalette.topicAccent,
@@ -168,11 +167,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               Expanded(
                 child: AdminSurface(
                   child: _RecentListCard(
-                    title: 'Lesson moi nhat',
-                    emptyLabel: 'Chua co lesson nao.',
+                    title: 'Bài học mới nhất',
+                    emptyLabel: 'Chưa có bài học nào.',
                     items: latestLessons,
                     builder: (item) => ListTile(
-                      contentPadding: EdgeInsets.zero,
+                       contentPadding: EdgeInsets.zero,
                       leading: const CircleAvatar(
                         backgroundColor: AdminPalette.lessonSurface,
                         child: Icon(
@@ -181,11 +180,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         ),
                       ),
                       title: Text(
-                        (item['chapter_name'] ?? 'Khong ten').toString(),
+                        (item['chapter_name'] ?? 'Không tên').toString(),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       subtitle: Text(
-                        'Level ${item['level'] ?? 'N/A'} | Thu tu ${item['order_index'] ?? '-'}',
+                        'Cấp độ ${item['level'] ?? 'N/A'} | Thứ tự ${item['order_index'] ?? '-'}',
                       ),
                     ),
                   ),
@@ -195,8 +194,8 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
               Expanded(
                 child: AdminSurface(
                   child: _RecentListCard(
-                    title: 'Topic moi nhat',
-                    emptyLabel: 'Chua co topic nao.',
+                    title: 'Chủ đề mới nhất',
+                    emptyLabel: 'Chưa có chủ đề nào.',
                     items: latestTopics,
                     builder: (item) => ListTile(
                       contentPadding: EdgeInsets.zero,
@@ -208,11 +207,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                         ),
                       ),
                       title: Text(
-                        (item['title'] ?? 'Khong ten').toString(),
+                        (item['title'] ?? 'Không tên').toString(),
                         style: const TextStyle(fontWeight: FontWeight.w700),
                       ),
                       subtitle: Text(
-                        'Level ${item['level'] ?? 'N/A'} | Lesson ${item['lesson_id'] ?? '-'}',
+                        'Cấp độ ${item['level'] ?? 'N/A'} | Bài học ${item['lesson_id'] ?? '-'}',
                       ),
                     ),
                   ),
@@ -313,7 +312,7 @@ class _RecentListCard extends StatelessWidget {
         if (items.isEmpty)
           AdminEmptyState(
             title: emptyLabel,
-            subtitle: 'Khi co du lieu moi, danh sach se hien o day.',
+            subtitle: 'Khi có dữ liệu mới, danh sách sẽ hiển thị ở đây.',
           )
         else
           ...items.map(builder),

@@ -1,4 +1,4 @@
-class SrsProgressModel {
+﻿class SrsProgressModel {
   final int completedWords;
   final int totalWords;
 

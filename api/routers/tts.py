@@ -14,6 +14,7 @@ Fallback chain (ưu tiên chất lượng giọng):
 
 import os
 import io
+import uuid
 import base64
 import hashlib
 import tempfile
@@ -24,6 +25,9 @@ from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 router = APIRouter(prefix="/tts", tags=["Text-to-Speech (Shadowing Sample)"])
+
+STATIC_UPLOAD_DIR = Path("static/uploads")
+STATIC_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # ── API Keys ─────────────────────────────────────────────────────────────────
 AZURE_SPEECH_KEY    = os.getenv("AZURE_SPEECH_KEY", "")
@@ -248,6 +252,75 @@ async def get_shadowing_sample(req: TTSRequest):
         headers={"X-TTS-Source": source},
     )
 
+
+class GenerateShadowingAudioRequest(BaseModel):
+    script: str = Field(..., description="Toàn bộ kịch bản tiếng Nhật của bài Shadowing")
+    speed: float = Field(default=0.85, ge=0.5, le=1.5, description="Tốc độ đọc")
+    voice_gender: str = Field(default="female", description="'female' hoặc 'male'")
+
+
+@router.post(
+    "/generate-shadowing-audio",
+    summary="Tạo audio AI từ script Shadowing (Admin)",
+    description=(
+        "Admin dùng endpoint này để tạo file audio MP3 từ toàn bộ script tiếng Nhật của bài Shadowing. "
+        "File sẽ được lưu vào thư mục static/uploads và trả về URL để lưu vào trường full_audio_url."
+    ),
+)
+async def generate_shadowing_audio(req: GenerateShadowingAudioRequest):
+    if not req.script.strip():
+        raise HTTPException(status_code=400, detail="script không được để trống.")
+    if len(req.script) > 5000:
+        raise HTTPException(status_code=400, detail="script tối đa 5000 ký tự.")
+
+    audio_bytes: bytes | None = None
+    source = "unknown"
+    errors = []
+
+    # Priority 1: Azure
+    if AZURE_SPEECH_KEY:
+        try:
+            audio_bytes = await _azure_tts(req.script, req.speed, req.voice_gender)
+            source = "azure"
+        except Exception as e:
+            errors.append(f"Azure: {e}")
+
+    # Priority 2: Google Wavenet
+    if audio_bytes is None and GOOGLE_API_KEY:
+        try:
+            audio_bytes = await _google_tts(req.script, req.speed, req.voice_gender)
+            source = "google"
+        except Exception as e:
+            errors.append(f"Google: {e}")
+
+    # Priority 3: gTTS (free)
+    if audio_bytes is None:
+        try:
+            audio_bytes = _gtts_tts(req.script, req.speed)
+            source = "gtts"
+        except Exception as e:
+            errors.append(f"gTTS: {e}")
+
+    if audio_bytes is None:
+        raise HTTPException(
+            status_code=503,
+            detail=f"Không thể tạo audio. Lỗi: {'; '.join(errors)}",
+        )
+
+    # Lưu file vào static/uploads/
+    filename = f"shadowing_{uuid.uuid4().hex}.mp3"
+    file_path = STATIC_UPLOAD_DIR / filename
+    file_path.write_bytes(audio_bytes)
+    file_url = f"/static/uploads/{filename}"
+
+    print(f"[TTS] Generated shadowing audio → {filename} (source={source}, size={len(audio_bytes)})")
+
+    return {
+        "url": file_url,
+        "source": source,
+        "size_bytes": len(audio_bytes),
+        "filename": filename,
+    }
 
 
 @router.get("/voices", summary="Danh sách giọng đọc tiếng Nhật")

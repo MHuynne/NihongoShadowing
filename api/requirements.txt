@@ -7,11 +7,12 @@ python-dotenv
 httpx
 gtts
 python-multipart
-# Optional (uncomment nếu dùng Azure):
-# azure-cognitiveservices-speech
+# Thêm Azure Speech SDK:
+azure-cognitiveservices-speech
 selenium
 webdriver-manager
 beautifulsoup4
 janome
+
 pykakasi
 google-generativeai

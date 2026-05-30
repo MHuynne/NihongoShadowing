@@ -1,12 +1,16 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/auth/presentation/screens/login_screen.dart';
+import 'package:flutter_application_1/features/onboarding/presentation/screens/onboarding_welcome_screen.dart';
+import 'package:flutter_application_1/features/onboarding/presentation/screens/level_selection_screen.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
+import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 
 /// AuthGate lắng nghe stream auth để tự động điều hướng.
-/// - Đã đăng nhập → MainScreen
-/// - Chưa đăng nhập → LoginScreen
+/// - Chưa đăng nhập         → OnboardingWelcomeScreen
+/// - Đã đăng nhập, chưa chọn level → LevelSelectionScreen
+/// - Đã đăng nhập, đã chọn level   → MainScreen
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
@@ -20,13 +24,28 @@ class AuthGate extends StatelessWidget {
           return const _SplashView();
         }
 
-        // Đã đăng nhập
+        // Đã đăng nhập — kiểm tra đã chọn level chưa
         if (snapshot.hasData && snapshot.data != null) {
-          return const MainScreen();
+          final uid = snapshot.data!.uid;
+          return FutureBuilder<bool>(
+            future: UserPrefsService().hasSelectedLevel(uid),
+            builder: (context, levelSnap) {
+              // Đang kiểm tra SharedPreferences
+              if (levelSnap.connectionState == ConnectionState.waiting) {
+                return const _SplashView();
+              }
+              // Chưa chọn level → bắt buộc chọn trước khi vào app
+              if (levelSnap.data != true) {
+                return const LevelSelectionScreen(isChanging: false);
+              }
+              // Đã chọn level → vào MainScreen bình thường
+              return const MainScreen();
+            },
+          );
         }
 
-        // Chưa đăng nhập
-        return const LoginScreen();
+        // Chưa đăng nhập -> Hiện Onboarding đầu tiên
+        return const OnboardingWelcomeScreen();
       },
     );
   }

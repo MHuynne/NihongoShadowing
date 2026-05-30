@@ -1,7 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_application_1/core/config/api_config.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 
 class AdminApiService {
   final String _baseUrl = ApiConfig.baseUrl;
@@ -152,6 +152,23 @@ class AdminApiService {
     await _request('DELETE', '/vocabularies/$vocabularyId');
   }
 
+  Future<String> generateShadowingAudio({
+    required String script,
+    double speed = 0.85,
+    String voiceGender = 'female',
+  }) async {
+    final data = await _request(
+      'POST',
+      '/tts/generate-shadowing-audio',
+      body: {
+        'script': script,
+        'speed': speed,
+        'voice_gender': voiceGender,
+      },
+    );
+    return data['url'] as String;
+  }
+
   Future<List<Map<String, dynamic>>> fetchTopics() async {
     final data = await _request('GET', '/shadowing/topics/');
     return (data as List)
@@ -206,4 +223,141 @@ class AdminApiService {
   Future<void> deleteScenario(int scenarioId) async {
     await _request('DELETE', '/roleplay/scenarios/$scenarioId');
   }
+
+  // ─── Shadowing Segments (độc lập) ────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchAllSegments() async {
+    final data = await _request('GET', '/shadowing/segments/all');
+    return (data as List)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> createSegment(
+    Map<String, dynamic> segment,
+  ) async {
+    final data = await _request(
+      'POST',
+      '/shadowing/segments/standalone',
+      body: {...segment, 'topic_id': null},
+    );
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> updateSegment(
+    int segmentId,
+    Map<String, dynamic> segment,
+  ) async {
+    final data = await _request(
+      'PUT',
+      '/shadowing/segments/$segmentId',
+      body: {...segment, 'topic_id': null},
+    );
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<void> deleteSegment(int segmentId) async {
+    await _request('DELETE', '/shadowing/segments/$segmentId');
+  }
+
+  // ─── Segment Topics ───────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchSegmentTopics() async {
+    final data = await _request('GET', '/segment-topics/');
+    return (data as List)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> createSegmentTopic(
+    Map<String, dynamic> topic,
+  ) async {
+    final data = await _request('POST', '/segment-topics/', body: topic);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> updateSegmentTopic(
+    int id,
+    Map<String, dynamic> topic,
+  ) async {
+    final data = await _request('PUT', '/segment-topics/$id', body: topic);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<void> deleteSegmentTopic(int id) async {
+    await _request('DELETE', '/segment-topics/$id');
+  }
+
+  Future<void> setSegmentTopicCategories(int id, List<int> catIds) async {
+    final uri = _uri('/segment-topics/$id/set-categories');
+    final response = await http.put(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(catIds),
+    );
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final payload = await _decodeResponse(response);
+      final detail =
+          payload is Map<String, dynamic> ? payload['detail'] : null;
+      throw Exception(detail ?? 'HTTP ${response.statusCode}');
+    }
+  }
+
+  Future<void> assignSegmentToTopic(int topicId, int segId) async {
+    await _request('PUT', '/segment-topics/$topicId/assign-segment/$segId');
+  }
+
+  Future<void> removeSegmentFromTopic(int topicId, int segId) async {
+    await _request('PUT', '/segment-topics/$topicId/remove-segment/$segId');
+  }
+
+  Future<List<Map<String, dynamic>>> createSegmentsBulk(
+    List<Map<String, dynamic>> segments,
+  ) async {
+    // Gửi JSON array — _request chỉ nhận Map nên gọi http.post trực tiếp
+    final uri = _uri('/shadowing/segments/bulk');
+    final response = await http.post(
+      uri,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(
+        segments.map((s) => {...s, 'topic_id': null}).toList(),
+      ),
+    );
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      final data = jsonDecode(utf8.decode(response.bodyBytes)) as List;
+      return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+    }
+    final payload = jsonDecode(utf8.decode(response.bodyBytes));
+    final detail = payload is Map<String, dynamic> ? payload['detail'] : null;
+    throw Exception(detail ?? 'HTTP ${response.statusCode}');
+  }
+
+  // ─── Categories ──────────────────────────────────────────────────────────
+
+  Future<List<Map<String, dynamic>>> fetchCategories() async {
+    final data = await _request('GET', '/categories/');
+    return (data as List)
+        .map((item) => Map<String, dynamic>.from(item as Map))
+        .toList();
+  }
+
+  Future<Map<String, dynamic>> createCategory(
+      Map<String, dynamic> category) async {
+    final data = await _request('POST', '/categories/', body: category);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<Map<String, dynamic>> updateCategory(
+    int categoryId,
+    Map<String, dynamic> category,
+  ) async {
+    final data =
+        await _request('PUT', '/categories/$categoryId', body: category);
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  Future<void> deleteCategory(int categoryId) async {
+    await _request('DELETE', '/categories/$categoryId');
+  }
+
 }

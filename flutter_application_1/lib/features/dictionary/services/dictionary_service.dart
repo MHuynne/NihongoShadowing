@@ -1,15 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:flutter_application_1/features/dictionary/models/dictionary_models.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
 
 class DictionaryService {
-  static String get _baseUrl {
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000';
-    }
-    return 'http://localhost:8000';
-  }
+  static String get _baseUrl => ApiConfig.baseUrl;
 
   /// Tìm kiếm từ điển — trả về danh sách entry.
   static Future<DictionarySearchResult> search(String keyword,

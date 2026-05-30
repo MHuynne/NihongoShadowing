@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
+import 'package:flutter_application_1/features/dictionary/presentation/screens/dictionary_screen.dart';
 
 class QuickAccessGrid extends StatelessWidget {
   const QuickAccessGrid({super.key});
@@ -15,18 +16,21 @@ class QuickAccessGrid extends StatelessWidget {
               Expanded(
                 child: _buildGridItem(
                   context: context,
-                  icon: Icons.style_rounded, // Flashcards icon
-                  title: 'Flashcards',
-                  onTap: () {}, // Can be implemented later
+                  icon: Icons.map_rounded,
+                  title: 'Lộ trình học',
+                  onTap: () => MainScreen.switchTab(context, 1),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildGridItem(
                   context: context,
-                  icon: Icons.graphic_eq_rounded, // AI Shadowing
-                  title: 'AI Shadowing',
-                  onTap: () => MainScreen.switchTab(context, 2),
+                  icon: Icons.menu_book_rounded,
+                  title: 'Từ điển',
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (_) => const DictionaryScreen()),
+                  ),
                 ),
               ),
             ],
@@ -37,18 +41,18 @@ class QuickAccessGrid extends StatelessWidget {
               Expanded(
                 child: _buildGridItem(
                   context: context,
-                  icon: Icons.record_voice_over_rounded, // Roleplay
-                  title: 'Roleplay',
-                  onTap: () => MainScreen.switchTab(context, 3),
+                  icon: Icons.graphic_eq_rounded,
+                  title: 'Shadowing',
+                  onTap: () => MainScreen.switchTab(context, 2),
                 ),
               ),
               const SizedBox(width: 16),
               Expanded(
                 child: _buildGridItem(
                   context: context,
-                  icon: Icons.bar_chart_rounded, // Mastery Stats
-                  title: 'Mastery Stats',
-                  onTap: () {}, // Can be implemented later
+                  icon: Icons.record_voice_over_rounded,
+                  title: 'Roleplay',
+                  onTap: () => MainScreen.switchTab(context, 3),
                 ),
               ),
             ],
@@ -100,7 +104,7 @@ class QuickAccessGrid extends StatelessWidget {
                   ),
                 ],
               ),
-              child: Icon(icon, color: const Color(0xFFFF5238), size: 24),
+              child: Icon(icon, color: const Color(0xFFFF4D6D), size: 24),
             ),
             const SizedBox(height: 12),
             Text(

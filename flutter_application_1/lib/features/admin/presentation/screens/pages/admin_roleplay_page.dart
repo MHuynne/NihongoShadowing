@@ -59,7 +59,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(scenario == null ? 'Them scenario' : 'Chinh sua scenario'),
+        title: Text(scenario == null ? 'Thêm kịch bản' : 'Chỉnh sửa kịch bản'),
         content: SizedBox(
           width: 460,
           child: SingleChildScrollView(
@@ -69,7 +69,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                 TextField(
                   controller: titleController,
                   decoration: const InputDecoration(
-                    labelText: 'Tieu de',
+                    labelText: 'Tiêu đề',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -78,7 +78,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                   controller: descriptionController,
                   maxLines: 4,
                   decoration: const InputDecoration(
-                    labelText: 'Mo ta boi canh',
+                    labelText: 'Mô tả bối cảnh',
                     border: OutlineInputBorder(),
                   ),
                 ),
@@ -97,11 +97,11 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Huy'),
+            child: const Text('Hủy'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Luu'),
+            child: const Text('Lưu'),
           ),
         ],
       ),
@@ -129,7 +129,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong the luu scenario: $e')),
+        SnackBar(content: Text('Không thể lưu kịch bản: $e')),
       );
     }
   }
@@ -138,19 +138,19 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Xoa scenario?'),
+        title: const Text('Xóa kịch bản?'),
         content: Text(
-          'Scenario "${scenario['title'] ?? ''}" se bi xoa khoi he thong.',
+          'Kịch bản "${scenario['title'] ?? ''}" sẽ bị xóa khỏi hệ thống.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Huy'),
+            child: const Text('Hủy'),
           ),
           FilledButton(
             onPressed: () => Navigator.of(context).pop(true),
             style: FilledButton.styleFrom(backgroundColor: AdminPalette.errorRed),
-            child: const Text('Xoa'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -164,7 +164,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Khong the xoa scenario: $e')),
+        SnackBar(content: Text('Không thể xóa kịch bản: $e')),
       );
     }
   }
@@ -176,10 +176,10 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AdminSectionHeader(
-            title: 'Roleplay scenarios',
-            subtitle: 'Quan ly cac boi canh hoi thoai cho AI Sensei.',
+            title: 'Kịch bản nhập vai',
+            subtitle: 'Quản lý các bối cảnh hội thoại cho AI Sensei.',
             action: AdminPrimaryButton(
-              label: 'Them scenario',
+              label: 'Thêm kịch bản',
               onPressed: _openScenarioDialog,
             ),
           ),
@@ -203,8 +203,8 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
 
     if (_scenarios.isEmpty) {
       return const AdminEmptyState(
-        title: 'Chua co scenario nao',
-        subtitle: 'Them boi canh roleplay de nguoi hoc tap giao tiep voi AI.',
+        title: 'Chưa có kịch bản nào',
+        subtitle: 'Thêm bối cảnh nhập vai để người học tập giao tiếp với AI.',
       );
     }
 
@@ -241,7 +241,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      (scenario['title'] ?? 'Khong ten').toString(),
+                      (scenario['title'] ?? 'Không tên').toString(),
                       style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
@@ -250,7 +250,7 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      (scenario['description'] ?? 'Khong co mo ta').toString(),
+                      (scenario['description'] ?? 'Không có mô tả').toString(),
                       style: const TextStyle(
                         color: AdminPalette.textSecondary,
                         height: 1.5,
@@ -273,12 +273,12 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
               Column(
                 children: [
                   IconButton(
-                    tooltip: 'Sua',
+                    tooltip: 'Sửa',
                     onPressed: () => _openScenarioDialog(scenario),
                     icon: const Icon(Icons.edit_outlined),
                   ),
                   IconButton(
-                    tooltip: 'Xoa',
+                    tooltip: 'Xóa',
                     onPressed: () => _deleteScenario(scenario),
                     icon: const Icon(Icons.delete_outline_rounded),
                   ),

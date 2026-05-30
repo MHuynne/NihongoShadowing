@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/admin/presentation/screens/pages/admin_dashboard_page.dart';
 import 'package:flutter_application_1/features/admin/presentation/screens/pages/admin_lessons_page.dart';
 import 'package:flutter_application_1/features/admin/presentation/screens/pages/admin_roleplay_page.dart';
+import 'package:flutter_application_1/features/admin/presentation/screens/pages/admin_segments_page.dart';
 import 'package:flutter_application_1/features/admin/presentation/screens/pages/admin_topics_page.dart';
 import 'package:flutter_application_1/features/admin/presentation/screens/pages/admin_vocabularies_page.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
-enum AdminSection { dashboard, lessons, vocabularies, topics, roleplay }
+enum AdminSection { dashboard, lessons, vocabularies, topics, segments, roleplay }
 
 class AdminShellScreen extends StatefulWidget {
   const AdminShellScreen({super.key});
@@ -40,11 +40,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
   @override
   Widget build(BuildContext context) {
     final title = switch (_section) {
-      AdminSection.dashboard => 'Admin Dashboard',
-      AdminSection.lessons => 'Lo trinh bai hoc',
-      AdminSection.vocabularies => 'Quan ly tu vung',
-      AdminSection.topics => 'Shadowing',
-      AdminSection.roleplay => 'Quan ly roleplay',
+      AdminSection.dashboard => 'Tổng quan Admin',
+      AdminSection.lessons => 'Lộ trình bài học',
+      AdminSection.vocabularies => 'Quản lý từ vựng',
+      AdminSection.topics => 'Chủ đề Shadowing',
+      AdminSection.segments => 'Phân đoạn & Danh mục',
+      AdminSection.roleplay => 'Quản lý Roleplay',
     };
 
     return Theme(
@@ -64,10 +65,12 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
               onChanged: (section) {
                 setState(() {
                   _section = section;
-                  if (section == AdminSection.vocabularies)
+                  if (section == AdminSection.vocabularies) {
                     _initialLessonIdForVocab = null;
-                  if (section == AdminSection.topics)
+                  }
+                  if (section == AdminSection.topics) {
                     _initialLessonIdForTopic = null;
+                  }
                 });
               },
             ),
@@ -100,7 +103,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Ket noi truc tiep FastAPI + MySQL Laragon',
+                                'Kết nối trực tiếp FastAPI + MySQL Laragon',
                                 style: const TextStyle(
                                   color: AdminPalette.textMuted,
                                   fontSize: 12,
@@ -121,7 +124,7 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
                             border: Border.all(color: AdminPalette.borderSoft),
                           ),
                           child: const Text(
-                            'WEB ADMIN',
+                            'QUẢN TRỊ VIÊN',
                             style: TextStyle(
                               color: AdminPalette.pillForeground,
                               fontSize: 11,
@@ -168,6 +171,8 @@ class _AdminShellScreenState extends State<AdminShellScreen> {
           api: _api,
           initialLessonId: _initialLessonIdForTopic,
         );
+      case AdminSection.segments:
+        return AdminSegmentsPage(api: _api);
       case AdminSection.roleplay:
         return AdminRoleplayPage(api: _api);
     }
@@ -212,7 +217,7 @@ class _AdminSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Content administration',
+            'Quản trị nội dung',
             style: TextStyle(
               color: AdminPalette.sidebarMuted,
               fontSize: 13,
@@ -221,31 +226,37 @@ class _AdminSidebar extends StatelessWidget {
           ),
           const SizedBox(height: 28),
           _SidebarItem(
-            label: 'Tong quan',
+            label: 'Tổng quan',
             icon: Icons.dashboard_rounded,
             selected: current == AdminSection.dashboard,
             onTap: () => onChanged(AdminSection.dashboard),
           ),
           _SidebarItem(
-            label: 'Lo trinh bai hoc',
+            label: 'Lộ trình bài học',
             icon: Icons.menu_book_rounded,
             selected: current == AdminSection.lessons,
             onTap: () => onChanged(AdminSection.lessons),
           ),
           _SidebarItem(
-            label: 'Tu vung',
+            label: 'Từ vựng',
             icon: Icons.translate_rounded,
             selected: current == AdminSection.vocabularies,
             onTap: () => onChanged(AdminSection.vocabularies),
           ),
           _SidebarItem(
-            label: 'Shadowing doc lap',
+            label: 'Chủ đề Shadowing',
             icon: Icons.graphic_eq_rounded,
             selected: current == AdminSection.topics,
             onTap: () => onChanged(AdminSection.topics),
           ),
           _SidebarItem(
-            label: 'Roleplay',
+            label: 'Phân đoạn & Danh mục',
+            icon: Icons.label_rounded,
+            selected: current == AdminSection.segments,
+            onTap: () => onChanged(AdminSection.segments),
+          ),
+          _SidebarItem(
+            label: 'Quản lý Roleplay',
             icon: Icons.forum_rounded,
             selected: current == AdminSection.roleplay,
             onTap: () => onChanged(AdminSection.roleplay),
@@ -281,7 +292,7 @@ class _AdminSidebar extends StatelessWidget {
                 ),
                 SizedBox(height: 10),
                 Text(
-                  'Trang admin nay duoc canh mau theo app chinh va noi truc tiep den du lieu MySQL qua backend FastAPI.',
+                  'Trang admin này được phối màu theo ứng dụng chính và kết nối trực tiếp đến dữ liệu MySQL qua backend FastAPI.',
                   style: TextStyle(
                     color: AdminPalette.sidebarMuted,
                     fontSize: 12,

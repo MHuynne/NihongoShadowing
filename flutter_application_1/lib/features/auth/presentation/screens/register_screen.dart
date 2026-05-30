@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+﻿import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
@@ -45,7 +45,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         password: _passwordCtrl.text,
         displayName: _nameCtrl.text.trim(),
       );
-      // AuthGate lắng nghe stream và tự redirect về MainScreen
+      if (mounted) {
+        // Đăng ký thành công, đóng RegisterScreen để AuthGate hiển thị MainScreen
+        Navigator.of(context).popUntil((route) => route.isFirst);
+      }
     } on FirebaseAuthException catch (e) {
       setState(() => _errorMessage = AuthService.getVietnameseError(e));
     } finally {

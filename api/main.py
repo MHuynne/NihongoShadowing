@@ -7,7 +7,7 @@ load_dotenv()
 
 # Import all models here so SQLAlchemy knows them before create_all
 import models 
-from models import shadowing_topic, shadowing_segment, shadowing_result, lesson, user_progress
+from models import shadowing_topic, shadowing_segment, shadowing_result, lesson, user_progress, category, segment_topic
 
 # Create all database tables
 Base.metadata.create_all(bind=engine)
@@ -24,6 +24,10 @@ from routers import dictionary as router_dictionary
 from routers import roleplay as router_roleplay
 from routers import admin as router_admin
 from routers import upload as router_upload
+from routers import category as router_category
+from routers import segments as router_segments
+from routers import segment_topic as router_segment_topic
+from routers import user_profile as router_profile
 
 app = FastAPI(
     title="Japanese Learning Backend API",
@@ -59,6 +63,10 @@ app.include_router(router_dictionary.router)
 app.include_router(router_roleplay.router)
 app.include_router(router_admin.router)
 app.include_router(router_upload.router)
+app.include_router(router_category.router)
+app.include_router(router_segments.router)
+app.include_router(router_segment_topic.router)
+app.include_router(router_profile.router)
 
 @app.get("/")
 def read_root():

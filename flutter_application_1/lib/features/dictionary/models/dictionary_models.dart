@@ -1,4 +1,4 @@
-// ── Dictionary Models — Từ điển Nhật - Việt ─────────────────────────────────
+﻿// ── Dictionary Models — Từ điển Nhật - Việt ─────────────────────────────────
 
 class DictionaryEntry {
   final String word;
