@@ -9,7 +9,9 @@ class AuthService {
 
   GoogleSignIn get _googleSignIn {
     _googleSignInInstance ??= GoogleSignIn(
-      clientId: kIsWeb ? 'YOUR_CLIENT_ID.apps.googleusercontent.com' : null,
+      clientId: kIsWeb
+          ? '56132876251-em0dkjk5g1g51agnc60h4rgk7hek5fui.apps.googleusercontent.com'
+          : null,
     );
     return _googleSignInInstance!;
   }
@@ -96,7 +98,8 @@ class AuthService {
       // ── WEB ──────────────────────────────────────────────────────────
       final googleProvider = GoogleAuthProvider()
         ..addScope('email')
-        ..addScope('profile');
+        ..addScope('profile')
+        ..setCustomParameters({'prompt': 'select_account'});
       final userCredential = await _auth.signInWithPopup(googleProvider);
       final token = await userCredential.user?.getIdToken();
       if (token != null) await _cacheToken(token);
@@ -181,16 +184,22 @@ class AuthService {
 
   // ── Đăng xuất (xóa token cache) ───────────────────────────────────────
   Future<void> signOut() async {
+    // 1. Xóa token cache trước
     await _clearToken();
-    try {
-      await _googleSignIn.signOut();
-    } catch (e) {
-      // Bỏ qua lỗi nếu Google Sign-In không được hỗ trợ trên nền tảng hiện tại (ví dụ: Windows) hoặc lỗi mạng
-    }
+
+    // 2. Firebase signOut là bước quan trọng nhất — gọi trước tiên
     try {
       await _auth.signOut();
-    } catch (e) {
-      // Bỏ qua lỗi nếu Firebase signOut thất bại
+    } catch (_) {}
+
+    // 3. Google Sign-In signOut/disconnect (bỏ qua trên Web vì package không hỗ trợ)
+    if (!kIsWeb) {
+      try {
+        await _googleSignIn.signOut();
+      } catch (_) {}
+      try {
+        await _googleSignIn.disconnect();
+      } catch (_) {}
     }
   }
 

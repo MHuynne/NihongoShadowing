@@ -39,23 +39,20 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _loadProgress() async {
     try {
-      // Get total lessons count to be accurate
-      int totalLessonsCount = 25;
+      List<dynamic> allLessons = [];
       try {
         String base = ApiConfig.baseUrl;
         final res = await http.get(Uri.parse('$base/lessons/?limit=200'));
         if (res.statusCode == 200) {
           final List<dynamic> data = json.decode(utf8.decode(res.bodyBytes));
           if (data.isNotEmpty) {
-            totalLessonsCount = data.length;
+            allLessons = data;
           }
         }
       } catch (_) {}
 
       final all = await ProgressService.getAllProgress();
-      final completed = all.where((p) => p['lesson_completed'] == true).length;
-      final flashcard = all.where((p) => p['flashcard_done'] == true).length;
-      final shadowing = all.where((p) => p['shadowing_passed'] == true).length;
+      final totalCompletedGlobal = all.where((p) => p['lesson_completed'] == true).length;
 
       // Ưu tiên dùng level do người dùng tự chọn (lưu trong SharedPreferences)
       String level = 'N5';
@@ -66,19 +63,40 @@ class _HomeScreenState extends State<HomeScreen> {
           level = savedLevel;
         } else {
           // Fallback: tính theo số bài đã hoàn thành
-          if (completed >= 25) level = 'N4';
-          if (completed >= 50) level = 'N3';
-          if (completed >= 75) level = 'N2';
+          if (totalCompletedGlobal >= 25) level = 'N4';
+          if (totalCompletedGlobal >= 50) level = 'N3';
+          if (totalCompletedGlobal >= 75) level = 'N2';
         }
       }
 
+      // Lọc các bài học thuộc level hiện tại
+      final levelLessons = allLessons.where((l) => l['level'] == level).toList();
+      final levelTotal = levelLessons.isNotEmpty ? levelLessons.length : 12;
+
+      // Đếm số bài đã hoàn thành trong level này
+      final levelLessonIds = levelLessons.map((l) => l['id'] as int).toSet();
+      final levelCompleted = all.where((p) {
+        final lid = p['lesson_id'] as int;
+        return levelLessonIds.contains(lid) && p['lesson_completed'] == true;
+      }).length;
+
+      final levelFlashcard = all.where((p) {
+        final lid = p['lesson_id'] as int;
+        return levelLessonIds.contains(lid) && p['flashcard_done'] == true;
+      }).length;
+
+      final levelShadowing = all.where((p) {
+        final lid = p['lesson_id'] as int;
+        return levelLessonIds.contains(lid) && p['shadowing_passed'] == true;
+      }).length;
+
       if (mounted) {
         setState(() {
-          _completedLessons = completed;
-          _totalLessons = totalLessonsCount;
+          _completedLessons = levelCompleted;
+          _totalLessons = levelTotal;
           _levelLabel = level;
-          _flashcardDone = flashcard;
-          _shadowingDone = shadowing;
+          _flashcardDone = levelFlashcard;
+          _shadowingDone = levelShadowing;
           _loadingProgress = false;
         });
       }
@@ -90,9 +108,13 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final String displayName = firebaseUser?.displayName ?? 'Minh Anh';
+    final String avatarUrl = firebaseUser?.photoURL ?? '';
+
     final dummyUser = UserModel(
-      name: 'Minh Anh',
-      avatarUrl: 'https://i.pravatar.cc/150?img=47',
+      name: displayName,
+      avatarUrl: avatarUrl,
       streakDays: 12,
       balanceYen: 2450,
       activeDates: [

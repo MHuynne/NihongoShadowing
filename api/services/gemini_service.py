@@ -1,7 +1,6 @@
 import json
 import os
 import asyncio
-import google.generativeai as genai
 from typing import List
 from schemas.roleplay import ChatResponseResp, GrammarCorrectionSchema
 
@@ -24,10 +23,6 @@ def _get_next_api_key() -> str:
     key = _GEMINI_KEY_POOL[_current_key_index % len(_GEMINI_KEY_POOL)]
     _current_key_index += 1
     return key
-
-# Khởi tạo key đầu tiên
-if _GEMINI_KEY_POOL:
-    genai.configure(api_key=_GEMINI_KEY_POOL[0])
 
 class RoleplayAIService:
     @staticmethod
@@ -57,29 +52,35 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
 }}
 """
         
-        # Thiết lập model (hỗ trợ ép kiểu JSON trả về)
-        model = genai.GenerativeModel(
-            model_name=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
-            system_instruction=system_instruction,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-                temperature=0.7
-            )
-        )
-        
         # Chuyển đổi định dạng lịch sử chat thành định dạng của Gemini (user và model)
-        gemini_history = []
+        contents = []
         for msg in chat_history:
             gemini_role = "user" if msg["role"] == "user" else "model"
-            gemini_history.append({"role": gemini_role, "parts": [msg["content"]]})
+            contents.append({"role": gemini_role, "parts": [{"text": msg["content"]}]})
+
+        contents.append({"role": "user", "parts": [{"text": user_message}]})
             
         max_retries = max(len(_GEMINI_KEY_POOL), 1)
         for attempt in range(max_retries):
             try:
-                # Phải tạo lại phiên chat mỗi lần retry vì genai.configure thay đổi client ngầm bên dưới
-                chat = model.start_chat(history=gemini_history)
-                response = await chat.send_message_async(user_message)
-                content = response.text
+                from google import genai
+                from google.genai import types
+
+                api_key = _get_next_api_key()
+                if not api_key:
+                    raise RuntimeError("Missing GEMINI_API_KEY or GEMINI_API_KEYS")
+
+                client = genai.Client(api_key=api_key)
+                response = await client.aio.models.generate_content(
+                    model=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        system_instruction=system_instruction,
+                        response_mime_type="application/json",
+                        temperature=0.7,
+                    ),
+                )
+                content = response.text or ""
                 
                 parsed = json.loads(content)
                 
@@ -98,9 +99,7 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
                 # Kiểm tra xem có phải lỗi 429 / Quota Exceeded không
                 if "429" in error_msg or "quota" in error_msg or "exhausted" in error_msg or "too many requests" in error_msg:
                     if attempt < max_retries - 1:
-                        next_key = _get_next_api_key()
-                        print(f"[Roleplay AI] Key hiện tại bị lỗi quota 429. Đang thử lại với key: ...{next_key[-6:]}")
-                        genai.configure(api_key=next_key)
+                        print("[Roleplay AI] Key hiện tại bị lỗi quota 429. Đang thử lại với key tiếp theo.")
                         await asyncio.sleep(1) # Nghỉ một nhịp trước khi thử lại
                         continue # Thử lại với vòng lặp tiếp theo
                 

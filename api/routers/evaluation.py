@@ -236,18 +236,44 @@ _recommendation_engine = RecommendationEngine()
 # ==============================================================================
 
 def _trim_silence(audio_bytes: bytes) -> bytes:
-    """Chuyển đổi mọi định dạng nén (OGG/WEBM/M4A) sang WAV LINEAR16 16kHz Mono bằng pydub."""
+    """Chuyen doi moi dinh dang nen (OGG/WEBM/M4A) sang WAV LINEAR16 16kHz Mono bang ffmpeg.
+    Khong dung pydub vi audioop bi xoa tu Python 3.13+."""
+    import subprocess
+    import tempfile
+    import os
     try:
-        from pydub import AudioSegment
-        import io
-        audio = AudioSegment.from_file(io.BytesIO(audio_bytes))
-        audio = audio.set_frame_rate(16000).set_channels(1)
-        out_buf = io.BytesIO()
-        # Dùng codec="pcm_s16le" để FFmpeg tự động scale âm thanh từ 32-bit về 16-bit chuẩn
-        # thay vì dùng .set_sample_width(2) gây vỡ tiếng (tạo tiếng xèo/noise).
-        audio.export(out_buf, format="wav", codec="pcm_s16le")
-        print(f"[AudioConvert] Chuyển đổi thành công {len(audio_bytes)} bytes sang WAV {len(out_buf.getvalue())} bytes.")
-        return out_buf.getvalue()
+        with tempfile.NamedTemporaryFile(suffix='.webm', delete=False) as tmp_in:
+            tmp_in.write(audio_bytes)
+            tmp_in_path = tmp_in.name
+        tmp_out_path = tmp_in_path + '.wav'
+        try:
+            result = subprocess.run(
+                ['ffmpeg', '-y', '-i', tmp_in_path,
+                 '-ac', '1', '-ar', '16000', '-acodec', 'pcm_s16le',
+                 tmp_out_path],
+                capture_output=True, timeout=30,
+            )
+            if result.returncode == 0 and os.path.exists(tmp_out_path):
+                with open(tmp_out_path, 'rb') as f:
+                    wav_bytes = f.read()
+                in_sz = len(audio_bytes)
+                out_sz = len(wav_bytes)
+                print(f"[AudioConvert] ffmpeg OK: {in_sz} bytes -> WAV {out_sz} bytes.")
+                return wav_bytes
+            else:
+                err = result.stderr.decode(errors='replace')
+                rc = result.returncode
+                print(f"[AudioConvert] ffmpeg failed (rc={rc}): {err}")
+                return audio_bytes
+        finally:
+            for p in [tmp_in_path, tmp_out_path]:
+                try:
+                    os.unlink(p)
+                except OSError:
+                    pass
+    except FileNotFoundError:
+        print("[AudioConvert] ffmpeg not found in PATH -- tra ve audio goc.")
+        return audio_bytes
     except Exception as e:
         print(f"[AudioConvert] Failed: {e}")
         return audio_bytes
@@ -690,14 +716,30 @@ async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int
 
     config = {
         "languageCode": "ja-JP",
-        "audioChannelCount": 1,
         "alternativeLanguageCodes": [],
         "enableAutomaticPunctuation": True,
         "enableWordTimeOffsets": True,
         "model": "latest_long",
-        "encoding": "LINEAR16",
-        "sampleRateHertz": 16000,
     }
+
+    filename = (audio_filename or "").lower()
+    if audio_bytes.startswith(b"RIFF") and audio_bytes[8:12] == b"WAVE":
+        config["encoding"] = "LINEAR16"
+        config["sampleRateHertz"] = 16000
+        config["audioChannelCount"] = 1
+    elif audio_bytes.startswith(b"\x1a\x45\xdf\xa3") or filename.endswith(".webm"):
+        config["encoding"] = "WEBM_OPUS"
+        # Browser MediaRecorder always records stereo (2-channel) WEBM/OPUS.
+        # Google STT defaults audioChannelCount to 1 when unset, which causes
+        # a 400 INVALID_ARGUMENT error if the WEBM header reports 2 channels.
+        config["audioChannelCount"] = 2
+    elif audio_bytes.startswith(b"OggS") or filename.endswith(".ogg") or filename.endswith(".opus"):
+        config["encoding"] = "OGG_OPUS"
+    else:
+        config["encoding"] = "ENCODING_UNSPECIFIED"
+
+
+    print(f"[Google STT] config={config}")
 
     payload = {
         "config": config,
@@ -762,8 +804,6 @@ async def evaluate_voice(
             raw_audio_bytes = await audio.read()
             with open("debug_raw_voice.raw", "wb") as f:
                 f.write(raw_audio_bytes)
-            with open("debug_converted_voice.wav", "wb") as f:
-                f.write(_trim_silence(raw_audio_bytes))
 
         # ----------------------------------------------------------------
         # LUỒNG 1: Azure Pronunciation Assessment
@@ -798,6 +838,16 @@ async def evaluate_voice(
                 recognized_text = result.text
                 error_word      = _find_error_word(expected_text, recognized_text)
 
+                # Azure chấm phoneme quality nhưng không phạt khi nói sai từ.
+                # Blend với text-level accuracy để phản ánh thực tế: nói sai từ → điểm thấp.
+                # scale = 0.25 (sai hoàn toàn) → 1.0 (đúng hết)
+                text_match = _mora_accuracy(expected_text, recognized_text) / 100.0
+                if text_match < 0.85:
+                    scale = 0.25 + 0.75 * text_match
+                    accuracy_score = int(accuracy_score * scale)
+                    fluency_score  = int(fluency_score  * scale)
+                    prosody_score  = int(prosody_score  * scale)
+
                 # Áp dụng guard câu ngắn cho Azure cũng
                 is_short = len(expected_text.strip()) < 15
                 if is_short:
@@ -812,7 +862,7 @@ async def evaluate_voice(
         # LUỒNG 2: Google Speech REST API
         # ----------------------------------------------------------------
         elif audio and GOOGLE_API_KEY and raw_audio_bytes:
-            audio_bytes = _trim_silence(raw_audio_bytes)
+            audio_bytes = raw_audio_bytes
             recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
             accuracy_score, fluency_score, prosody_score = _compute_scores(expected_text, recognized_text)
             error_word = _find_error_word(expected_text, recognized_text)
@@ -884,6 +934,7 @@ async def evaluate_shadowing(
     fluency_score   = 0
     prosody_score   = 0
     rhythm_score    = 0
+    used_azure      = False  # track nếu Azure đã chấm điểm trực tiếp từ audio
 
     try:
         # --- DEBUG: Lưu file âm thanh nhận được từ mobile/web ---
@@ -892,8 +943,6 @@ async def evaluate_shadowing(
             raw_audio_bytes = await audio.read()
             with open("debug_raw_shadowing.raw", "wb") as f:
                 f.write(raw_audio_bytes)
-            with open("debug_converted_shadowing.wav", "wb") as f:
-                f.write(_trim_silence(raw_audio_bytes))
 
         # ----------------------------------------------------------------
         # LUỒNG 1: Azure
@@ -926,6 +975,19 @@ async def evaluate_shadowing(
                 fluency_score   = int(pr.fluency_score)
                 recognized_text = result.text
                 error_word      = _find_error_word(expected_text, recognized_text)
+                used_azure      = True  # Azure đã chấm từ audio — tin cậy nhất
+
+                # Azure chấm phoneme quality nhưng không phạt khi nói sai từ.
+                # Blend với text-level accuracy để phản ánh được: nói sai từ → điểm thấp.
+                text_match = _mora_accuracy(expected_text, recognized_text) / 100.0
+                if text_match < 0.85:
+                    scale = 0.25 + 0.75 * text_match
+                    accuracy_score    = int(accuracy_score * scale)
+                    fluency_score     = int(fluency_score  * scale)
+                    # azure_prosody sẽ tính lại sau, lưu raw để scale
+                    _azure_prosody_raw = int(pr.prosody_score * scale)
+                else:
+                    _azure_prosody_raw = int(pr.prosody_score)
 
                 # Tính rhythm và prosody shadowing
                 exp_pauses = _count_pauses(expected_text)
@@ -936,8 +998,7 @@ async def evaluate_shadowing(
                     pause_ratio  = 1.0 - abs(exp_pauses - rec_pauses) / max(exp_pauses, 1)
                     rhythm_score = max(int(pause_ratio * 100), 0)
 
-                azure_prosody = int(pr.prosody_score)
-                prosody_score = min(int(azure_prosody * 0.7 + rhythm_score * 0.3), 100)
+                prosody_score = min(int(_azure_prosody_raw * 0.7 + rhythm_score * 0.3), 100)
 
                 # Guard câu ngắn
                 is_short = len(expected_text.strip()) < 15
@@ -953,7 +1014,7 @@ async def evaluate_shadowing(
         # LUỒNG 2: Google STT
         # ----------------------------------------------------------------
         elif audio and GOOGLE_API_KEY and raw_audio_bytes:
-            audio_bytes = _trim_silence(raw_audio_bytes)
+            audio_bytes = raw_audio_bytes
             recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
             accuracy_score, fluency_score, prosody_score, rhythm_score = _compute_shadowing_scores(
                 expected_text, recognized_text
@@ -992,10 +1053,15 @@ async def evaluate_shadowing(
         if recognized_text and recognized_text != "(Không nhận được audio)":
             ai_eval = await _ai_full_evaluation(expected_text, recognized_text)
             if ai_eval:
-                accuracy_score      = ai_eval.get("accuracy", accuracy_score)
-                fluency_score       = ai_eval.get("fluency", fluency_score)
-                prosody_score       = ai_eval.get("prosody", prosody_score)
-                rhythm_score        = ai_eval.get("rhythm", rhythm_score)
+                # Nếu Azure đã chấm điểm trực tiếp từ audio thì GIỮ điểm Azure.
+                # Gemini chỉ bổ sung words_analysis / mispronounced_words / error_types.
+                # Lý do: Azure phân tích phoneme từ waveform — chính xác hơn so sánh text.
+                # Gemini so sánh text STT vs text gốc nên bị ảnh hưởng bởi lỗi nhận dạng.
+                if not used_azure:
+                    accuracy_score = ai_eval.get("accuracy", accuracy_score)
+                    fluency_score  = ai_eval.get("fluency", fluency_score)
+                    prosody_score  = ai_eval.get("prosody", prosody_score)
+                    rhythm_score   = ai_eval.get("rhythm", rhythm_score)
                 words_analysis      = ai_eval.get("words_analysis", [])
                 mispronounced_words = ai_eval.get("mispronounced_words", [])
                 error_types         = ai_eval.get("error_types", error_types)

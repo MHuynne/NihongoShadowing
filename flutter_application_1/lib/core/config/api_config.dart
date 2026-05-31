@@ -16,7 +16,7 @@ class ApiConfig {
   //   Xem IP bằng lệnh: ipconfig  (Windows) / ifconfig (Mac/Linux)
   //   Lấy địa chỉ IPv4 của card mạng Wifi đang kết nối cùng điện thoại.
   //
-  static const String _physicalDeviceIp = '192.168.1.3';
+  static const String _physicalDeviceIp = '172.20.10.8';
 
   // ─── Port server FastAPI ───────────────────────────────────────────────────
   static const int _port = 8000;

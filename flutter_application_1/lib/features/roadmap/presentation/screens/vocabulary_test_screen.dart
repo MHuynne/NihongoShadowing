@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/foundation.dart';
 import 'dart:convert';
 import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/flashcard_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
@@ -33,6 +31,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
 
   bool _isAnswered = false;
   String? _selectedAnswer;
+  final List<dynamic> _wrongWords = [];  // Danh sách từ trả lời sai
   
   List<String> _currentOptions = [];
 
@@ -103,6 +102,12 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
       _isAnswered = true;
       if (selected == _vocabularies[_currentIndex]['meaning']) {
         _score++;
+      } else {
+        // Lưu từ trả lời sai để ôn lại bằng flashcard
+        final wrong = _vocabularies[_currentIndex];
+        if (!_wrongWords.any((w) => w['word'] == wrong['word'])) {
+          _wrongWords.add(wrong);
+        }
       }
     });
   }
@@ -157,6 +162,8 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
 
     // HIỂN THỊ KẾT QUẢ KHI LÀM XONG
     if (_currentIndex >= _vocabularies.length) {
+      final bool isPerfect = _score == _vocabularies.length;
+      final bool hasWrong  = _wrongWords.isNotEmpty;
       return Scaffold(
         body: Container(
           decoration: const BoxDecoration(
@@ -173,9 +180,9 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    _score == _vocabularies.length ? Icons.emoji_events_rounded : Icons.verified_rounded, 
-                    size: 100, 
-                    color: _score == _vocabularies.length ? Colors.amber : _kPrimary,
+                    isPerfect ? Icons.emoji_events_rounded : Icons.verified_rounded,
+                    size: 100,
+                    color: isPerfect ? Colors.amber : _kPrimary,
                   ),
                   const SizedBox(height: 24),
                   const Text('Kết Quả Bài Test', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: _kPrimary)),
@@ -186,10 +193,41 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    _score == _vocabularies.length ? 'Tuyệt vời, điểm Tối đa!' : 'Cố gắng cải thiện nhé học giả!',
+                    isPerfect ? 'Tuyệt vời, điểm Tối đa!' : 'Cố gắng cải thiện nhé học giả!',
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _kPrimary),
                   ),
-                  const SizedBox(height: 48),
+                  const SizedBox(height: 32),
+                  // Nết ôn lại từ sai bằng flashcard (chỉ hiện khi có từ sai)
+                  if (hasWrong && !isPerfect) ...[
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => FlashcardScreen(
+                                topicId: widget.topicId,
+                                lessonId: widget.lessonId,
+                                isReviewMode: true,
+                                reviewWords: _wrongWords,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: const Icon(Icons.replay_rounded),
+                        label: Text('Ôn lại ${_wrongWords.length} từ chưa thuộc 🔄',
+                          style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w800)),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: _kPrimary,
+                          side: const BorderSide(color: _kPrimary, width: 2),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
                   _buildNavigateNextButton(),
                 ],
               ),

@@ -16,6 +16,7 @@ import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/recommendation_bottom_sheet.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/lesson_summary_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
+import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_summary_screen.dart';
 
 class ShadowingScreen extends StatefulWidget {
   final int? segmentId;  // Standalone: 1 segment được chọn từ danh sách
@@ -61,6 +62,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   ShadowingFeedbackModel? _dynamicFeedback;
   String _errorWord = "";
   ActionPlan? _lastActionPlan;          // Lưu action plan mới nhất từ AI
+  final List<SentenceResult> _sentenceResults = []; // Tổng kết từng câu
 
   @override
   void initState() {
@@ -378,7 +380,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
            if (kIsWeb) {
               try {
                 final blobResponse = await http.get(Uri.parse(_recordedFilePath!));
-                request.files.add(http.MultipartFile.fromBytes('audio', blobResponse.bodyBytes, filename: 'record.ogg'));
+                request.files.add(http.MultipartFile.fromBytes('audio', blobResponse.bodyBytes, filename: 'record.webm'));
               } catch (e) {
                 debugPrint("Web blob load error: $e");
               }
@@ -430,10 +432,31 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
               // Tracking lỗi
               bool hasWordError = _dynamicFeedback!.wordsAnalysis.any((w) => !w.isCorrect);
-              if ((data['accuracy'] ?? 0) < 90 || hasWordError || _errorWord.isNotEmpty) {
+              final acc = data['accuracy'] ?? 0;
+              final passed = acc >= 50 && !hasWordError && _errorWord.isEmpty;
+              if (!passed) {
                 _failedSentences.add(_currentIndex);
               } else {
                 _failedSentences.remove(_currentIndex);
+              }
+
+              // Lưu kết quả câu hiện tại vào _sentenceResults
+              final sentence = _sentences[_currentIndex];
+              final resultEntry = SentenceResult(
+                kanji: sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
+                accuracy: acc,
+                fluency: data['fluency'] ?? 0,
+                prosody: data['prosody'] ?? 0,
+                passed: passed,
+              );
+              // Cập nhật hoặc thêm mới
+              if (_currentIndex < _sentenceResults.length) {
+                _sentenceResults[_currentIndex] = resultEntry;
+              } else {
+                while (_sentenceResults.length < _currentIndex) {
+                  _sentenceResults.add(SentenceResult(kanji: '', accuracy: 0, fluency: 0, prosody: 0, passed: false));
+                }
+                _sentenceResults.add(resultEntry);
               }
 
               _isEvaluating = false;
@@ -535,25 +558,46 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
   /// Navigate đến LessonSummaryScreen (sau khi lưu tiến độ)
   Future<void> _navigateToSummary() async {
-    // Tính overall score từ accuracy các câu
     final totalSentences = _sentences.length;
     final failedCount = _failedSentences.length;
-    final shadowingScore = totalSentences == 0
-        ? 0.0
-        : ((totalSentences - failedCount) / totalSentences) * 100.0;
+    // Dung diem accuracy thuc te thay vi ti le pass/fail nhi phan
+    final double shadowingScore;
+    if (_sentenceResults.isNotEmpty) {
+      final avgAcc = _sentenceResults
+          .map((r) => r.accuracy as num)
+          .reduce((a, b) => a + b) / _sentenceResults.length;
+      shadowingScore = avgAcc.toDouble().clamp(0.0, 100.0);
+    } else if (totalSentences == 0) {
+      shadowingScore = 0.0;
+    } else {
+      shadowingScore = ((totalSentences - failedCount) / totalSentences) * 100.0;
+    }
 
     if (widget.lessonId != 0) {
-      // Lưu kết quả shadowing vào backend
       await ProgressService.saveShadowingResult(widget.lessonId, shadowingScore);
-      // Đánh dấu bài học hoàn thành → mở khoá bài kế tiếp trên Roadmap
       await ProgressService.markLessonCompleted(widget.lessonId);
     }
 
     if (!mounted) return;
 
     if (widget.lessonId == 0) {
-      // Standalone mode: chỉ pop về màn hình trước
-      Navigator.of(context).pop();
+      // Standalone: hiện màn hình tổng kết shadowing
+      // Đảm bảo có đủ kết quả cho tất cả câu (pad nếu cần)
+      while (_sentenceResults.length < _sentences.length) {
+        _sentenceResults.add(SentenceResult(
+          kanji: _sentences[_sentenceResults.length].kanji,
+          accuracy: 0, fluency: 0, prosody: 0, passed: false,
+        ));
+      }
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ShadowingSummaryScreen(
+            results: _sentenceResults,
+            topicTitle: _sentences.isNotEmpty ? _sentences[0].title : 'Shadowing',
+          ),
+        ),
+      );
     } else {
       Navigator.pushReplacement(
         context,

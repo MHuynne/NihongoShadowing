@@ -17,8 +17,11 @@ class RoadmapScreen extends StatefulWidget {
 }
 
 class _RoadmapScreenState extends State<RoadmapScreen> {
-  late Future<RoadmapModel> futureRoadmap;
+  Future<RoadmapModel>? futureRoadmap;
   String? _userLevel; // level đã chọn khi onboarding
+  bool _levelUpShown = false; // tránh hiện dialog nhiều lần
+
+  static const _levelOrder = ['N5', 'N4', 'N3', 'N2', 'N1'];
 
   static String get _base => ApiConfig.baseUrl;
 
@@ -43,6 +46,107 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
       setState(() {
         futureRoadmap = _fetchRoadmap();
       });
+    }
+  }
+
+  // Trả về level tiếp theo (N5→N4→N3→N2→N1), null nếu đã là N1
+  String? _nextLevel(String current) {
+    final idx = _levelOrder.indexOf(current);
+    if (idx == -1 || idx == _levelOrder.length - 1) return null;
+    return _levelOrder[idx + 1];
+  }
+
+  // Hiện dialog chúc mừng và hỏi có muốn lên cấp không
+  Future<void> _showLevelUpDialog(String currentLevel, String nextLevel) async {
+    if (!mounted || _levelUpShown) return;
+    _levelUpShown = true;
+
+    final levelNames = {
+      'N5': 'N5 (Sơ cấp)',
+      'N4': 'N4 (Tiền trung cấp)',
+      'N3': 'N3 (Trung cấp)',
+      'N2': 'N2 (Thượng trung cấp)',
+      'N1': 'N1 (Cao cấp)',
+    };
+
+    final shouldAdvance = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+        child: Padding(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('🎉', style: TextStyle(fontSize: 60)),
+              const SizedBox(height: 16),
+              Text(
+                'Hoàn thành ${levelNames[currentLevel] ?? currentLevel}!',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1E293B),
+                ),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                'Bạn đã chinh phục toàn bộ bài học $currentLevel. Tiếp tục chinh phục ${levelNames[nextLevel] ?? nextLevel} nhé!',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF64748B),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 28),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF4D6D),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16)),
+                    elevation: 0,
+                  ),
+                  onPressed: () => Navigator.of(ctx).pop(true),
+                  child: Text(
+                    'Chuyển sang ${levelNames[nextLevel] ?? nextLevel} 🚀',
+                    style: const TextStyle(
+                        fontSize: 15, fontWeight: FontWeight.w800),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextButton(
+                onPressed: () => Navigator.of(ctx).pop(false),
+                child: const Text(
+                  'Ôn lại bài cũ',
+                  style: TextStyle(
+                      color: Color(0xFF94A3B8), fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    if (shouldAdvance == true && mounted) {
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      if (uid != null) {
+        await UserPrefsService().saveLevel(uid, nextLevel);
+      }
+      setState(() {
+        _userLevel = nextLevel;
+        _levelUpShown = false;
+        futureRoadmap = _fetchRoadmap();
+      });
+    } else {
+      _levelUpShown = false;
     }
   }
 
@@ -186,6 +290,21 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           .where((l) => l.status == LessonStatus.completed)
           .length;
 
+      // ── Kiểm tra hoàn thành cấp độ để đề xuất lên cấp ─────────────────
+      if (_userLevel != null && chapters.isNotEmpty && !_levelUpShown) {
+        final currentChapter = chapters.first;
+        final allCompleted = currentChapter.lessons.isNotEmpty &&
+            currentChapter.lessons
+                .every((l) => l.status == LessonStatus.completed);
+        final next = _nextLevel(_userLevel!);
+        if (allCompleted && next != null) {
+          // Hiện dialog sau khi build xong
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _showLevelUpDialog(_userLevel!, next);
+          });
+        }
+      }
+
       return RoadmapModel(
         title: 'Lộ trình học tiếng Nhật',
         totalProgress: totalLessons == 0 ? 0 : completedLessons / totalLessons,
@@ -257,7 +376,8 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           FutureBuilder<RoadmapModel>(
             future: futureRoadmap,
             builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
+              if (futureRoadmap == null ||
+                  snapshot.connectionState == ConnectionState.waiting) {
                 return const _LoadingView();
               } else if (snapshot.hasError) {
                 return _ErrorView(error: snapshot.error.toString());

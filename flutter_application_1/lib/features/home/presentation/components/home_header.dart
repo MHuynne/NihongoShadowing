@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/home/models/user_model.dart';
 
@@ -34,7 +34,7 @@ class HomeHeader extends StatelessWidget {
               color: Colors.white,
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
+                  color: Colors.black.withOpacity(0.08),
                   blurRadius: 10,
                   offset: const Offset(0, 4),
                 ),
@@ -42,13 +42,37 @@ class HomeHeader extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(2.0),
-              child: CircleAvatar(
-                backgroundImage: NetworkImage(user.avatarUrl),
-                backgroundColor: AppColors.slate200,
+              child: ClipOval(
+                child: user.avatarUrl.isNotEmpty
+                    ? Image.network(
+                        user.avatarUrl,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return _buildFallbackAvatar(user.name);
+                        },
+                      )
+                    : _buildFallbackAvatar(user.name),
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildFallbackAvatar(String name) {
+    final cleanName = name.trim();
+    final String initial = cleanName.isNotEmpty ? cleanName[0].toUpperCase() : 'U';
+    return Container(
+      color: const Color(0xFFFF4D6D),
+      alignment: Alignment.center,
+      child: Text(
+        initial,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 18,
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/features/auth/presentation/screens/auth_gate.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -399,6 +400,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     if (shouldSignOut == true && context.mounted) {
       await _auth.signOut();
+      if (context.mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const AuthGate()),
+          (route) => false,
+        );
+      }
     }
   }
 

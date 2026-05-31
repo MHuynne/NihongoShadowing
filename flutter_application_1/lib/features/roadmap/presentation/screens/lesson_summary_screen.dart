@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
+import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/features/home/presentation/components/mountain_progress_widget.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
@@ -66,26 +69,77 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
   Future<void> _loadProgress() async {
     try {
-      final all = await ProgressService.getAllProgress();
-      final completed = all.where((p) => p['lesson_completed'] == true).length;
-      final total     = all.isNotEmpty ? all.length : 25;
+      final results = await Future.wait([
+        http.get(Uri.parse('${ApiConfig.baseUrl}/lessons/?limit=200')),
+        ProgressService.getAllProgress(),
+      ]);
 
-      // Xác định level từ lessonId
-      String level = 'N5';
-      if (widget.lessonId >= 26) level = 'N4';
-      if (widget.lessonId >= 51) level = 'N3';
-      if (widget.lessonId >= 76) level = 'N2';
+      final lessonsResp = results[0] as http.Response;
+      final progressList = results[1] as List<Map<String, dynamic>>;
 
+      if (lessonsResp.statusCode == 200) {
+        final List<dynamic> allLessons = json.decode(utf8.decode(lessonsResp.bodyBytes));
+        
+        // Xác định level của lesson hiện tại
+        String currentLevel = 'N5';
+        final currentLesson = allLessons.firstWhere(
+          (l) => l['id'] == widget.lessonId, 
+          orElse: () => null
+        );
+        if (currentLesson != null) {
+          currentLevel = currentLesson['level'] ?? 'N5';
+        } else {
+          // fallback ID range checks
+          final id = widget.lessonId;
+          if (id >= 1101 && id <= 1120) currentLevel = 'N1';
+          else if (id >= 2201 && id <= 2220) currentLevel = 'N2';
+          else if (id >= 3301 && id <= 3320) currentLevel = 'N3';
+          else if (id >= 4201 && id <= 4225) currentLevel = 'N4';
+          else if (id >= 5101 && id <= 5125) currentLevel = 'N5';
+          else if (id >= 6101 && id <= 6112) currentLevel = 'N5';
+        }
+
+        // Lọc các bài học thuộc level này
+        final levelLessons = allLessons.where((l) => l['level'] == currentLevel).toList();
+        final total = levelLessons.length;
+
+        // Đếm số bài đã hoàn thành trong level này
+        final levelLessonIds = levelLessons.map((l) => l['id'] as int).toSet();
+        final completed = progressList.where((p) {
+          final lid = p['lesson_id'] as int;
+          return levelLessonIds.contains(lid) && p['lesson_completed'] == true;
+        }).length;
+
+        if (mounted) {
+          setState(() {
+            _completedLessons = completed;
+            _totalLessons     = total > 0 ? total : 12;
+            _levelLabel       = currentLevel;
+            _loadingProgress  = false;
+          });
+        }
+      } else {
+        throw Exception('Lessons API failed');
+      }
+    } catch (_) {
       if (mounted) {
+        // Fallback range check
+        String level = 'N5';
+        final id = widget.lessonId;
+        if (id >= 1101 && id <= 1120) level = 'N1';
+        else if (id >= 2201 && id <= 2220) level = 'N2';
+        else if (id >= 3301 && id <= 3320) level = 'N3';
+        else if (id >= 4201 && id <= 4225) level = 'N4';
+        else if (id >= 5101 && id <= 5125) level = 'N5';
+        else if (id >= 6101 && id <= 6112) level = 'N5';
+        
         setState(() {
-          _completedLessons = completed;
-          _totalLessons     = total;
+          _completedLessons = 1;
+          _totalLessons     = 12;
           _levelLabel       = level;
           _loadingProgress  = false;
         });
       }
-    } catch (_) {
-      if (mounted) setState(() => _loadingProgress = false);
     }
   }
 

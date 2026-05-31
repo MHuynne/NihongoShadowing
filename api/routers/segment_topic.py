@@ -103,7 +103,6 @@ def get_segments(seg_topic_id: int, db: Session = Depends(get_db)):
     _load(seg_topic_id, db)   # validate exists
     return (
         db.query(ShadowingSegment)
-        .options(joinedload(ShadowingSegment.categories))
         .filter(ShadowingSegment.segment_topic_id == seg_topic_id)
         .order_by(ShadowingSegment.order_index, ShadowingSegment.id)
         .all()
