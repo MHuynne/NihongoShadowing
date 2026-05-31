@@ -138,11 +138,16 @@ class AuthService {
       );
     }
 
-    await user.updateDisplayName(displayName.trim());
-    await user.updatePhotoURL(
-      (photoUrl == null || photoUrl.trim().isEmpty) ? null : photoUrl.trim(),
-    );
-    await user.reload();
+    final nextDisplayName = displayName.trim();
+    final nextPhotoUrl =
+        (photoUrl == null || photoUrl.trim().isEmpty) ? null : photoUrl.trim();
+
+    if (user.displayName != nextDisplayName) {
+      await user.updateDisplayName(nextDisplayName);
+    }
+    if (user.photoURL != nextPhotoUrl) {
+      await user.updatePhotoURL(nextPhotoUrl);
+    }
   }
 
   Future<void> sendEmailVerification() async {

@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/home/models/user_model.dart';
 
@@ -42,13 +42,49 @@ class HomeHeader extends StatelessWidget {
             ),
             child: Padding(
               padding: const EdgeInsets.all(2.0),
-              child: CircleAvatar(
-                backgroundImage: NetworkImage(user.avatarUrl),
-                backgroundColor: AppColors.slate200,
-              ),
+              child: _HomeAvatar(user: user),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _HomeAvatar extends StatelessWidget {
+  final UserModel user;
+
+  const _HomeAvatar({required this.user});
+
+  @override
+  Widget build(BuildContext context) {
+    final avatarUrl = user.avatarUrl.trim();
+    final initials = user.name.trim().isEmpty
+        ? 'U'
+        : user.name
+            .trim()
+            .split(RegExp(r'\s+'))
+            .take(2)
+            .map((part) => part.isEmpty ? '' : part[0].toUpperCase())
+            .join();
+
+    if (avatarUrl.isNotEmpty) {
+      return CircleAvatar(
+        backgroundImage: NetworkImage(avatarUrl),
+        backgroundColor: AppColors.slate200,
+        onBackgroundImageError: (_, __) {},
+        child: const SizedBox.shrink(),
+      );
+    }
+
+    return CircleAvatar(
+      backgroundColor: AppColors.lightPinkBackground,
+      child: Text(
+        initials.isEmpty ? 'U' : initials,
+        style: const TextStyle(
+          color: Color(0xFFFF4D6D),
+          fontWeight: FontWeight.w900,
+        ),
       ),
     );
   }

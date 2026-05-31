@@ -1,21 +1,22 @@
+import asyncio
 import json
 import os
-import asyncio
-import google.generativeai as genai
 from typing import List
+
+import google.generativeai as genai
+
 from schemas.roleplay import ChatResponseResp, GrammarCorrectionSchema
 
-# -------------------------------------------------------------------------
-# Lấy danh sách API keys từ .env (hỗ trợ nhiều key để tránh 429)
-# -------------------------------------------------------------------------
+
 _main_key = os.getenv("GEMINI_API_KEY", "")
 _raw_keys = os.getenv("GEMINI_API_KEYS", "")
-_GEMINI_KEY_POOL = [k.strip() for k in _raw_keys.split(",") if k.strip()]
+_GEMINI_KEY_POOL = [key.strip() for key in _raw_keys.split(",") if key.strip()]
 
 if _main_key and _main_key not in _GEMINI_KEY_POOL:
     _GEMINI_KEY_POOL.insert(0, _main_key)
 
 _current_key_index = 0
+
 
 def _get_next_api_key() -> str:
     global _current_key_index
@@ -25,19 +26,66 @@ def _get_next_api_key() -> str:
     _current_key_index += 1
     return key
 
-# Khởi tạo key đầu tiên
-if _GEMINI_KEY_POOL:
-    genai.configure(api_key=_GEMINI_KEY_POOL[0])
+
+genai.configure(api_key=_GEMINI_KEY_POOL[0] if _GEMINI_KEY_POOL else _main_key)
+
+
+def _is_quota_error(exc: Exception) -> bool:
+    message = str(exc).lower()
+    return (
+        "resource_exhausted" in message
+        or "429" in message
+        or "quota" in message
+        or "credits are depleted" in message
+        or "prepayment credits" in message
+        or "too many requests" in message
+    )
+
+
+def _fallback_reply(mode: str, quota_limited: bool = False) -> ChatResponseResp:
+    if mode == "plain":
+        ai_reply = (
+            "今はAI接続が混み合っているみたい。練習は続けよう。"
+            "まず、もう少し詳しく話してくれる？"
+        )
+        suggestions = [
+            "うん、もう少し説明するね。",
+            "例えば、こんな状況なんだ。",
+            "あなたならどう思う？",
+        ]
+    else:
+        ai_reply = (
+            "現在AIサービスに接続できませんが、練習は続けられます。"
+            "恐れ入りますが、もう少し詳しくお話しいただけますか。"
+        )
+        suggestions = [
+            "はい、もう少し詳しくご説明いたします。",
+            "例えば、このような状況でございます。",
+            "ご意見を伺ってもよろしいでしょうか。",
+        ]
+
+    return ChatResponseResp(
+        ai_reply=ai_reply,
+        suggestions=suggestions,
+        grammar_correction=None,
+        retry_after_seconds=60 if quota_limited else None,
+    )
+
 
 class RoleplayAIService:
     @staticmethod
-    async def generate_reply(scenario_title: str, scenario_desc: str, mode: str, chat_history: List[dict], user_message: str) -> ChatResponseResp:
-        # Định nghĩa Prompt
+    async def generate_reply(
+        scenario_title: str,
+        scenario_desc: str,
+        mode: str,
+        chat_history: List[dict],
+        user_message: str,
+    ) -> ChatResponseResp:
         system_instruction = f"""
 You are an AI Japanese conversation partner playing a role in a roleplay scenario.
 Scenario: {scenario_title}
 Context: {scenario_desc}
-Politeness Mode: {mode.upper()} 
+Politeness Mode: {mode.upper()}
 (If mode is KEIGO, you and the user MUST communicate in formal Keigo/Teineigo. If mode is PLAIN, you both MUST communicate in casual/plain form.)
 
 Your tasks:
@@ -56,65 +104,52 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
     }}
 }}
 """
-        
-        # Thiết lập model (hỗ trợ ép kiểu JSON trả về)
+
         model = genai.GenerativeModel(
             model_name=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
             system_instruction=system_instruction,
             generation_config=genai.GenerationConfig(
                 response_mime_type="application/json",
-                temperature=0.7
-            )
+                temperature=0.7,
+            ),
         )
-        
-        # Chuyển đổi định dạng lịch sử chat thành định dạng của Gemini (user và model)
+
         gemini_history = []
         for msg in chat_history:
             gemini_role = "user" if msg["role"] == "user" else "model"
             gemini_history.append({"role": gemini_role, "parts": [msg["content"]]})
-            
+
         max_retries = max(len(_GEMINI_KEY_POOL), 1)
         for attempt in range(max_retries):
             try:
-                # Phải tạo lại phiên chat mỗi lần retry vì genai.configure thay đổi client ngầm bên dưới
                 chat = model.start_chat(history=gemini_history)
                 response = await chat.send_message_async(user_message)
-                content = response.text
-                
-                parsed = json.loads(content)
-                
-                # Khởi tạo schema an toàn
+                parsed = json.loads(response.text)
+
                 grammar = None
                 if parsed.get("grammar_correction"):
                     grammar = GrammarCorrectionSchema(**parsed["grammar_correction"])
-                    
+
                 return ChatResponseResp(
-                    ai_reply=parsed.get("ai_reply", "すみません、もう一度お願いします。"),
+                    ai_reply=parsed.get(
+                        "ai_reply",
+                        "すみません、もう一度お願いします。",
+                    ),
                     suggestions=parsed.get("suggestions", []),
-                    grammar_correction=grammar
+                    grammar_correction=grammar,
                 )
-            except Exception as e:
-                error_msg = str(e).lower()
-                # Kiểm tra xem có phải lỗi 429 / Quota Exceeded không
-                if "429" in error_msg or "quota" in error_msg or "exhausted" in error_msg or "too many requests" in error_msg:
-                    if attempt < max_retries - 1:
-                        next_key = _get_next_api_key()
-                        print(f"[Roleplay AI] Key hiện tại bị lỗi quota 429. Đang thử lại với key: ...{next_key[-6:]}")
-                        genai.configure(api_key=next_key)
-                        await asyncio.sleep(1) # Nghỉ một nhịp trước khi thử lại
-                        continue # Thử lại với vòng lặp tiếp theo
-                
-                # Lỗi khác hoặc đã hết số lần thử
-                print("Lỗi từ Gemini API:", str(e))
-                return ChatResponseResp(
-                    ai_reply="[System Error] Có lỗi xảy ra khi kết nối tới AI. Vui lòng thử lại sau.",
-                    suggestions=[],
-                    grammar_correction=None
-                )
-                
-        # Fallback nếu thoát khỏi vòng lặp
-        return ChatResponseResp(
-            ai_reply="[System Error] Hệ thống hiện đang quá tải (Hết hạn ngạch API). Vui lòng quay lại sau.",
-            suggestions=[],
-            grammar_correction=None
-        )
+            except Exception as exc:
+                quota_limited = _is_quota_error(exc)
+                if quota_limited and attempt < max_retries - 1:
+                    next_key = _get_next_api_key()
+                    suffix = next_key[-6:] if next_key else "empty"
+                    print(f"[roleplay] Gemini quota hit. Retrying with key ...{suffix}")
+                    genai.configure(api_key=next_key)
+                    await asyncio.sleep(1)
+                    continue
+
+                safe_error = str(exc).encode("ascii", "ignore").decode("ascii")
+                print(f"[roleplay] Gemini API error: {type(exc).__name__}: {safe_error}")
+                return _fallback_reply(mode=mode, quota_limited=quota_limited)
+
+        return _fallback_reply(mode=mode, quota_limited=True)

@@ -9,7 +9,7 @@ class ApiConfig {
   //   Emulator  → set _usePhysicalDevice = false
   //   Máy thật  → set _usePhysicalDevice = true, sau đó đổi _physicalDeviceIp
   //
-  static const bool _usePhysicalDevice = true;
+  static const bool _usePhysicalDevice = false;
 
   // ─── Bước 2: IP máy tính (chỉ cần điền khi _usePhysicalDevice = true) ─────
   //

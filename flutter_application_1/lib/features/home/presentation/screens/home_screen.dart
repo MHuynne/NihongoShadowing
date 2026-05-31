@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/home/models/user_model.dart';
 import 'package:flutter_application_1/features/home/presentation/components/home_header.dart';
 import 'package:flutter_application_1/features/home/presentation/components/mountain_progress_widget.dart';
 import 'package:flutter_application_1/features/home/presentation/components/quick_access_grid.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
-import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
+import 'package:flutter_application_1/core/network/app_http_client.dart'
+    as http;
 import 'dart:convert';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,11 +23,11 @@ class _HomeScreenState extends State<HomeScreen> {
   int _completedLessons = 0;
   int _totalLessons = 25;
   String _levelLabel = 'N5';
-  
+
   // Roadmap specific progress
   int _flashcardDone = 0;
   int _shadowingDone = 0;
-  
+
   bool _loadingProgress = true;
 
   @override
@@ -90,9 +89,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final today = DateTime.now();
-    final dummyUser = UserModel(
-      name: 'Minh Anh',
-      avatarUrl: 'https://i.pravatar.cc/150?img=47',
+    final firebaseUser = FirebaseAuth.instance.currentUser;
+    final currentUser = UserModel(
+      name: firebaseUser?.displayName?.trim().isNotEmpty == true
+          ? firebaseUser!.displayName!.trim()
+          : 'Learner',
+      avatarUrl: firebaseUser?.photoURL ?? '',
       streakDays: 12,
       balanceYen: 2450,
       activeDates: [
@@ -117,7 +119,7 @@ class _HomeScreenState extends State<HomeScreen> {
         bottom: false,
         child: Column(
           children: [
-            HomeHeader(user: dummyUser),
+            HomeHeader(user: currentUser),
             Expanded(
               child: RefreshIndicator(
                 color: const Color(0xFFFF4D6D),
@@ -133,7 +135,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           ? const SizedBox(
                               height: 180,
                               child: Center(
-                                child: CircularProgressIndicator(color: Color(0xFFFF4D6D)),
+                                child: CircularProgressIndicator(
+                                    color: Color(0xFFFF4D6D)),
                               ),
                             )
                           : MountainProgressWidget(
@@ -154,8 +157,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
                       const SizedBox(height: 24),
                       _buildDailyGoalCard(),
-
-
                     ],
                   ),
                 ),
@@ -180,7 +181,8 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.menu_book_rounded, color: Color(0xFFFF4D6D), size: 20),
+                  const Icon(Icons.menu_book_rounded,
+                      color: Color(0xFFFF4D6D), size: 20),
                   const SizedBox(width: 8),
                   const Text(
                     'Tiến độ lộ trình',
@@ -194,14 +196,19 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const Text(
                 'Tổng quan',
-                style: TextStyle(fontSize: 11, color: Colors.black45, fontWeight: FontWeight.w600),
+                style: TextStyle(
+                    fontSize: 11,
+                    color: Colors.black45,
+                    fontWeight: FontWeight.w600),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          _buildProgressBar('Từ vựng (Flashcard)', _flashcardDone, _totalLessons),
+          _buildProgressBar(
+              'Từ vựng (Flashcard)', _flashcardDone, _totalLessons),
           const SizedBox(height: 16),
-          _buildProgressBar('Luyện đọc (Shadowing)', _shadowingDone, _totalLessons),
+          _buildProgressBar(
+              'Luyện đọc (Shadowing)', _shadowingDone, _totalLessons),
           const Padding(
             padding: EdgeInsets.symmetric(vertical: 16),
             child: Divider(color: Color(0xFFE2E8F0), thickness: 1, height: 1),
@@ -210,22 +217,35 @@ class _HomeScreenState extends State<HomeScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: Color(0xFFFFEBF0), shape: BoxShape.circle),
-                child: const Text('N5', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Color(0xFFFF4D6D))),
+                decoration: const BoxDecoration(
+                    color: Color(0xFFFFEBF0), shape: BoxShape.circle),
+                child: const Text('N5',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFFFF4D6D))),
               ),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(color: Color(0xFFF1F5F9), shape: BoxShape.circle),
-                child: const Text('N4', style: TextStyle(fontSize: 10, fontWeight: FontWeight.bold, color: Colors.black38)),
+                decoration: const BoxDecoration(
+                    color: Color(0xFFF1F5F9), shape: BoxShape.circle),
+                child: const Text('N4',
+                    style: TextStyle(
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black38)),
               ),
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _completedLessons > 0 
-                    ? '"Bạn đã hoàn thành ${_completedLessons} bài học. Tiếp tục phát huy nhé!"'
-                    : '"Hãy bắt đầu bài học đầu tiên để chinh phục đỉnh núi!"',
-                  style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.black54),
+                  _completedLessons > 0
+                      ? '"Bạn đã hoàn thành ${_completedLessons} bài học. Tiếp tục phát huy nhé!"'
+                      : '"Hãy bắt đầu bài học đầu tiên để chinh phục đỉnh núi!"',
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.black54),
                 ),
               ),
             ],
@@ -243,13 +263,22 @@ class _HomeScreenState extends State<HomeScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13, color: Color(0xFF1E293B))),
+            Text(title,
+                style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: Color(0xFF1E293B))),
             RichText(
               text: TextSpan(
                 text: '$current',
-                style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13, color: Color(0xFFFF4D6D)),
+                style: const TextStyle(
+                    fontWeight: FontWeight.w800,
+                    fontSize: 13,
+                    color: Color(0xFFFF4D6D)),
                 children: [
-                  TextSpan(text: ' / $total bài', style: const TextStyle(color: Colors.black38)),
+                  TextSpan(
+                      text: ' / $total bài',
+                      style: const TextStyle(color: Colors.black38)),
                 ],
               ),
             ),
@@ -286,17 +315,33 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: Colors.white,
                   shape: BoxShape.circle,
                   boxShadow: [
-                    BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 8, offset: const Offset(0, 2)),
+                    BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.05),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2)),
                   ],
                 ),
-                child: const Icon(Icons.check_circle_outline_rounded, color: Color(0xFFFF4D6D), size: 24),
+                child: const Icon(Icons.check_circle_outline_rounded,
+                    color: Color(0xFFFF4D6D), size: 24),
               ),
-              const Text('ĐANG HỌC', style: TextStyle(fontWeight: FontWeight.w900, color: Color(0xFFFF4D6D), fontSize: 12)),
+              const Text('ĐANG HỌC',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFFFF4D6D),
+                      fontSize: 12)),
             ],
           ),
           const SizedBox(height: 16),
-          const Text('MỤC TIÊU NGÀY', style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: Colors.black38)),
-          const Text('Hoàn thành 1 bài học', style: TextStyle(fontSize: 20, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+          const Text('MỤC TIÊU NGÀY',
+              style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w800,
+                  color: Colors.black38)),
+          const Text('Hoàn thành 1 bài học',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1E293B))),
           const SizedBox(height: 20),
           GestureDetector(
             onTap: () => MainScreen.switchTab(context, 1),
@@ -310,7 +355,10 @@ class _HomeScreenState extends State<HomeScreen> {
               child: const Text(
                 'HỌC NGAY',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800, color: Color(0xFF1E293B)),
+                style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w800,
+                    color: Color(0xFF1E293B)),
               ),
             ),
           ),
@@ -319,17 +367,16 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-
-
   BoxDecoration _cardDecoration() {
     return BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(24),
       boxShadow: [
-        BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 16, offset: const Offset(0, 8)),
+        BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 8)),
       ],
     );
   }
 }
-
-
