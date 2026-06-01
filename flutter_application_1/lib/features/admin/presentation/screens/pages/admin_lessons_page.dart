@@ -213,7 +213,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
               buildField(chapterController, 'Tên bài học'),
               const SizedBox(height: 14),
               DropdownButtonFormField<String>(
-                initialValue: level,
+                value: level,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Cấp độ', border: OutlineInputBorder()),
                 items: ['N5', 'N4', 'N3', 'N2', 'N1']
@@ -302,7 +302,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
               buildField(shadowTitleController, 'Tiêu đề bài Shadowing'),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                initialValue: shadowLevel,
+                value: shadowLevel,
                 isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Cấp độ', border: OutlineInputBorder()),
                 items: ['N5', 'N4', 'N3', 'N2', 'N1']

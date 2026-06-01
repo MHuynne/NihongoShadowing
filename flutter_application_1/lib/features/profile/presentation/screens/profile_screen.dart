@@ -1,9 +1,15 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/auth/presentation/screens/auth_gate.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -81,11 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       user: user,
                       onEditProfile: () => _showEditProfileSheet(
                         user: user,
-                        targetLevel: data.targetLevel,
                       ),
-                      onVerifyEmail: _sendVerificationEmail,
-                      onResetPassword: () => _sendPasswordReset(user?.email),
-                      onChangePassword: _showChangePasswordDialog,
                       onDeleteAccount: _confirmDeleteAccount,
                       onSignOut: () => _confirmSignOut(context),
                     ),
@@ -101,15 +103,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> _showEditProfileSheet({
     required User? user,
-    required String targetLevel,
   }) async {
     final nameController = TextEditingController(
       text: user?.displayName?.trim().isNotEmpty == true
           ? user!.displayName!.trim()
           : '',
     );
-    final photoController = TextEditingController(text: user?.photoURL ?? '');
-    var selectedLevel = targetLevel;
+    var selectedPhotoUrl = user?.photoURL ?? '';
+    String? selectedPhotoName;
+    var isUploadingAvatar = false;
+    final email = user?.email?.trim();
+    final phoneNumber = user?.phoneNumber?.trim();
 
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -148,42 +152,56 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     label: 'Display name',
                     icon: Icons.badge_outlined,
                   ),
-                  const SizedBox(height: 12),
-                  _ProfileTextField(
-                    controller: photoController,
-                    label: 'Avatar image URL',
-                    icon: Icons.image_outlined,
-                  ),
                   const SizedBox(height: 16),
-                  Text(
-                    'Target JLPT level',
-                    style: TextStyle(
-                      color: AppColors.secondaryText(context),
-                      fontWeight: FontWeight.w800,
-                    ),
+                  _ReadOnlyProfileInfoTile(
+                    label: 'Email',
+                    value: email?.isNotEmpty == true ? email! : 'No email',
+                    icon: Icons.email_outlined,
                   ),
-                  const SizedBox(height: 10),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: ['N5', 'N4', 'N3', 'N2', 'N1'].map((level) {
-                      final selected = selectedLevel == level;
-                      return ChoiceChip(
-                        label: Text(level),
-                        selected: selected,
-                        selectedColor: AppColors.lightPinkBackground,
-                        checkmarkColor: AppColors.toriiRed,
-                        labelStyle: TextStyle(
-                          color: selected
-                              ? AppColors.toriiRed
-                              : AppColors.primaryText(context),
-                          fontWeight: FontWeight.w900,
-                        ),
-                        onSelected: (_) {
-                          setSheetState(() => selectedLevel = level);
-                        },
-                      );
-                    }).toList(),
+                  if (phoneNumber?.isNotEmpty == true) ...[
+                    const SizedBox(height: 12),
+                    _ReadOnlyProfileInfoTile(
+                      label: 'Phone number',
+                      value: phoneNumber!,
+                      icon: Icons.phone_outlined,
+                    ),
+                  ],
+                  const SizedBox(height: 16),
+                  _AvatarPicker(
+                    photoUrl: selectedPhotoUrl,
+                    fileName: selectedPhotoName,
+                    isUploading: isUploadingAvatar,
+                    displayName: nameController.text,
+                    onPick: () async {
+                      setSheetState(() => isUploadingAvatar = true);
+                      try {
+                        final uploadedUrl = await _pickAndUploadAvatar();
+                        if (!context.mounted) return;
+                        if (uploadedUrl == null) {
+                          return;
+                        }
+                        setSheetState(() {
+                          selectedPhotoUrl = uploadedUrl.url;
+                          selectedPhotoName = uploadedUrl.fileName;
+                        });
+                      } catch (e) {
+                        if (mounted) {
+                          _showSnack('Could not upload avatar: $e');
+                        }
+                      } finally {
+                        if (context.mounted) {
+                          setSheetState(() => isUploadingAvatar = false);
+                        }
+                      }
+                    },
+                    onRemove: selectedPhotoUrl.trim().isEmpty
+                        ? null
+                        : () {
+                            setSheetState(() {
+                              selectedPhotoUrl = '';
+                              selectedPhotoName = null;
+                            });
+                          },
                   ),
                   const SizedBox(height: 22),
                   SizedBox(
@@ -203,12 +221,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         try {
                           await _auth.updateProfile(
                             displayName: nameController.text,
-                            photoUrl: photoController.text,
-                          );
-                          final prefs = await SharedPreferences.getInstance();
-                          await prefs.setString(
-                            _targetLevelKey,
-                            selectedLevel,
+                            photoUrl: selectedPhotoUrl,
                           );
                           if (sheetContext.mounted) {
                             Navigator.of(sheetContext).pop(true);
@@ -232,111 +245,66 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
 
     nameController.dispose();
-    photoController.dispose();
 
     if (saved == true && mounted) {
       _showSnack('Profile updated.');
-      await _refresh();
       setState(() {});
     }
   }
 
-  Future<void> _sendVerificationEmail() async {
-    try {
-      await _auth.sendEmailVerification();
-      _showSnack('Verification email sent.');
-    } on FirebaseAuthException catch (e) {
-      _showSnack(AuthService.getVietnameseError(e));
-    } catch (e) {
-      _showSnack('Could not send verification email: $e');
-    }
-  }
-
-  Future<void> _sendPasswordReset(String? email) async {
-    if (email == null || email.trim().isEmpty) {
-      _showSnack('This account has no email address.');
-      return;
-    }
-
-    try {
-      await _auth.sendPasswordResetEmail(email);
-      _showSnack('Password reset email sent.');
-    } on FirebaseAuthException catch (e) {
-      _showSnack(AuthService.getVietnameseError(e));
-    } catch (e) {
-      _showSnack('Could not send reset email: $e');
-    }
-  }
-
-  Future<void> _showChangePasswordDialog() async {
-    final controller = TextEditingController();
-    final confirmController = TextEditingController();
-
-    final changed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Change password'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: controller,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'New password',
-                prefixIcon: Icon(Icons.lock_outline),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: 'Confirm password',
-                prefixIcon: Icon(Icons.lock_reset_outlined),
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.toriiRed,
-              foregroundColor: Colors.white,
-            ),
-            onPressed: () async {
-              final password = controller.text.trim();
-              if (password.length < 6) {
-                _showSnack('Password must be at least 6 characters.');
-                return;
-              }
-              if (password != confirmController.text.trim()) {
-                _showSnack('Passwords do not match.');
-                return;
-              }
-
-              try {
-                await _auth.updatePassword(password);
-                if (context.mounted) Navigator.of(context).pop(true);
-              } on FirebaseAuthException catch (e) {
-                _showSnack(AuthService.getVietnameseError(e));
-              } catch (e) {
-                _showSnack('Could not change password: $e');
-              }
-            },
-            child: const Text('Update'),
-          ),
-        ],
-      ),
+  Future<_UploadedAvatar?> _pickAndUploadAvatar() async {
+    final result = await FilePicker.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['jpg', 'jpeg', 'png', 'webp'],
+      withData: kIsWeb,
     );
+    if (result == null || result.files.isEmpty) return null;
 
-    controller.dispose();
-    confirmController.dispose();
-    if (changed == true) _showSnack('Password updated.');
+    final file = result.files.single;
+    final path = file.path;
+    final bytes = file.bytes;
+    if ((path == null || path.isEmpty) && (bytes == null || bytes.isEmpty)) {
+      throw Exception('Could not read selected image.');
+    }
+
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('${ApiConfig.baseUrl}/upload/'),
+    );
+    if (!kIsWeb && path != null && path.isNotEmpty) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'file',
+          path,
+          filename: file.name,
+        ),
+      );
+    } else {
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes!,
+          filename: file.name,
+        ),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+    final payload = json.decode(utf8.decode(response.bodyBytes));
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      final detail = payload is Map<String, dynamic> ? payload['detail'] : null;
+      throw Exception(detail ?? 'HTTP ${response.statusCode}');
+    }
+
+    final rawUrl = payload['url']?.toString();
+    if (rawUrl == null || rawUrl.isEmpty) {
+      throw Exception('Upload response did not include an image URL.');
+    }
+
+    final absoluteUrl =
+        rawUrl.startsWith('http') ? rawUrl : '${ApiConfig.baseUrl}$rawUrl';
+    return _UploadedAvatar(url: absoluteUrl, fileName: file.name);
   }
 
   Future<void> _confirmDeleteAccount() async {
@@ -432,6 +400,16 @@ class _ProfileData {
       stats: _ProfileStats.empty(),
     );
   }
+}
+
+class _UploadedAvatar {
+  final String url;
+  final String fileName;
+
+  const _UploadedAvatar({
+    required this.url,
+    required this.fileName,
+  });
 }
 
 class _ProfileStats {
@@ -1155,26 +1133,18 @@ class _ActivityChartPainter extends CustomPainter {
 class _AccountActions extends StatelessWidget {
   final User? user;
   final VoidCallback onEditProfile;
-  final VoidCallback onVerifyEmail;
-  final VoidCallback onResetPassword;
-  final VoidCallback onChangePassword;
   final VoidCallback onDeleteAccount;
   final VoidCallback onSignOut;
 
   const _AccountActions({
     required this.user,
     required this.onEditProfile,
-    required this.onVerifyEmail,
-    required this.onResetPassword,
-    required this.onChangePassword,
     required this.onDeleteAccount,
     required this.onSignOut,
   });
 
   @override
   Widget build(BuildContext context) {
-    final needsVerification = user?.emailVerified == false;
-
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
@@ -1188,27 +1158,6 @@ class _AccountActions extends StatelessWidget {
             icon: Icons.edit_outlined,
             label: 'Edit profile',
             onTap: onEditProfile,
-          ),
-          if (needsVerification) ...[
-            Divider(height: 1, color: AppColors.divider(context)),
-            _ActionRow(
-              icon: Icons.mark_email_unread_outlined,
-              label: 'Verify email',
-              color: AppColors.warningYellow,
-              onTap: onVerifyEmail,
-            ),
-          ],
-          Divider(height: 1, color: AppColors.divider(context)),
-          _ActionRow(
-            icon: Icons.password_outlined,
-            label: 'Reset password by email',
-            onTap: onResetPassword,
-          ),
-          Divider(height: 1, color: AppColors.divider(context)),
-          _ActionRow(
-            icon: Icons.lock_reset_outlined,
-            label: 'Change password',
-            onTap: onChangePassword,
           ),
           Divider(height: 1, color: AppColors.divider(context)),
           _ActionRow(
@@ -1301,6 +1250,163 @@ class _ProfileTextField extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           borderSide: BorderSide(color: AppColors.border(context)),
         ),
+      ),
+    );
+  }
+}
+
+class _ReadOnlyProfileInfoTile extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+
+  const _ReadOnlyProfileInfoTile({
+    required this.label,
+    required this.value,
+    required this.icon,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill(context),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: AppColors.tertiaryText(context)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: AppColors.tertiaryText(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.primaryText(context),
+                    fontSize: 15,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Icon(
+            Icons.lock_outline_rounded,
+            color: AppColors.tertiaryText(context),
+            size: 18,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AvatarPicker extends StatelessWidget {
+  final String photoUrl;
+  final String? fileName;
+  final bool isUploading;
+  final String displayName;
+  final VoidCallback onPick;
+  final VoidCallback? onRemove;
+
+  const _AvatarPicker({
+    required this.photoUrl,
+    required this.fileName,
+    required this.isUploading,
+    required this.displayName,
+    required this.onPick,
+    required this.onRemove,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final hasPhoto = photoUrl.trim().isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.inputFill(context),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border(context)),
+      ),
+      child: Row(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16),
+            child: SizedBox(
+              width: 58,
+              height: 58,
+              child: _Avatar(
+                photoUrl: hasPhoto ? photoUrl : null,
+                displayName:
+                    displayName.trim().isEmpty ? 'Learner' : displayName.trim(),
+              ),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  fileName ??
+                      (hasPhoto ? 'Current avatar' : 'No avatar selected'),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: AppColors.primaryText(context),
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  'JPG, PNG, or WebP',
+                  style: TextStyle(
+                    color: AppColors.tertiaryText(context),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 10),
+          if (isUploading)
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            )
+          else ...[
+            IconButton(
+              tooltip: 'Choose image',
+              onPressed: onPick,
+              icon: const Icon(Icons.photo_library_outlined),
+            ),
+            if (hasPhoto)
+              IconButton(
+                tooltip: 'Remove avatar',
+                onPressed: onRemove,
+                icon: const Icon(Icons.close_rounded),
+              ),
+          ],
+        ],
       ),
     );
   }
