@@ -9,9 +9,14 @@ class AuthService {
 
   GoogleSignIn get _googleSignIn {
     _googleSignInInstance ??= GoogleSignIn(
+      // Web: cần clientId để signInWithPopup hoạt động
       clientId: kIsWeb
           ? '56132876251-em0dkjk5g1g51agnc60h4rgk7hek5fui.apps.googleusercontent.com'
           : null,
+      // Android (Credential Manager API từ v6.x): bắt buộc phải có serverClientId
+      // Đây là Web Client ID (type 3) từ google-services.json
+      serverClientId:
+          '56132876251-em0dkjk5g1g51agnc60h4rgk7hek5fui.apps.googleusercontent.com',
     );
     return _googleSignInInstance!;
   }
