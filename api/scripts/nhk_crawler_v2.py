@@ -20,10 +20,10 @@ import httpx
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import SessionLocal
@@ -199,8 +199,7 @@ Trả về JSON THUẦN (không có markdown, không có ```json):
     for attempt in range(3):
         try:
             time.sleep(AI_SLEEP)
-            model = genai.GenerativeModel(GEMINI_MODEL)
-            resp  = model.generate_content(prompt)
+            resp  = _client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
             raw   = resp.text.strip()
 
             # Làm sạch markdown

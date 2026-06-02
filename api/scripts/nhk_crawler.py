@@ -8,10 +8,10 @@ import time
 import random
 import json
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -93,8 +93,7 @@ Trả về DUY NHẤT một mảng JSON (không bọc trong markdown) theo đị
 """
     try:
         time.sleep(3) # Cân đối để tránh nghẽn API quota cho phiên bản miễn phí
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(prompt)
+        response = _client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text[7:]
         if raw_text.startswith("```"): raw_text = raw_text[3:]
@@ -126,8 +125,7 @@ Trả về DUY NHẤT một object JSON nguyên chất KHÔNG bọc trong markdo
 """
     try:
         time.sleep(3)
-        model = genai.GenerativeModel('gemini-2.5-flash')
-        response = model.generate_content(prompt)
+        response = _client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
         raw_text = response.text.strip(' \n`')
         if raw_text.startswith("json"): raw_text = raw_text[4:]
         return json.loads(raw_text.strip())

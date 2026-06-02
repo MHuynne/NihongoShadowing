@@ -3,7 +3,8 @@ import json
 import os
 from typing import List
 
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 from schemas.roleplay import ChatResponseResp, GrammarCorrectionSchema
 
@@ -27,7 +28,7 @@ def _get_next_api_key() -> str:
     return key
 
 
-genai.configure(api_key=_GEMINI_KEY_POOL[0] if _GEMINI_KEY_POOL else _main_key)
+_client = genai.Client(api_key=_GEMINI_KEY_POOL[0] if _GEMINI_KEY_POOL else _main_key)
 
 
 def _is_quota_error(exc: Exception) -> bool:
@@ -81,6 +82,7 @@ class RoleplayAIService:
         chat_history: List[dict],
         user_message: str,
     ) -> ChatResponseResp:
+        global _client
         system_instruction = f"""
 You are an AI Japanese conversation partner playing a role in a roleplay scenario.
 Scenario: {scenario_title}
@@ -105,25 +107,28 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
 }}
 """
 
-        model = genai.GenerativeModel(
-            model_name=os.getenv("GEMINI_MODEL", "gemini-2.5-flash"),
+        _config = types.GenerateContentConfig(
             system_instruction=system_instruction,
-            generation_config=genai.GenerationConfig(
-                response_mime_type="application/json",
-                temperature=0.7,
-            ),
+            response_mime_type="application/json",
+            temperature=0.7,
         )
+        model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-        gemini_history = []
+        # Build flat contents list: history + new user message
+        contents = []
         for msg in chat_history:
-            gemini_role = "user" if msg["role"] == "user" else "model"
-            gemini_history.append({"role": gemini_role, "parts": [msg["content"]]})
+            role = "user" if msg["role"] == "user" else "model"
+            contents.append(types.Content(role=role, parts=[types.Part(text=msg["content"])]))
+        contents.append(types.Content(role="user", parts=[types.Part(text=user_message)]))
 
         max_retries = max(len(_GEMINI_KEY_POOL), 1)
         for attempt in range(max_retries):
             try:
-                chat = model.start_chat(history=gemini_history)
-                response = await chat.send_message_async(user_message)
+                response = await _client.aio.models.generate_content(
+                    model=model_name,
+                    contents=contents,
+                    config=_config,
+                )
                 parsed = json.loads(response.text)
 
                 grammar = None
@@ -144,7 +149,7 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
                     next_key = _get_next_api_key()
                     suffix = next_key[-6:] if next_key else "empty"
                     print(f"[roleplay] Gemini quota hit. Retrying with key ...{suffix}")
-                    genai.configure(api_key=next_key)
+                    _client = genai.Client(api_key=next_key)
                     await asyncio.sleep(1)
                     continue
 

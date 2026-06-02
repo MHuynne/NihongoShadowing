@@ -19,10 +19,10 @@ import httpx
 from bs4 import BeautifulSoup
 import xml.etree.ElementTree as ET
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import SessionLocal
@@ -200,8 +200,7 @@ Tra ve JSON THUAN (khong markdown, khong chu thich them):
     for attempt in range(3):
         try:
             time.sleep(AI_SLEEP)
-            model = genai.GenerativeModel("gemini-2.5-flash")
-            resp = model.generate_content(prompt)
+            resp = _client.models.generate_content(model="gemini-2.5-flash", contents=prompt)
             raw = resp.text.strip().strip("`").strip()
             if raw.lower().startswith("json"):
                 raw = raw[4:].strip()

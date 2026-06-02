@@ -15,10 +15,10 @@ Cách chạy:
 
 import os, sys, re, time, json, argparse
 from dotenv import load_dotenv
-import google.generativeai as genai
+from google import genai
 
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+_client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from database import SessionLocal
@@ -185,8 +185,7 @@ vocabularies: 6-8 từ vựng cốt lõi của bài, quan trọng cho JLPT {leve
     for attempt in range(3):
         try:
             time.sleep(AI_SLEEP)
-            model = genai.GenerativeModel(GEMINI_MODEL)
-            resp  = model.generate_content(prompt)
+            resp  = _client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
             raw   = resp.text.strip()
 
             # Làm sạch markdown fence nếu có

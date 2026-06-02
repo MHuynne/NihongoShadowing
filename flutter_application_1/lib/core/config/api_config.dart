@@ -9,14 +9,14 @@ class ApiConfig {
   //   Emulator  → set _usePhysicalDevice = false
   //   Máy thật  → set _usePhysicalDevice = true, sau đó đổi _physicalDeviceIp
   //
-  static const bool _usePhysicalDevice = false;
+  static const bool _usePhysicalDevice = true;
 
   // ─── Bước 2: IP máy tính (chỉ cần điền khi _usePhysicalDevice = true) ─────
   //
   //   Xem IP bằng lệnh: ipconfig  (Windows) / ifconfig (Mac/Linux)
   //   Lấy địa chỉ IPv4 của card mạng Wifi đang kết nối cùng điện thoại.
   //
-  static const String _physicalDeviceIp = ' 192.168.1.199';
+  static const String _physicalDeviceIp = '192.168.1.199';
 
   // ─── Port server FastAPI ───────────────────────────────────────────────────
   static const int _port = 8000;
