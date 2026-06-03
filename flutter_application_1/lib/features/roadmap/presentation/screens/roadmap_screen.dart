@@ -219,6 +219,8 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         final prog = progressMap[lessonId];
         LessonStatus status;
         double? progress;
+        bool flashcardDone = false;
+        bool testPassed    = false;
 
         if (prog == null) {
           // Chưa có record — chỉ bài đầu tiên mỗi level được mở
@@ -227,15 +229,20 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         } else if (prog['lesson_completed'] == true) {
           status = LessonStatus.completed;
           progress = 1.0;
+          flashcardDone = true;
+          testPassed    = true;
         } else {
-          // Đang học dở: tính % tiến độ 3 bước
+          // Đang học dở: tính % tiến độ 3 bước chính
           status = LessonStatus.inProgress;
+          flashcardDone = prog['flashcard_done'] == true;
+          testPassed    = prog['test_passed'] == true;
           int steps = 0;
-          if (prog['flashcard_done'] == true) steps++;
-          if (prog['test_passed'] == true) steps++;
+          if (flashcardDone) steps++;
+          if (testPassed) steps++;
           if (prog['shadowing_passed'] == true) steps++;
           progress = steps / 3.0;
         }
+
 
         // Mở khoá bài kế tiếp nếu bài trước đã completed
         if (status == LessonStatus.locked) {
@@ -255,7 +262,10 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           icon: _iconForIndex(i),
           status: status,
           progress: progress,
+          flashcardDone: flashcardDone,
+          testPassed: testPassed,
         ));
+
       }
 
       // ── Build chapters ────────────────────────────────────────────────

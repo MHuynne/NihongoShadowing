@@ -7,6 +7,7 @@ import 'package:flutter_application_1/core/utils/sample_audio_player.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/vocabulary_test_screen.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 const _kPrimary = Color(0xFFFF4D6D);
 const _kPrimaryGradient = LinearGradient(
@@ -59,6 +60,13 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   // _isInReviewPass = true : vòng ôn (cycle khi chưa thuộc)
   bool _isInReviewPass = false;
 
+  // SharedPreferences keys — rieng cho moi lesson
+  String get _prefKeyIndex => 'flashcard_idx_${widget.lessonId}';
+  String get _prefKeyMemorized => 'flashcard_mem_${widget.lessonId}';
+  String get _prefKeyNotMemorized => 'flashcard_notmem_${widget.lessonId}';
+  String get _prefKeyIndices => 'flashcard_indices_${widget.lessonId}';
+  String get _prefKeyInReview => 'flashcard_inreview_${widget.lessonId}';
+
   @override
   void initState() {
     super.initState();
@@ -84,7 +92,39 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   @override
   void dispose() {
     _flipCtrl.dispose();
+    // Tu dong luu vi tri khi thoat (chi khi khong phai review mode va dang hoc do)
+    if (!widget.isReviewMode && _vocabularies.isNotEmpty && _learningQueue.isNotEmpty) {
+      _saveProgressLocally();
+    }
     super.dispose();
+  }
+
+  Future<void> _saveProgressLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final currentIndex = _totalVocab - _learningQueue.length;
+      await prefs.setInt(_prefKeyIndex, currentIndex);
+      await prefs.setInt(_prefKeyMemorized, _memorizedCount);
+      await prefs.setInt(_prefKeyNotMemorized, _notMemorizedCount);
+      await prefs.setBool(_prefKeyInReview, _isInReviewPass);
+      await prefs.setString(_prefKeyIndices, jsonEncode(_notMemorizedIndices.toList()));
+      debugPrint('[Flashcard] Saved: card=$currentIndex/$_totalVocab');
+    } catch (e) {
+      debugPrint('[Flashcard] Save error: $e');
+    }
+  }
+
+  Future<void> _clearLocalProgress() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_prefKeyIndex);
+      await prefs.remove(_prefKeyMemorized);
+      await prefs.remove(_prefKeyNotMemorized);
+      await prefs.remove(_prefKeyIndices);
+      await prefs.remove(_prefKeyInReview);
+    } catch (e) {
+      debugPrint('[Flashcard] Clear error: $e');
+    }
   }
 
   Future<void> _fetchVocab() async {
@@ -92,14 +132,58 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       final response = await http.get(Uri.parse('${ApiConfig.baseUrl}/vocabularies/?lesson_id=${widget.lessonId}'));
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
-        setState(() {
-          _vocabularies      = data;
-          _learningQueue     = List.from(_vocabularies);
-          _totalVocab        = _vocabularies.length;
-          _memorizedCount    = 0;
-          _notMemorizedCount = 0;
-          _isLoading         = false;
-        });
+
+        // Doc progress da luu
+        final prefs = await SharedPreferences.getInstance();
+        final savedIdx      = prefs.getInt(_prefKeyIndex) ?? 0;
+        final savedMem      = prefs.getInt(_prefKeyMemorized) ?? 0;
+        final savedNotMem   = prefs.getInt(_prefKeyNotMemorized) ?? 0;
+        final savedInReview = prefs.getBool(_prefKeyInReview) ?? false;
+        final indicesJson   = prefs.getString(_prefKeyIndices);
+        Set<int> savedIndices = {};
+        if (indicesJson != null) {
+          savedIndices = (jsonDecode(indicesJson) as List<dynamic>).map((e) => e as int).toSet();
+        }
+
+        final hasResume = savedIdx > 0 && savedIdx < data.length;
+
+        if (mounted) {
+          setState(() {
+            _vocabularies = data;
+            _totalVocab   = data.length;
+            if (hasResume) {
+              // Tiep tuc tu vi tri da luu
+              _learningQueue       = List.from(data.sublist(savedIdx));
+              _memorizedCount      = savedMem;
+              _notMemorizedCount   = savedNotMem;
+              _notMemorizedIndices = savedIndices;
+              _isInReviewPass      = savedInReview;
+            } else {
+              _learningQueue     = List.from(data);
+              _memorizedCount    = 0;
+              _notMemorizedCount = 0;
+            }
+            _isLoading = false;
+          });
+        }
+
+        if (hasResume && mounted) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Row(children: [
+                const Icon(Icons.bookmark_rounded, color: Colors.white, size: 18),
+                const SizedBox(width: 8),
+                Text('Tiep tuc tu tu $savedIdx/$_totalVocab',
+                  style: const TextStyle(fontWeight: FontWeight.w700)),
+              ]),
+              backgroundColor: _kPrimary,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              duration: const Duration(seconds: 3),
+            ));
+          });
+        }
       } else {
         setState(() => _isLoading = false);
       }
@@ -414,6 +498,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   }
 
   void _startTest() async {
+    await _clearLocalProgress(); // Xoa progress local khi hoan thanh
     await ProgressService.markFlashcardDone(widget.lessonId);
     if (!mounted) return;
     Navigator.pushReplacement(

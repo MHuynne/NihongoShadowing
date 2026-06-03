@@ -1,8 +1,10 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/components/lesson_node.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/flashcard_screen.dart';
+import 'package:flutter_application_1/features/roadmap/presentation/screens/vocabulary_test_screen.dart';
+import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
 
 class ChapterSection extends StatefulWidget {
   final ChapterModel chapter;
@@ -170,25 +172,147 @@ class _ChapterSectionState extends State<ChapterSection>
           return LessonNode(
             lesson: lesson,
             index: index,
-            onTap: () {
-              if (lesson.status != LessonStatus.locked &&
-                  lesson.id != 'err_msg') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => FlashcardScreen(
-                      topicId: lesson.topicId,
-                      lessonId: lesson.lessonId,
-                    ),
-                  ),
-                );
-              }
-            },
+            onTap: () => _navigateToLesson(lesson),
           );
         }).toList(),
       ),
     );
   }
+
+  /// Điều hướng đúng bước dựa trên tiến độ đã lưu
+  void _navigateToLesson(LessonModel lesson) {
+    if (lesson.status == LessonStatus.locked || lesson.id == 'err_msg') return;
+
+    // Bài đã hoàn thành → hỏi muốn học lại bước nào
+    if (lesson.status == LessonStatus.completed) {
+      _showReplayDialog(lesson);
+      return;
+    }
+
+    // Đang học dở → nhảy thẳng vào bước đang dở
+    if (lesson.testPassed) {
+      // Đã qua Test → vào Shadowing
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ShadowingScreen(
+            topicId: lesson.topicId,
+            lessonId: lesson.lessonId,
+            testErrors: 0,
+          ),
+        ),
+      );
+    } else if (lesson.flashcardDone) {
+      // Đã xong Flashcard → vào Test
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => VocabularyTestScreen(
+            topicId: lesson.topicId,
+            lessonId: lesson.lessonId,
+            isReview: false,
+          ),
+        ),
+      );
+    } else {
+      // Chưa xong Flashcard → vào Flashcard (SharedPreferences sẽ tự resume)
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => FlashcardScreen(
+            topicId: lesson.topicId,
+            lessonId: lesson.lessonId,
+          ),
+        ),
+      );
+    }
+  }
+
+  /// Dialog chọn học lại khi bài đã hoàn thành
+  void _showReplayDialog(LessonModel lesson) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 48),
+              const SizedBox(height: 12),
+              Text(lesson.title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
+              const SizedBox(height: 6),
+              const Text('Bài này bạn đã hoàn thành rồi! Ôn lại phần nào?',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
+              const SizedBox(height: 20),
+              _replayBtn(
+                icon: Icons.style_rounded,
+                label: 'Từ vựng (Flashcard)',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => FlashcardScreen(
+                      topicId: lesson.topicId, lessonId: lesson.lessonId),
+                  ));
+                },
+              ),
+              const SizedBox(height: 10),
+              _replayBtn(
+                icon: Icons.quiz_rounded,
+                label: 'Kiểm tra từ vựng (Test)',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => VocabularyTestScreen(
+                      topicId: lesson.topicId, lessonId: lesson.lessonId, isReview: false),
+                  ));
+                },
+              ),
+              const SizedBox(height: 10),
+              _replayBtn(
+                icon: Icons.mic_rounded,
+                label: 'Luyện phát âm (Shadowing)',
+                onTap: () {
+                  Navigator.pop(context);
+                  Navigator.push(context, MaterialPageRoute(
+                    builder: (_) => ShadowingScreen(
+                      topicId: lesson.topicId, lessonId: lesson.lessonId, testErrors: 0),
+                  ));
+                },
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Hủy', style: TextStyle(color: Color(0xFF94A3B8))),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _replayBtn({required IconData icon, required String label, required VoidCallback onTap}) {
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: onTap,
+        icon: Icon(icon, size: 18),
+        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.toriiRed,
+          side: BorderSide(color: AppColors.toriiRed.withValues(alpha: 0.5), width: 1.5),
+          padding: const EdgeInsets.symmetric(vertical: 14),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildEmptyChapter() {
     return Column(

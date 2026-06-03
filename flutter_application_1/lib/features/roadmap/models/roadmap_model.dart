@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 class LessonModel {
   final String id;       // display ID (chuỗi dùng cho UI)
@@ -9,6 +9,9 @@ class LessonModel {
   final IconData icon;
   final LessonStatus status;
   final double? progress; // 0.0 – 1.0
+  // Trạng thái chi tiết để điều hướng đúng bước
+  final bool flashcardDone;
+  final bool testPassed;
 
   LessonModel({
     required this.id,
@@ -19,6 +22,8 @@ class LessonModel {
     required this.icon,
     required this.status,
     this.progress,
+    this.flashcardDone = false,
+    this.testPassed = false,
   });
 }
 

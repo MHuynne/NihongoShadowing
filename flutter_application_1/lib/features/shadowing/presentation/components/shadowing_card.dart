@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/shadowing/models/shadowing_model.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/furigana_text.dart';
@@ -54,20 +54,13 @@ class ShadowingCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // --- KANJI & FURIGANA (Parse từ HTML và đưa furigana lên đầu) ---
-          if (sentence.furiganaHtml.isNotEmpty && sentence.furiganaHtml.contains('<ruby>'))
-             FuriganaText(text: sentence.furiganaHtml)
-          else 
-             Text(
-               sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
-               textAlign: TextAlign.center,
-               style: const TextStyle(
-                 fontSize: 30,
-                 color: AppColors.textDark,
-                 fontWeight: FontWeight.bold,
-                 height: 1.6,
-               ),
-             ),
+          // --- KANJI & FURIGANA ---
+          FuriganaText(
+            text: sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
+            furigana: sentence.furiganaHtml,
+            kanjiFontSize: 28,
+            furiganaFontSize: 13,
+          ),
 
           const SizedBox(height: 24),
           const Divider(color: AppColors.slate100),

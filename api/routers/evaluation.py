@@ -521,25 +521,27 @@ async def _ai_generate_tip(
     )
 
     # Dùng _gemini_post (có sẵn fallback model) thay vì gọi thẳng 1 model
-    result = await _gemini_post(prompt, timeout=15)
+    result = await _gemini_post(prompt, timeout=30)
     text = result.get("_text", "").strip()
     if text:
         return text
 
     return fallback_tip
 
-# Danh sách model fallback theo thứ tự ưu tiên
-# (lấy từ API: /v1beta/models — chỉ giữ model hỗ trợ generateContent)
+# Danh sách model fallback theo thứ tự ưu tiên (model tồn tại, hỗ trợ generateContent)
+# Nếu một model bị ReadTimeout hoặc quota, tự chuyển sang model tiếp theo
 _GEMINI_MODELS = [
-    "gemini-2.0-flash",
-    "gemini-2.0-flash-lite",
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-flash",
-    "gemini-3.1-flash-lite",
-    "gemini-flash-latest",
-    "gemini-flash-lite-latest",
+    "gemini-2.0-flash-lite",   # Nhanh nhất, ưu tiên đầu
+    "gemini-2.0-flash",        # Nhanh, ổn định
+    "gemini-2.5-flash",        # Mạnh nhất, dùng khi các model nhẹ fail
 ]
 
+# Timeout riêng cho từng model (giây) — model nhẹ thì timeout ngắn hơn
+_MODEL_TIMEOUT = {
+    "gemini-2.0-flash-lite": 20,
+    "gemini-2.0-flash": 35,
+    "gemini-2.5-flash": 55,
+}
 
 
 async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
@@ -566,7 +568,8 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
                 f"{model}:generateContent?key={api_key}"
             )
             try:
-                async with httpx.AsyncClient(timeout=timeout) as client:
+                model_timeout = _MODEL_TIMEOUT.get(model, timeout)
+                async with httpx.AsyncClient(timeout=model_timeout) as client:
                     resp = await client.post(url, json=payload)
 
                 if resp.status_code == 429:
@@ -592,6 +595,8 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
                     return {"_text": text}  # text bình thường
 
                 print(f"[Gemini] {model} HTTP {resp.status_code}")
+            except httpx.ReadTimeout:
+                print(f"[Gemini] {model} ReadTimeout after {_MODEL_TIMEOUT.get(model, timeout)}s, trying next model...")
             except Exception as e:
                 print(f"[Gemini] {model} error: {repr(e)}")
 
@@ -663,7 +668,7 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
         "4. Nếu STT trống hoặc quá ngắn, đánh false cho hầu hết."
     )
 
-    result = await _gemini_post(prompt, timeout=20)
+    result = await _gemini_post(prompt, timeout=45)
     if result and "accuracy" in result:
         # Validate và clamp điểm
         for k in ["accuracy", "fluency", "prosody", "rhythm"]:
