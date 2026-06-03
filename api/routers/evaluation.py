@@ -366,11 +366,11 @@ def _compute_scores(expected: str, recognized: str) -> tuple[int, int, int]:
     # --- Accuracy (mora-level) ---
     accuracy = _mora_accuracy(expected, recognized)
 
-    # --- Fluency ---
+    # --- Fluency: positional SequenceMatcher (chính xác hơn naive `in`) ---
     exp_moras = _jp_mora_split(expected)
     rec_moras = _jp_mora_split(recognized)
-    matched_moras = sum(1 for m in rec_moras if m in exp_moras)
-    fluency = min(int((matched_moras / max(len(exp_moras), 1)) * 100), 100)
+    fluency_ratio = SequenceMatcher(None, exp_moras, rec_moras).ratio()
+    fluency = min(int(fluency_ratio * 100), 100)
 
     # --- Prosody: độ phủ trợ từ + tỉ lệ độ dài ---
     pitch_cov   = _pitch_particle_coverage(expected, recognized)
@@ -603,53 +603,64 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
     """
     Dùng Gemini để chấm điểm shadowing toàn diện.
 
-    Lưu ý quan trọng:
-    - expected_text có thể là Kanji (ví dụ: 明日は早く起きなければなりません)
-    - recognized_text là output của Google STT — thường ở dạng Hiragana
-    - Gemini cần hiểu rằng Kanji và Hiragana đọc giống nhau là ĐÚNG
+    Early-exit: nếu Hiragana của recognized khớp ≥ 95% với expected
+    thì không cần gọi Gemini — trả về điểm cao tức thì.
     """
     if not recognized_text or recognized_text == "(Được đọc)":
         return {}
+
+    # --- Tính quick_ratio trước để dùng cho early-exit và sanity-boost ---
+    exp_hira_norm = _normalize_jp(expected_text)
+    rec_hira_norm = _normalize_jp(recognized_text)
+    quick_ratio   = SequenceMatcher(None, list(exp_hira_norm), list(rec_hira_norm)).ratio()
+
+    # Early-exit: STT nhận ra gần như hoàn hảo — không cần Gemini
+    if quick_ratio >= 0.95:
+        acc = min(int(quick_ratio * 100), 100)
+        return {
+            "accuracy": acc,
+            "fluency":  max(acc - 5, 85),
+            "prosody":  max(acc - 10, 80),
+            "rhythm":   90,
+            "mispronounced_words": [],
+            "error_types": {"pronunciation": [], "prosody": [], "pitch_accent": [], "rhythm": []},
+            "words_analysis": [{"text": expected_text, "is_correct": True}],
+        }
 
     # Convert expected sang Hiragana để Gemini so sánh dễ hơn
     expected_hira = _kanji_to_hira(expected_text)
 
     prompt = (
-        "Bạn là giám khảo chấm thi nói tiếng Nhật chuyên nghiệp và nghiêm khắc.\n\n"
+        "Bạn là giám khảo chấm thi nói tiếng Nhật. So sánh DỰA TRÊN ÂM ĐỌC Hiragana, KHÔNG phải ký tự bề mặt.\n\n"
         f"★ Câu gốc (Kanji):    {expected_text}\n"
         f"★ Câu gốc (Hiragana): {expected_hira}\n"
         f"★ STT nhận dạng:      {recognized_text}\n\n"
-        "QUY TẮC CHẤM ĐIỂM NGHIÊM KHẮC:\n"
-        "- So sánh theo ÂM ĐỌC (Hiragana), không phải ký tự bề mặt.\n"
-        "- Nếu STT nhận dạng khớp 100% Hiragana câu gốc → accuracy 90-100.\n"
-        "- Nếu thiếu hoặc thêm 1 mora → accuracy giảm 10 điểm.\n"
-        "- Nếu sai 1 từ rõ ràng → accuracy giảm 15-20 điểm.\n"
-        "- Nếu sai nhiều từ → accuracy < 65.\n"
-        "- Từ nào STT ra khác Hiragana câu gốc → đánh dấu is_correct=false VÀ thêm vào mispronounced_words.\n"
-        "- KHÔNG làm tròn điểm lên một cách vô lý. Hãy chấm thực chất.\n\n"
+        "QUY TẮC QUAN TRỌNG:\n"
+        "- Kanji và Hiragana đọc giống nhau là ĐÚNG HOÀN TOÀN (is_correct=true).\n"
+        "  VD: 明日=あした, 早く=はやく, 起き=おき → là ĐÚNG nếu STT ra Hiragana tương ứng.\n"
+        "- Chỉ đánh sai (is_correct=false) khi ÂM ĐỌC thực sự khác nhau.\n"
+        "- Nếu STT Hiragana khớp ≥90% Hiragana câu gốc → accuracy 85-100.\n"
+        "- Nếu thiếu/thêm 1 mora → accuracy giảm 8 điểm.\n"
+        "- Nếu sai 1 từ → accuracy giảm 15 điểm. Sai nhiều → accuracy < 65.\n"
+        "- KHÔNG phạt khi Kanji và Hiragana tương đương nhau.\n\n"
         "Trả về JSON THUẦN (không markdown, không text ngoài JSON):\n"
         "{\n"
         '  "accuracy": 85,\n'
         '  "fluency": 80,\n'
         '  "prosody": 75,\n'
         '  "rhythm": 90,\n'
-        '  "mispronounced_words": ["từ sai 1", "từ sai 2"],\n'
-        '  "error_types": {\n'
-        '    "pronunciation": ["từ phát âm sai"],\n'
-        '    "prosody": [],\n'
-        '    "pitch_accent": [],\n'
-        '    "rhythm": []\n'
-        '  },\n'
+        '  "mispronounced_words": ["từ sai 1"],\n'
+        '  "error_types": {"pronunciation": [], "prosody": [], "pitch_accent": [], "rhythm": []},\n'
         '  "words_analysis": [\n'
         '    {"text": "明日は", "is_correct": true},\n'
         '    {"text": "早く起き", "is_correct": false}\n'
         '  ]\n'
         "}\n\n"
         "Quy tắc words_analysis:\n"
-        "1. Chia nhỏ câu gốc thành cụm 2-4 ký tự Kanji/Kana nguyên gốc (không đổi sang Hiragana).\n"
-        "2. is_correct=false nếu cụm đó KHÔNG xuất hiện (kể cả dạng Hiragana) trong STT output.\n"
-        "3. Ghép lại phải khôi phục được 100% câu gốc (Kanji).\n"
-        "4. Nếu STT trống hoặc rất ngắn so với câu gốc, đánh dấu hầu hết là false."
+        "1. Chia câu gốc thành cụm 2-4 ký tự Kanji/Kana NGUYÊN GỐC.\n"
+        "2. is_correct=false CHỈ KHI âm đọc cụm đó KHÔNG có trong STT output.\n"
+        "3. Ghép lại phải khôi phục 100% câu gốc.\n"
+        "4. Nếu STT trống hoặc quá ngắn, đánh false cho hầu hết."
     )
 
     result = await _gemini_post(prompt, timeout=20)
@@ -658,6 +669,12 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
         for k in ["accuracy", "fluency", "prosody", "rhythm"]:
             if k in result:
                 result[k] = max(0, min(100, int(result[k])))
+        # Sanity-boost: nếu Gemini cho điểm quá thấp nhưng text khớp tốt
+        if quick_ratio >= 0.80 and result.get("accuracy", 0) < 60:
+            boost = int(quick_ratio * 85)
+            result["accuracy"] = max(result["accuracy"], boost)
+            result["fluency"]  = max(result.get("fluency", 0), boost - 10)
+            print(f"[SanityBoost] quick_ratio={quick_ratio:.2f} → accuracy boosted to {result['accuracy']}")
         return result
     return {}
 

@@ -12,6 +12,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:async';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -24,17 +25,35 @@ class _HomeScreenState extends State<HomeScreen> {
   int _completedLessons = 0;
   int _totalLessons = 25;
   String _levelLabel = 'N5';
-  
+
   // Roadmap specific progress
   int _flashcardDone = 0;
   int _shadowingDone = 0;
-  
+
   bool _loadingProgress = true;
+  StreamSubscription<User?>? _authSub;
 
   @override
   void initState() {
     super.initState();
-    _loadProgress();
+    // Chờ Firebase Auth xác nhận trạng thái đăng nhập trước rồi mới load
+    _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
+      if (user != null) {
+        // Đã đăng nhập → tải dữ liệu (chỉ 1 lần)
+        _authSub?.cancel();
+        _authSub = null;
+        _loadProgress();
+      } else {
+        // Chưa đăng nhập
+        if (mounted) setState(() => _loadingProgress = false);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _authSub?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadProgress() async {

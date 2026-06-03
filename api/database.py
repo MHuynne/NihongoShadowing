@@ -12,11 +12,11 @@ MYSQL_USER = os.getenv("MYSQL_USER", "root")
 MYSQL_PASSWORD = os.getenv("MYSQL_PASSWORD", "1234")
 MYSQL_HOST = os.getenv("MYSQL_HOST", "localhost")
 MYSQL_PORT = int(os.getenv("MYSQL_PORT", "3306"))
-MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "nihongo_learning")
+MYSQL_DATABASE = os.getenv("MYSQL_DATABASE", "nihongo_learning1")
 DATABASE_BACKEND = os.getenv("DATABASE_BACKEND", "auto").lower()
 SQLITE_DATABASE = os.getenv(
     "SQLITE_DATABASE",
-    os.path.join(os.path.dirname(__file__), "nihongo_learning.db"),
+    os.path.join(os.path.dirname(__file__), "nihongo_learning1.db"),
 )
 
 

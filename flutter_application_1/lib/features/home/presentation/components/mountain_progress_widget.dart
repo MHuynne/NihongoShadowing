@@ -18,7 +18,8 @@ class MountainProgressWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final double progress = totalLessons > 0 ? completedLessons / totalLessons : 0;
+    final double progress =
+        totalLessons > 0 ? completedLessons / totalLessons : 0;
     final int pct = (progress * 100).round();
 
     // Map level to Japanese traditional trail names or milestones
@@ -126,7 +127,8 @@ class MountainProgressWidget extends StatelessWidget {
                           Row(
                             children: [
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.1),
                                   borderRadius: BorderRadius.circular(8),
@@ -158,13 +160,13 @@ class MountainProgressWidget extends StatelessWidget {
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 8),
 
                           // Goal / Level Title
                           Text(
                             '$levelLabel Mastery',
                             style: const TextStyle(
-                              fontSize: 26,
+                              fontSize: 22,
                               fontWeight: FontWeight.w900,
                               color: Colors.white,
                               height: 1.1,
@@ -178,7 +180,7 @@ class MountainProgressWidget extends StatelessWidget {
                               ],
                             ),
                           ),
-                          const SizedBox(height: 4),
+                          const SizedBox(height: 2),
 
                           // Subtitle (Trail)
                           Text(
@@ -191,17 +193,19 @@ class MountainProgressWidget extends StatelessWidget {
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 10),
 
                           // Station progress pill
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
                               color: const Color(0xFFFF4D6D),
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF4D6D).withOpacity(0.3),
+                                  color:
+                                      const Color(0xFFFF4D6D).withOpacity(0.3),
                                   blurRadius: 8,
                                   offset: const Offset(0, 3),
                                 ),
@@ -236,14 +240,15 @@ class MountainProgressWidget extends StatelessWidget {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color: const Color(0xFFFF4D6D).withOpacity(0.15),
+                                  color:
+                                      const Color(0xFFFF4D6D).withOpacity(0.15),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                 ),
                               ],
                             ),
                           ),
-                          
+
                           // Circular Track Background
                           SizedBox(
                             width: 76,
@@ -374,7 +379,7 @@ class FujiPainter extends CustomPainter {
     final capPath = Path();
     capPath.moveTo(w * 0.45, h * 0.15);
     capPath.lineTo(w * 0.55, h * 0.15);
-    
+
     // Top right of slope cap
     capPath.cubicTo(w * 0.57, h * 0.25, w * 0.54, h * 0.32, w * 0.51, h * 0.38);
     // Wavy edge of snow cap

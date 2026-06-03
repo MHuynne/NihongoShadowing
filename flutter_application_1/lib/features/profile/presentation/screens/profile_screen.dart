@@ -844,7 +844,7 @@ class _StatsGrid extends StatelessWidget {
       crossAxisCount: 2,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.45,
+      childAspectRatio: 1.6,
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       children: [
@@ -900,7 +900,7 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.surface(context),
         borderRadius: BorderRadius.circular(22),
@@ -917,8 +917,8 @@ class _StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: accent, size: 21),
-          const SizedBox(height: 10),
+          Icon(icon, color: accent, size: 20),
+          const SizedBox(height: 6),
           Text(
             label,
             maxLines: 1,
@@ -929,12 +929,12 @@ class _StatTile extends StatelessWidget {
               fontWeight: FontWeight.w900,
             ),
           ),
-          const SizedBox(height: 5),
+          const SizedBox(height: 4),
           Text(
             value,
             style: TextStyle(
               color: AppColors.primaryText(context),
-              fontSize: 19,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),

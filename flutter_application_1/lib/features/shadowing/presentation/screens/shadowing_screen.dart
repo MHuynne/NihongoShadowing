@@ -399,7 +399,11 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         }
         debugPrint('--------------------------------------');
 
-        final streamedResponse = await request.send();
+        // Timeout 90s — backend cần gọi Google STT + Gemini AI
+        final streamedResponse = await request.send().timeout(
+          const Duration(seconds: 90),
+          onTimeout: () => throw Exception('Hết thời gian chờ AI chấm điểm (>90s). Vui lòng thử lại.'),
+        );
         final response = await http.Response.fromStream(streamedResponse);
 
         
@@ -464,9 +468,18 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
            });
         }
       } catch (e) {
+         String errorMsg;
+         final errStr = e.toString();
+         if (errStr.contains('Hết thời gian')) {
+           errorMsg = errStr;
+         } else if (errStr.contains('SocketException') || errStr.contains('Connection')) {
+           errorMsg = 'Không thể kết nối server. Kiểm tra server có đang chạy không.';
+         } else {
+           errorMsg = 'Lỗi kết nối AI: $e';
+         }
          setState(() {
             _isEvaluating = false;
-            _dynamicFeedback = ShadowingFeedbackModel(accuracy: 0, feedbackHtml: "", tip: "Lỗi kết nối AI: $e");
+            _dynamicFeedback = ShadowingFeedbackModel(accuracy: 0, feedbackHtml: "", tip: errorMsg);
             _showFeedback = true;
          });
       }
