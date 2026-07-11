@@ -2,14 +2,14 @@
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/shadowing/models/shadowing_model.dart';
 
-// ─── Màu Sakura Pink ────────────────────────────────────────────────────────
+
 const _sakuraBg       = Color(0xFFFFF0F5);
 const _sakuraBorder   = Color(0xFFFFB7C5);
 const _sakuraDark     = Color(0xFFB5375A);
 const _sakuraAccent   = Color(0xFFFF6B9D);
 
-/// Bottom sheet hiện sau khi hoàn thành bài học Shadowing.
-/// Hiển thị lời khuyên cá nhân hóa từ RecommendationEngine.
+
+
 class RecommendationBottomSheet extends StatelessWidget {
   final ActionPlan actionPlan;
   final ErrorTypes errorTypes;
@@ -18,10 +18,10 @@ class RecommendationBottomSheet extends StatelessWidget {
   final int fluency;
   final int prosody;
 
-  /// Callback khi người dùng nhấn action button
+
   final VoidCallback? onActionPressed;
 
-  /// Callback khi nhấn "Tiếp tục"
+
   final VoidCallback? onContinue;
 
   const RecommendationBottomSheet({
@@ -36,7 +36,7 @@ class RecommendationBottomSheet extends StatelessWidget {
     this.onContinue,
   });
 
-  /// Hiển thị bottom sheet với animation từ dưới lên
+
   static Future<void> show({
     required BuildContext context,
     required ActionPlan actionPlan,
@@ -92,7 +92,7 @@ class RecommendationBottomSheet extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Handle bar ───────────────────────────────────────────────────
+
           Center(
             child: Container(
               width: 44,
@@ -105,7 +105,7 @@ class RecommendationBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Header ───────────────────────────────────────────────────────
+
           Row(
             children: [
               Container(
@@ -147,13 +147,13 @@ class RecommendationBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 20),
 
-          // ── Error type badges ─────────────────────────────────────────────
+
           if (errorTypes.hasAnyError) ...[
             _buildErrorBadges(),
             const SizedBox(height: 16),
           ],
 
-          // ── AI message box ────────────────────────────────────────────────
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -174,11 +174,11 @@ class RecommendationBottomSheet extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // ── Score summary mini ────────────────────────────────────────────
+
           _buildScoreSummary(),
           const SizedBox(height: 20),
 
-          // ── Action Button (nếu có action cụ thể) ─────────────────────────
+
           if (actionPlan.action != ActionType.celebrate &&
               actionPlan.action != ActionType.retry &&
               onActionPressed != null) ...[
@@ -208,7 +208,7 @@ class RecommendationBottomSheet extends StatelessWidget {
             const SizedBox(height: 10),
           ],
 
-          // ── Nút tiếp tục ─────────────────────────────────────────────────
+
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -240,7 +240,7 @@ class RecommendationBottomSheet extends StatelessWidget {
     );
   }
 
-  // ── Error Badge Cards ─────────────────────────────────────────────────────
+
   Widget _buildErrorBadges() {
     final badges = <_ErrorBadge>[];
     if (errorTypes.pronunciation.isNotEmpty) {
@@ -322,7 +322,7 @@ class RecommendationBottomSheet extends StatelessWidget {
     );
   }
 
-  // ── Score Summary ─────────────────────────────────────────────────────────
+
   Widget _buildScoreSummary() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -373,7 +373,7 @@ class RecommendationBottomSheet extends StatelessWidget {
         color: _sakuraBorder.withValues(alpha: 0.5),
       );
 
-  // ── Action helpers ────────────────────────────────────────────────────────
+
   IconData _getActionIcon() {
     switch (actionPlan.action) {
       case ActionType.openVocabulary:    return Icons.menu_book_rounded;
@@ -397,7 +397,7 @@ class RecommendationBottomSheet extends StatelessWidget {
   }
 }
 
-// ── Helper class ──────────────────────────────────────────────────────────────
+
 class _ErrorBadge {
   final String label;
   final IconData icon;

@@ -24,7 +24,7 @@ class SrsProgressCard extends StatelessWidget {
       ),
       child: Column(
         children: [
-          // Banner Area (Optional, can be removed to be more minimalist, but we'll adapt it)
+
           Container(
             height: 80,
             decoration: BoxDecoration(
@@ -49,8 +49,8 @@ class SrsProgressCard extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Content Area
+
+
           Padding(
             padding: const EdgeInsets.all(20.0),
             child: Column(
@@ -86,8 +86,8 @@ class SrsProgressCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 16),
-                
-                // Progress Bar
+
+
                 LinearProgressIndicator(
                   value: progress.progressPercentage,
                   backgroundColor: AppColors.slate100,
@@ -96,8 +96,8 @@ class SrsProgressCard extends StatelessWidget {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 const SizedBox(height: 24),
-                
-                // Action Button
+
+
                 SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(

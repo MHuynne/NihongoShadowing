@@ -69,17 +69,17 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
   Future<void> _openLessonDialog([Map<String, dynamic>? lesson]) async {
     final isEditing = lesson != null;
 
-    // ─── Bước 1: Thông tin bài học ────────────────────────────────
+
     final chapterController = TextEditingController(
         text: (lesson?['chapter_name'] ?? '').toString());
     String? level = lesson?['level']?.toString();
     final orderController = TextEditingController(
         text: (lesson?['order_index'] ?? '').toString());
 
-    // ─── Bước 2: Từ vựng ─────────────────────────────────────────
+
     final vocabs = <Map<String, String>>[];
 
-    // ─── Bước 3: Shadowing ───────────────────────────────────────
+
     final shadowTitleController = TextEditingController();
     final shadowScriptController = TextEditingController();
     final shadowAudioController = TextEditingController();
@@ -88,7 +88,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
     final segments = <Map<String, String>>[];
 
     if (isEditing) {
-      // Show loading overlay
+
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -125,7 +125,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
         final loadedVocabs = results[0] as List;
         final loadedTopics = results[1] as List;
 
-        // Pop loading overlay
+
         if (mounted) {
           Navigator.of(context).pop();
         }
@@ -175,7 +175,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
           }
         }
       } catch (e) {
-        // Pop loading overlay
+
         if (mounted) {
           Navigator.of(context).pop();
           ScaffoldMessenger.of(context).showSnackBar(
@@ -197,7 +197,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (ctx, setDS) {
-          // ── helper ──
+
           Widget buildField(TextEditingController c, String label, {int maxLines = 1, TextInputType? kb}) =>
               TextField(
                 controller: c,
@@ -206,7 +206,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
                 decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
               );
 
-          // ── Step 1: Bài học ──────────────────────────────────────
+
           Widget step1 = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -226,7 +226,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
             ],
           );
 
-          // ── Step 2: Từ vựng ──────────────────────────────────────
+
           Widget step2 = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -295,7 +295,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
             ],
           );
 
-          // ── Step 3: Shadowing ─────────────────────────────────────
+
           Widget step3 = Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -430,7 +430,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Step indicator
+
                   Row(
                     children: List.generate(steps.length, (i) {
                       final active = i == currentStep;
@@ -488,7 +488,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
                       return;
                     }
                   } else if (currentStep == 1) {
-                    // Kiểm tra danh sách từ vựng
+
                     for (int i = 0; i < vocabs.length; i++) {
                       final v = vocabs[i];
                       final word = (v['word'] ?? '').trim();
@@ -496,7 +496,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
                       final meaning = (v['meaning'] ?? '').trim();
                       final example = (v['example'] ?? '').trim();
                       final hasAnyInput = word.isNotEmpty || reading.isNotEmpty || meaning.isNotEmpty || example.isNotEmpty;
-                      
+
                       if (hasAnyInput) {
                         if (word.isEmpty) {
                           ScaffoldMessenger.of(ctx).showSnackBar(
@@ -531,7 +531,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
     if (confirmed != true) return;
 
     try {
-      // Bước 1: Tạo / cập nhật bài học
+
       final lessonPayload = {
         'chapter_name': chapterController.text.trim(),
         'level': level,
@@ -547,7 +547,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
       }
       final lessonId = savedLesson['id'] as int;
 
-      // Bước 2: Tạo / Cập nhật từ vựng
+
       if (isEditing) {
         final existingVocabs = await widget.api.fetchVocabularies(lessonId: lessonId);
         for (final ev in existingVocabs) {
@@ -566,7 +566,7 @@ class _AdminLessonsPageState extends State<AdminLessonsPage> {
         });
       }
 
-      // Bước 3: Tạo / Cập nhật Shadowing Topic (nếu có tiêu đề)
+
       if (isEditing) {
         final loadedTopics = await widget.api.fetchTopics();
         final existingTopic = loadedTopics.firstWhere(

@@ -112,7 +112,7 @@ class _KingoChatScreenState extends State<KingoChatScreen> {
             child: ListView(
               padding: const EdgeInsets.only(top: 24, bottom: 24),
               children: [
-                // Today Label
+
                 Center(
                   child: Container(
                     padding: const EdgeInsets.symmetric(
@@ -137,10 +137,10 @@ class _KingoChatScreenState extends State<KingoChatScreen> {
                 ),
                 ..._messages.map((m) => ChatBubble(message: m)).toList(),
 
-                // Keigo Suggestion
+
                 KeigoSuggestionCard(
                   onApply: () {
-                    // Implement functionality to apply suggestion
+
                   },
                 ),
               ],

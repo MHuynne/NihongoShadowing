@@ -19,9 +19,9 @@ class FuriganaText extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.end,
       children: words.map((w) {
         if (w.text == '\n') {
-          return const SizedBox(width: double.infinity, height: 4); // basic line break
+          return const SizedBox(width: double.infinity, height: 4);
         }
-        
+
         if (w.furigana == null || w.furigana!.isEmpty) {
           return Padding(
             padding: const EdgeInsets.only(bottom: 2.0),

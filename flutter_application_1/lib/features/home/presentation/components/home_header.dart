@@ -15,7 +15,7 @@ class HomeHeader extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // Left: Title only
+
           const Text(
             'NihongoJP',
             style: TextStyle(
@@ -25,7 +25,7 @@ class HomeHeader extends StatelessWidget {
               letterSpacing: -0.5,
             ),
           ),
-          // Right: Profile Avatar
+
           Container(
             width: 44,
             height: 44,

@@ -88,7 +88,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     String? level = topic?['level']?.toString();
     String? lessonId = topic?['lesson_id']?.toString();
 
-    // Chỉ giữ 3 trường cần thiết cho mỗi câu
+
     final rawSegments = topic?['segments'];
     final segments = <Map<String, String>>[];
     if (rawSegments is List && rawSegments.isNotEmpty) {
@@ -136,7 +136,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Tên chủ đề + Cấp độ ─────────────────────
+
                       _twoColumn(
                         TextField(
                           controller: titleController,
@@ -160,7 +160,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                       ),
                       const SizedBox(height: 12),
 
-                      // ── Gán vào lesson ───────────────────────────
+
                       DropdownButtonFormField<String?>(
                         isExpanded: true,
                         value: _lessons.any((l) => l['id'].toString() == lessonId) ? lessonId : null,
@@ -187,7 +187,7 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                       ),
                       const SizedBox(height: 20),
 
-                      // ── Danh sách câu Shadowing ──────────────────
+
                       Row(
                         children: [
                           const Text(

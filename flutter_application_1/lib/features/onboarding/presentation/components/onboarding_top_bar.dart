@@ -14,7 +14,7 @@ class OnboardingTopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Padding(
       padding: const EdgeInsets.all(24.0),
       child: Row(
@@ -30,7 +30,7 @@ class OnboardingTopBar extends StatelessWidget {
                 shape: BoxShape.circle,
                 color: Colors.transparent,
               ),
-      
+
             ),
           ),
           Text(
@@ -42,7 +42,7 @@ class OnboardingTopBar extends StatelessWidget {
               color: isDark ? AppColors.slate100 : AppColors.slate900,
             ),
           ),
-          const SizedBox(width: 40), // Spacer for centering
+          const SizedBox(width: 40),
         ],
       ),
     );

@@ -8,7 +8,7 @@ const _kBg     = Color(0xFFF8F9FE);
 const _kDark   = Color(0xFF1E293B);
 const _kGray   = Color(0xFF94A3B8);
 
-/// Kết quả tổng kết cho từng câu shadowing
+
 class SentenceResult {
   final String kanji;
   final int accuracy;
@@ -25,7 +25,7 @@ class SentenceResult {
   });
 }
 
-/// Màn hình tổng kết sau khi hoàn thành toàn bộ shadowing segment (standalone)
+
 class ShadowingSummaryScreen extends StatefulWidget {
   final List<SentenceResult> results;
   final String topicTitle;
@@ -104,7 +104,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
             child: Column(
               children: [
                 const SizedBox(height: 20),
-                // ── Header chip ──────────────────────────────────────────
+
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Container(
@@ -126,7 +126,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 24),
 
-                // ── Trophy + XP ──────────────────────────────────────────
+
                 ScaleTransition(
                   scale: _scaleAnim,
                   child: Stack(
@@ -163,7 +163,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 16),
 
-                // ── Title ────────────────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Column(
@@ -183,7 +183,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 24),
 
-                // ── Overall stats row ─────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Row(
@@ -199,7 +199,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 20),
 
-                // ── Pass / Fail count ─────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: AnimatedBuilder(
@@ -228,7 +228,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 24),
 
-                // ── Per-sentence breakdown ────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Column(
@@ -243,7 +243,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 32),
 
-                // ── CTA ────────────────────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: ElevatedButton(
@@ -333,7 +333,7 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
             ),
           ),
           const SizedBox(width: 8),
-          // Mini scores
+
           Row(
             children: [
               _miniScore('${r.accuracy}', Colors.blue),

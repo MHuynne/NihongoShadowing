@@ -34,23 +34,23 @@ def upsert_progress(
     record = get_progress(db, user_firebase_id, lesson_id)
 
     if record is None:
-        # Tạo mới
+
         record = UserProgress(
             user_firebase_id=user_firebase_id,
             lesson_id=lesson_id,
         )
         db.add(record)
 
-    # Cập nhật từng field (chỉ các field không phải None)
+
     update_data = data.model_dump(exclude_none=True)
     for field, value in update_data.items():
         setattr(record, field, value)
 
-    # Tự động tính lesson_completed nếu chưa được set thủ công
+
     if "lesson_completed" not in update_data:
-        # Chỉ auto-complete nếu cả test lẫn shadowing đã qua
+
         record.lesson_completed = bool(record.test_passed and record.shadowing_passed)
-    # Nếu request đã set lesson_completed=True thì giữ nguyên (đã được setattr ở trên)
+
 
     db.commit()
     db.refresh(record)

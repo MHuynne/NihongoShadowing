@@ -42,23 +42,23 @@ from models.vocabulary        import Vocabulary
 from models.lesson            import LevelEnum
 
 GEMINI_MODEL  = "gemini-2.0-flash"
-AI_SLEEP      = 4        # giây delay giữa các call
-MAX_VOCAB     = 40       # số từ tối đa mỗi topic
-SKIP_THRESHOLD = 30      # bỏ qua topic đã có >= số từ này
+AI_SLEEP      = 4
+MAX_VOCAB     = 40
+SKIP_THRESHOLD = 30
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Gemini: Tạo danh sách từ vựng có Kanji
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _level_from_topic(topic: ShadowingTopic) -> str:
     """Lấy level string từ topic."""
     if topic.level:
         val = topic.level if isinstance(topic.level, str) else topic.level.value
-        return val  # "N5", "N4", "N3", "N2"
+        return val
     if topic.lesson and topic.lesson.level:
         return topic.lesson.level.value
-    # Đoán từ title
+
     for lv in ["N1", "N2", "N3", "N4", "N5"]:
         if lv in (topic.title or ""):
             return lv
@@ -151,7 +151,7 @@ Phải trả về đúng {MAX_VOCAB} từ."""
             resp   = _client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
             raw    = resp.text.strip()
 
-            # Làm sạch markdown
+
             raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
             raw = re.sub(r"\s*```$",           "", raw, flags=re.MULTILINE)
             raw = raw.strip()
@@ -164,17 +164,17 @@ Phải trả về đúng {MAX_VOCAB} từ."""
             result = json.loads(match.group())
             vocabs = result.get("vocabularies", [])
 
-            # Lọc từ BẮT BUỘC có Kanji
+
             filtered = []
             for v in vocabs:
                 word = v.get("word", "").strip()
                 if not word:
                     continue
-                # Kiểm tra có chữ Kanji không (Unicode range U+4E00–U+9FFF)
+
                 has_kanji = bool(re.search(r'[\u4e00-\u9fff]', word))
                 if not has_kanji:
                     continue
-                # Bỏ qua từ đã tồn tại
+
                 if word in existing_words:
                     continue
                 filtered.append(v)
@@ -196,9 +196,9 @@ Phải trả về đúng {MAX_VOCAB} từ."""
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Lưu từ vựng vào DB
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def save_vocabs(db, topic: ShadowingTopic, vocab_list: list[dict]) -> int:
     """Lưu danh sách từ vựng vào DB. Trả về số từ đã lưu."""
@@ -226,9 +226,9 @@ def save_vocabs(db, topic: ShadowingTopic, vocab_list: list[dict]) -> int:
     return saved
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def run(
     topic_id:  int  | None,
@@ -239,7 +239,7 @@ def run(
     db = SessionLocal()
 
     try:
-        # ── Lọc danh sách topic cần xử lý ────────────────────────────────
+
         query = db.query(ShadowingTopic)
         if topic_id:
             query = query.filter(ShadowingTopic.id == topic_id)
@@ -259,7 +259,7 @@ def run(
         for i, topic in enumerate(topics):
             print(f"\n[{i+1}/{len(topics)}] Topic #{topic.id}: {topic.title[:65]}")
 
-            # Lấy từ vựng hiện có của topic này
+
             existing = db.query(Vocabulary)\
                          .filter(Vocabulary.topic_id == topic.id)\
                          .all()
@@ -267,13 +267,13 @@ def run(
 
             print(f"  → Đang có {len(existing_words)} từ vựng")
 
-            # Bỏ qua nếu đủ từ rồi (trừ khi overwrite)
+
             if not overwrite and len(existing_words) >= SKIP_THRESHOLD:
                 print(f"  [SKIP] Đã đủ {len(existing_words)} từ (ngưỡng {SKIP_THRESHOLD})")
                 total_skipped += 1
                 continue
 
-            # Nếu overwrite: xóa từ vựng cũ
+
             if overwrite and existing:
                 if not dry_run:
                     db.query(Vocabulary)\
@@ -283,7 +283,7 @@ def run(
                 print(f"  [OVERWRITE] Xóa {len(existing)} từ cũ")
                 existing_words = set()
 
-            # Lấy segments để làm context
+
             segments = db.query(ShadowingSegment)\
                          .filter(ShadowingSegment.topic_id == topic.id)\
                          .order_by(ShadowingSegment.order_index)\

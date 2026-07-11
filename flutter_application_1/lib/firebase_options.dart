@@ -1,19 +1,19 @@
-﻿// ⚠️ FILE NÀY ĐƯỢC TẠO TỰ ĐỘNG BỞI FlutterFire CLI.
-//
-// HƯỚNG DẪN:
-// 1. Cài FlutterFire CLI:
-//    dart pub global activate flutterfire_cli
-//
-// 2. Đăng nhập Firebase:
-//    firebase login
-//
-// 3. Chạy lệnh này từ thư mục gốc project để tự động sinh file thật:
-//    flutterfire configure
-//
-// 4. Lệnh trên sẽ ghi đè file này với cấu hình thật từ Firebase Console.
-//
-// ❌ ĐỪNG xoá file này — app sẽ bị lỗi compile.
-// ❌ ĐỪNG commit file này lên git nếu chứa thông tin thật.
+﻿
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 import 'package:firebase_core/firebase_core.dart' show FirebaseOptions;
 import 'package:flutter/foundation.dart'
@@ -37,7 +37,7 @@ class DefaultFirebaseOptions {
     }
   }
 
-  // ─── THAY CÁC GIÁ TRỊ DƯỚI ĐÂY SAU KHI CHẠY flutterfire configure ───
+
 
   static const FirebaseOptions web = FirebaseOptions(
     apiKey: "AIzaSyDbL_cGySXFJFmvPxmVqxqayUX83mImlOw",

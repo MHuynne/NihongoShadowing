@@ -114,7 +114,7 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
         )
         model_name = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
 
-        # Build flat contents list: history + new user message
+
         contents = []
         for msg in chat_history:
             role = "user" if msg["role"] == "user" else "model"

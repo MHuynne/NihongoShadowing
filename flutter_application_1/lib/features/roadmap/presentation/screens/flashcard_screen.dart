@@ -24,9 +24,9 @@ const _kGreen = Color(0xFF16A34A);
 class FlashcardScreen extends StatefulWidget {
   final int topicId;
   final int lessonId;
-  /// Nếu true: chỉ ôn lại các từ chưa thuộc (review mode)
+
   final bool isReviewMode;
-  /// Danh sách từ cần ôn lại (chỉ dùng khi isReviewMode=true)
+
   final List<dynamic> reviewWords;
 
   const FlashcardScreen({
@@ -45,22 +45,22 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     with SingleTickerProviderStateMixin {
   List<dynamic> _vocabularies = [];
   List<dynamic> _learningQueue = [];
-  Set<int> _notMemorizedIndices = {};   // index trong _vocabularies chưa thuộc
-  int _memorizedCount    = 0;  // số từ đã thuộc trong phiên này
-  int _notMemorizedCount = 0;  // số từ chưa thuộc trong phiên này
+  Set<int> _notMemorizedIndices = {};
+  int _memorizedCount    = 0;
+  int _notMemorizedCount = 0;
   int _totalVocab = 0;
   bool _isLoading = true;
 
-  // Flip animation
+
   late AnimationController _flipCtrl;
   late Animation<double> _flipAnim;
   bool _isFrontSide = true;
 
-  // _isInReviewPass = false: lần đọc đầu (advance-only)
-  // _isInReviewPass = true : vòng ôn (cycle khi chưa thuộc)
+
+
   bool _isInReviewPass = false;
 
-  // SharedPreferences keys — rieng cho moi lesson
+
   String get _prefKeyIndex => 'flashcard_idx_${widget.lessonId}';
   String get _prefKeyMemorized => 'flashcard_mem_${widget.lessonId}';
   String get _prefKeyNotMemorized => 'flashcard_notmem_${widget.lessonId}';
@@ -75,13 +75,13 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       CurvedAnimation(parent: _flipCtrl, curve: Curves.easeInOut),
     );
     if (widget.isReviewMode && widget.reviewWords.isNotEmpty) {
-      // Post-test review mode: danh sách từ sai từ TestScreen
-      // Dùng chế độ "review pass" — "Chưa thuộc" cycle lại, "Đã thuộc" advance
+
+
       _vocabularies      = widget.reviewWords;
       _learningQueue     = List.from(_vocabularies);
       _totalVocab        = _vocabularies.length;
       _memorizedCount    = 0;
-      _notMemorizedCount = _vocabularies.length; // tất cả đều đang "đưa vào ôn"
+      _notMemorizedCount = _vocabularies.length;
       _isInReviewPass    = true;
       _isLoading         = false;
     } else {
@@ -92,7 +92,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   @override
   void dispose() {
     _flipCtrl.dispose();
-    // Tu dong luu vi tri khi thoat (chi khi khong phai review mode va dang hoc do)
+
     if (!widget.isReviewMode && _vocabularies.isNotEmpty && _learningQueue.isNotEmpty) {
       _saveProgressLocally();
     }
@@ -133,7 +133,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
 
-        // Doc progress da luu
+
         final prefs = await SharedPreferences.getInstance();
         final savedIdx      = prefs.getInt(_prefKeyIndex) ?? 0;
         final savedMem      = prefs.getInt(_prefKeyMemorized) ?? 0;
@@ -152,7 +152,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
             _vocabularies = data;
             _totalVocab   = data.length;
             if (hasResume) {
-              // Tiep tuc tu vi tri da luu
+
               _learningQueue       = List.from(data.sublist(savedIdx));
               _memorizedCount      = savedMem;
               _notMemorizedCount   = savedNotMem;
@@ -205,7 +205,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     {'word': '景色', 'reading': 'けしき (Keshiki)', 'meaning': 'Phong cảnh', 'level': 'N3'},
   ];
 
-  // ── Flip card ────────────────────────────────────────────────────────────────
+
   void _flipCard() {
     if (_flipCtrl.isAnimating) return;
     if (_isFrontSide) {
@@ -221,19 +221,19 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     setState(() => _isFrontSide = true);
   }
 
-  // ── Đánh dấu CHƯA THUỘC ────────────────────────────────────────────────────
+
   void _markNotMemorized() {
     if (_learningQueue.isEmpty) return;
     final current = _learningQueue[0];
 
     if (_isInReviewPass) {
-      // Vòng ôn: cycle về cuối để học lại
+
       setState(() {
         _learningQueue.removeAt(0);
         _learningQueue.add(current);
       });
     } else {
-      // Lần đọc đầu: đánh dấu và advance (không cycle)
+
       final idx = _vocabularies.indexOf(current);
       if (idx != -1) _notMemorizedIndices.add(idx);
       setState(() {
@@ -249,7 +249,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     _resetFlip();
   }
 
-  // ── Đánh dấu ĐÃ THUỘC ─────────────────────────────────────────────────────
+
   void _markMemorized() {
     if (_learningQueue.isEmpty) return;
     final current = _learningQueue[0];
@@ -259,7 +259,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     setState(() {
       _learningQueue.removeAt(0);
       _memorizedCount++;
-      // Trong review pass: giảm chưa thuộc xuống vì từ này vừa được học thuộc
+
       if (_isInReviewPass && _notMemorizedCount > 0) _notMemorizedCount--;
     });
 
@@ -271,16 +271,16 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     _resetFlip();
   }
 
-  // ── Xử lý sau khi đọc hết một vòng ─────────────────────────────────────────
+
   void _handleRoundComplete() {
     if (!_isInReviewPass && _notMemorizedIndices.isNotEmpty) {
-      // Lần đọc đầu xong, còn từ chưa thuộc → hỏi ôn lại
+
       _showReviewDialog();
     } else if (_isInReviewPass) {
-      // Vòng ôn xong (đã thuộc hết trong queue) → hỏi ôn thêm hay sang Test
+
       _showReviewCompleteDialog();
     } else {
-      // Thuộc hết ngay lần đầu → sang Test luôn
+
       _startTest();
     }
   }
@@ -368,8 +368,8 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       _learningQueue     = reviewList;
       _totalVocab        = reviewList.length;
       _memorizedCount    = 0;
-      _notMemorizedCount = reviewList.length; // reset: tất cả lại thành chưa thuộc
-      // _isInReviewPass giữ nguyên = true
+      _notMemorizedCount = reviewList.length;
+
     });
     _resetFlip();
   }
@@ -477,7 +477,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       _learningQueue     = reviewList;
       _totalVocab        = reviewList.length;
       _memorizedCount    = 0;
-      _notMemorizedCount = reviewList.length; // bắt đầu: tất cả là "chưa thuộc"
+      _notMemorizedCount = reviewList.length;
       _isInReviewPass    = true;
     });
     _resetFlip();
@@ -498,7 +498,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   }
 
   void _startTest() async {
-    await _clearLocalProgress(); // Xoa progress local khi hoan thanh
+    await _clearLocalProgress();
     await ProgressService.markFlashcardDone(widget.lessonId);
     if (!mounted) return;
     Navigator.pushReplacement(
@@ -513,7 +513,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     );
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -544,7 +544,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
         child: Column(
           children: [
             _buildProgress(),
-            // Phase label
+
             if (_isInReviewPass || widget.isReviewMode)
               Padding(
                 padding: const EdgeInsets.only(bottom: 4),
@@ -566,7 +566,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                 child: _buildFlippableCard(vocab),
               ),
             ),
-            // Nút chuyển sang test (chỉ hiện sau khi đã lật ít nhất 1 lần)
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
               child: _buildTestButton(),
@@ -607,7 +607,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─ Row tiêu đề ────────────────────────────────────
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -618,7 +618,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
             ],
           ),
           const SizedBox(height: 10),
-          // ─ Thanh Đã thuộc (xanh) ─────────────────────────
+
           Row(
             children: [
               const SizedBox(
@@ -647,7 +647,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
             ],
           ),
           const SizedBox(height: 8),
-          // ─ Thanh Chưa thuộc (đỏ) ──────────────────────
+
           Row(
             children: [
               const SizedBox(
@@ -688,7 +688,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
     );
   }
 
-  // ── Flip Card ──────────────────────────────────────────────────────────────
+
   Widget _buildFlippableCard(Map<String, dynamic> v) {
     return GestureDetector(
       onTap: _flipCard,
@@ -702,7 +702,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
           if (isFront) {
             cardFace = _buildCardFront(v);
           } else {
-            // Khi vượt qua 90°, flip lại để text không bị ngược
+
             cardFace = Transform(
               alignment: Alignment.center,
               transform: Matrix4.rotationY(math.pi),
@@ -747,7 +747,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                     Text(reading, textAlign: TextAlign.center,
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600, color: Color(0xFF7A6A6A))),
                   const SizedBox(height: 24),
-                  // Hint to flip
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -789,7 +789,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Hiển thị lại từ nhỏ hơn
+
                   Text(word, style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w700, color: _kTextGray)),
                   const SizedBox(height: 16),
                   Container(width: 48, height: 2, color: _kPrimary.withValues(alpha: 0.3)),
@@ -800,7 +800,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
                     style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: _kPrimary, height: 1.4),
                   ),
                   const SizedBox(height: 16),
-                  // Hint to flip back
+
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -878,7 +878,7 @@ class _FlashcardScreenState extends State<FlashcardScreen>
   }
 }
 
-// ── Shared card shell ────────────────────────────────────────────────────────
+
 class _CardShell extends StatelessWidget {
   final Widget child;
   final Gradient? gradient;
@@ -901,7 +901,7 @@ class _CardShell extends StatelessWidget {
   }
 }
 
-// ── Audio Button ─────────────────────────────────────────────────────────────
+
 class _AudioButton extends StatefulWidget {
   final String word;
   const _AudioButton({required this.word});

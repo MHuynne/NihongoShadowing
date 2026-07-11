@@ -2,17 +2,17 @@ import os
 
 path = r'flutter_application_1\lib\features\admin\presentation\screens\pages\admin_segments_page.dart'
 
-# Byte gốc trước khi append (lấy từ Total Bytes lúc file còn đúng)
+
 ORIGINAL_SIZE = 46441
 
 with open(path, 'rb') as f:
     raw = f.read()
 
-# Lấy đúng phần gốc UTF-8
+
 head_bytes = raw[:ORIGINAL_SIZE]
 head = head_bytes.decode('utf-8')
 
-# Kiểm tra kết thúc đúng chỗ (dòng cuối nên là "}\n")
+
 print("Tail of head:", repr(head[-60:]))
 
 new_tab = '''
@@ -640,7 +640,7 @@ with open(path, 'w', encoding='utf-8') as f:
 
 print("Done! Written", len(final), "chars as UTF-8.")
 
-# Verify
+
 with open(path, 'rb') as f:
     check = f.read(4)
-print("First bytes:", check.hex())  # should NOT start with EF BB BF (BOM), just normal UTF-8
+print("First bytes:", check.hex())

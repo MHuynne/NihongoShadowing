@@ -31,14 +31,14 @@ from models.shadowing_segment import ShadowingSegment
 from models.vocabulary import Vocabulary
 from models.lesson import Lesson, LevelEnum
 
-# ─────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────
+
+
+
 RSS_FEEDS = [
-    "https://www3.nhk.or.jp/rss/news/cat1.xml",  # xa hoi (nhieu bai nhat)
-    "https://www3.nhk.or.jp/rss/news/cat2.xml",  # khoa hoc
-    "https://www3.nhk.or.jp/rss/news/cat3.xml",  # the thao
-    "https://www3.nhk.or.jp/rss/news/cat0.xml",  # tong hop
+    "https://www3.nhk.or.jp/rss/news/cat1.xml",
+    "https://www3.nhk.or.jp/rss/news/cat2.xml",
+    "https://www3.nhk.or.jp/rss/news/cat3.xml",
+    "https://www3.nhk.or.jp/rss/news/cat0.xml",
 ]
 
 HEADERS = {
@@ -51,13 +51,13 @@ HEADERS = {
     "Accept-Language": "ja-JP,ja;q=0.9",
 }
 
-AI_SLEEP     = 4   # giay delay giua cac call Gemini
-MAX_SENTENCES = 3  # so cau toi da moi bai
+AI_SLEEP     = 4
+MAX_SENTENCES = 3
 
 
-# ─────────────────────────────────────────────
-# STEP 1: Lay danh sach bai tu RSS
-# ─────────────────────────────────────────────
+
+
+
 def fetch_rss_articles(limit: int) -> list[dict]:
     print(f"[1/4] Lay danh sach bai tu RSS NHK...")
     articles = []
@@ -76,7 +76,7 @@ def fetch_rss_articles(limit: int) -> list[dict]:
                 link = item.findtext("link", "")
                 title = item.findtext("title", "NHK News")
 
-                # Trich article_id tu URL RSS: .../html/YYYYMMDD/kXXXXXXXXXXXXXX000.html
+
                 m = re.search(r"/(k\d{14})(?:000)?\.html", link)
                 if not m:
                     continue
@@ -86,7 +86,7 @@ def fetch_rss_articles(limit: int) -> list[dict]:
                     continue
                 seen_ids.add(news_id)
 
-                # URL Web Easy chinh thuc
+
                 easy_url = f"https://www3.nhk.or.jp/news/easy/{news_id}/{news_id}.html"
 
                 articles.append({
@@ -95,7 +95,7 @@ def fetch_rss_articles(limit: int) -> list[dict]:
                     "rss_url": link,
                     "easy_url": easy_url,
                 })
-                if len(articles) >= limit * 3:  # lay du de co the skip
+                if len(articles) >= limit * 3:
                     break
         except Exception as e:
             print(f"  [WARN] RSS loi: {e}")
@@ -104,12 +104,12 @@ def fetch_rss_articles(limit: int) -> list[dict]:
     return articles
 
 
-# ─────────────────────────────────────────────
-# STEP 2: Cao noi dung mot bai
-# ─────────────────────────────────────────────
+
+
+
 def scrape_article(url: str) -> dict:
     """Tra ve {"sentences": [...], "image_url": "..."}"""
-    # Thu 2 URL: Web Easy va URL goc tu RSS
+
     urls_to_try = [url]
 
     for try_url in urls_to_try:
@@ -120,13 +120,13 @@ def scrape_article(url: str) -> dict:
 
             soup = BeautifulSoup(r.text, "html.parser")
 
-            # Lay image
+
             image_url = ""
             og_img = soup.find("meta", property="og:image")
             if og_img:
                 image_url = og_img.get("content", "")
 
-            # Chon noi dung theo thu tu uu tien
+
             body = None
             for selector in [
                 {"class_": re.compile(r"article-main__body|article__body|content--detail-main|news-detail")},
@@ -144,7 +144,7 @@ def scrape_article(url: str) -> dict:
                     break
 
             if not body:
-                # Fallback: lay tat ca <p> co tieng Nhat
+
                 paragraphs = [
                     p.get_text(strip=True)
                     for p in soup.find_all("p")
@@ -157,17 +157,17 @@ def scrape_article(url: str) -> dict:
                 else:
                     continue
             else:
-                # Xoa ruby annotation (giu kanji goc)
+
                 for rt in body.find_all("rt"): rt.decompose()
                 for rp in body.find_all("rp"): rp.decompose()
                 body_text = body.get_text(separator="", strip=True)
 
-            # Tach cau theo dau cau Nhat
+
             parts = re.split(r"(?<=[。！？])", body_text)
             sentences = []
             for part in parts:
                 part = part.strip()
-                # Phai co it nhat 1 ky tu Nhat va > 8 ky tu
+
                 if (len(part) > 8
                         and re.search(r"[\u3040-\u30ff\u4e00-\u9fff]", part)):
                     sentences.append(part)
@@ -181,9 +181,9 @@ def scrape_article(url: str) -> dict:
     return {"sentences": [], "image_url": ""}
 
 
-# ─────────────────────────────────────────────
-# STEP 3: Gemini phan tich
-# ─────────────────────────────────────────────
+
+
+
 def analyze_with_gemini(sentences: list[str], level: str) -> dict | None:
     joined = "\n".join(f"{i+1}. {s}" for i, s in enumerate(sentences))
     prompt = f"""Phan tich doan tin tuc tieng Nhat theo trinh do JLPT {level}:
@@ -204,7 +204,7 @@ Tra ve JSON THUAN (khong markdown, khong chu thich them):
             raw = resp.text.strip().strip("`").strip()
             if raw.lower().startswith("json"):
                 raw = raw[4:].strip()
-            # Tim object JSON dau tien
+
             match = re.search(r"\{.*\}", raw, re.DOTALL)
             if match:
                 result = json.loads(match.group())
@@ -217,9 +217,9 @@ Tra ve JSON THUAN (khong markdown, khong chu thich them):
     return None
 
 
-# ─────────────────────────────────────────────
-# STEP 4: Luu DB
-# ─────────────────────────────────────────────
+
+
+
 def save_to_db(db, lesson_id, title, level_enum, image_url, sentences, ai_result):
     full_script = "。".join(sentences) + "。"
     topic = ShadowingTopic(
@@ -273,9 +273,9 @@ def save_to_db(db, lesson_id, title, level_enum, image_url, sentences, ai_result
     return topic
 
 
-# ─────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────
+
+
+
 def run(limit: int = 10, level: str = "N3", clear_old: bool = False):
     db = SessionLocal()
     level_enum = LevelEnum[level]
@@ -287,7 +287,7 @@ def run(limit: int = 10, level: str = "N3", clear_old: bool = False):
             db.commit()
             print(f"[!] Da xoa {len(old)} topic level {level} cu.")
 
-        # Lay hoac tao Lesson
+
         lesson = db.query(Lesson).filter(Lesson.level == level_enum).first()
         if not lesson:
             order = {"N5":1,"N4":2,"N3":3,"N2":4,"N1":5}.get(level, 99)
@@ -297,7 +297,7 @@ def run(limit: int = 10, level: str = "N3", clear_old: bool = False):
         else:
             print(f"  Dung Lesson co san: id={lesson.id}")
 
-        # Lay danh sach bai tu RSS
+
         articles = fetch_rss_articles(limit=limit)
         print(f"\n[2/4] Bat dau xu ly tung bai (limit={limit})...")
 
@@ -310,13 +310,13 @@ def run(limit: int = 10, level: str = "N3", clear_old: bool = False):
 
             print(f"\n[3/4] Bai {saved+1}/{limit}: {art['title'][:60]}")
 
-            # Cao noi dung tu Web Easy
+
             result = scrape_article(art["easy_url"])
             sentences = result["sentences"]
             image_url = result["image_url"]
 
             if len(sentences) < 1:
-                # Thu URL goc (non-Easy)
+
                 result2 = scrape_article(art["rss_url"])
                 sentences = result2["sentences"]
                 image_url = result2.get("image_url", "")

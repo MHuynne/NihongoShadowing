@@ -13,7 +13,7 @@ void main() async {
       options: DefaultFirebaseOptions.currentPlatform,
     );
   } catch (e) {
-    // Firebase đã được khởi tạo từ native side (google-services.json) — bỏ qua
+
   }
   runApp(const MyApp());
 }

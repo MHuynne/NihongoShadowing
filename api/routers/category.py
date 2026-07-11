@@ -54,4 +54,3 @@ def delete(category_id: int, db: Session = Depends(get_db)):
     db.commit()
     return None
 
-

@@ -19,10 +19,10 @@ import 'package:flutter_application_1/features/roadmap/services/progress_service
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_summary_screen.dart';
 
 class ShadowingScreen extends StatefulWidget {
-  final int? segmentId;  // Standalone: 1 segment được chọn từ danh sách
-  final int? topicId;   // Roadmap flow: tất cả segments của topic (ShadowingTopic)
-  final int? segmentTopicId; // Standalone flow: tất cả segments của SegmentTopic
-  final int lessonId;   // 0 nếu standalone
+  final int? segmentId;
+  final int? topicId;
+  final int? segmentTopicId;
+  final int lessonId;
   final int testErrors;
 
   const ShadowingScreen({
@@ -42,27 +42,27 @@ class ShadowingScreen extends StatefulWidget {
 class _ShadowingScreenState extends State<ShadowingScreen> {
   bool _isLoading = true;
   String? _errorMessage;
-  
+
   List<ShadowingSentenceModel> _sentences = [];
   int _currentIndex = 0;
-  
+
   bool _isBlindMode = false;
   bool _isRecording = false;
   bool _isEvaluating = false;
   bool _showFeedback = false;
-  bool _isPlayingSample = false;   // đang phát audio mẫu
+  bool _isPlayingSample = false;
   double _currentSpeed = 1.0;
   final Set<int> _failedSentences = {};
 
   final _audioRecorder = AudioRecorder();
-  final _audioPlayer  = createSampleAudioPlayer();  // Web: dart:html | Native: audioplayers
+  final _audioPlayer  = createSampleAudioPlayer();
   String? _recordedFilePath;
-  String _topicAudioUrl = '';  // full_audio_url của topic (nếu có)
+  String _topicAudioUrl = '';
 
   ShadowingFeedbackModel? _dynamicFeedback;
   String _errorWord = "";
-  ActionPlan? _lastActionPlan;          // Lưu action plan mới nhất từ AI
-  final List<SentenceResult> _sentenceResults = []; // Tổng kết từng câu
+  ActionPlan? _lastActionPlan;
+  final List<SentenceResult> _sentenceResults = [];
 
   @override
   void initState() {
@@ -75,7 +75,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
       final String apiUrl;
 
       if (widget.segmentId != null) {
-        // Standalone: lấy 1 segment
+
         apiUrl = '${_baseUrl()}/shadowing/segments/${widget.segmentId}';
         final response = await http.get(Uri.parse(apiUrl));
         if (response.statusCode == 200) {
@@ -100,7 +100,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
           });
         }
       } else if (widget.segmentTopicId != null) {
-        // Standalone topic flow: lấy tất cả segments của segment_topic
+
         apiUrl = '${_baseUrl()}/segment-topics/${widget.segmentTopicId}';
         final response = await http.get(Uri.parse(apiUrl));
         if (response.statusCode == 200) {
@@ -122,7 +122,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
             );
           }).toList();
 
-          _topicAudioUrl = ''; // SegmentTopic không có audio chung, sẽ dùng TTS
+          _topicAudioUrl = '';
 
           if (parsed.isEmpty) {
             parsed.add(ShadowingSentenceModel(
@@ -144,7 +144,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
           });
         }
       } else {
-        // Roadmap: lấy tất cả segments của topic
+
         apiUrl = '${_baseUrl()}/shadowing/topics/${widget.topicId}';
         final response = await http.get(Uri.parse(apiUrl));
         if (response.statusCode == 200) {
@@ -166,7 +166,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
             );
           }).toList();
 
-          // Lưu full_audio_url của topic để dùng khi phát đoạn
+
           final rawUrl = (data['full_audio_url'] ?? '').toString();
           _topicAudioUrl = rawUrl.startsWith('http') ? rawUrl
               : (rawUrl.isEmpty ? '' : '${_baseUrl()}$rawUrl');
@@ -214,12 +214,12 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
             if (_failedSentences.contains(index)) {
               color = Colors.orange;
             } else {
-              color = const Color(0xFF16A34A); // Success green
+              color = const Color(0xFF16A34A);
             }
           } else if (index == _currentIndex) {
-            color = AppColors.sunRed; // Active
+            color = AppColors.sunRed;
           } else {
-            color = const Color(0xFFE2E8F0); // Unreached grey
+            color = const Color(0xFFE2E8F0);
           }
 
           return Expanded(
@@ -244,7 +244,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     super.dispose();
   }
 
-  // ── Play Sample (theo tốc độ hiện tại) ─────────────────────────────────────
+
   Future<void> _playSample() async {
     final speed = _currentSpeed;
     if (_isPlayingSample) {
@@ -260,7 +260,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     setState(() => _isPlayingSample = true);
 
     try {
-      // ── Ưu tiên: topic có full_audio_url → phát đoạn start→end ──
+
       if (_topicAudioUrl.isNotEmpty) {
         await _audioPlayer.playUrlFromTo(
           _topicAudioUrl,
@@ -273,7 +273,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         return;
       }
 
-      // ── Fallback: gọi TTS API realtime ──────────────────────────
+
       if (text.isEmpty) return;
       final response = await http.post(
         Uri.parse('${_baseUrl()}/tts/sample'),
@@ -304,7 +304,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     }
   }
 
-  // ── Đổi tốc độ phát ─────────────────────────────────────────────────
+
   void _toggleSpeed() {
     setState(() {
       if (_currentSpeed == 1.0) {
@@ -333,10 +333,10 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
           await _audioRecorder.start(
             RecordConfig(
-              encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.wav, 
-              sampleRate: 16000, 
+              encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.wav,
+              sampleRate: 16000,
               numChannels: 1
-            ), 
+            ),
             path: path ?? ''
           );
           setState(() => _isRecording = true);
@@ -349,8 +349,8 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         final path = await _audioRecorder.stop();
         setState(() => _isRecording = false);
 
-        // Trên Web: stop() trả về blob URL dạng "blob:http://..."
-        // Trên Mobile/Desktop: stop() trả về đường dẫn file thực
+
+
         if (path != null && path.isNotEmpty) {
            _recordedFilePath = path;
            _uploadToAIAndGetResult();
@@ -368,14 +368,14 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
      setState(() => _isEvaluating = true);
      final sentence = _sentences[_currentIndex];
      String apiUrl = '${ApiConfig.baseUrl}/evaluate/shadowing';
-      
+
       try {
         var request = http.MultipartRequest('POST', Uri.parse(apiUrl));
         request.fields['expected_text'] = sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji;
         if (sentence.romaji.isNotEmpty) {
            request.fields['romaji'] = sentence.romaji;
         }
-        
+
         if (_recordedFilePath != null) {
            if (kIsWeb) {
               try {
@@ -390,7 +390,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
               }
            }
         }
-        
+
         debugPrint('--- SHADOWING EVALUATE API REQUEST ---');
         debugPrint('URL: ${request.method} ${request.url}');
         debugPrint('Fields: ${request.fields}');
@@ -399,14 +399,14 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         }
         debugPrint('--------------------------------------');
 
-        // Timeout 90s — backend cần gọi Google STT + Gemini AI
+
         final streamedResponse = await request.send().timeout(
           const Duration(seconds: 90),
           onTimeout: () => throw Exception('Hết thời gian chờ AI chấm điểm (>90s). Vui lòng thử lại.'),
         );
         final response = await http.Response.fromStream(streamedResponse);
 
-        
+
         if (response.statusCode == 200) {
            final data = json.decode(utf8.decode(response.bodyBytes));
            setState(() {
@@ -434,7 +434,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
               _errorWord = data['error_word'] ?? '';
               _lastActionPlan = _dynamicFeedback!.actionPlan;
 
-              // Tracking lỗi
+
               bool hasWordError = _dynamicFeedback!.wordsAnalysis.any((w) => !w.isCorrect);
               final acc = data['accuracy'] ?? 0;
               final passed = acc >= 50 && !hasWordError && _errorWord.isEmpty;
@@ -444,7 +444,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                 _failedSentences.remove(_currentIndex);
               }
 
-              // Lưu kết quả câu hiện tại vào _sentenceResults
+
               final sentence = _sentences[_currentIndex];
               final resultEntry = SentenceResult(
                 kanji: sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
@@ -453,7 +453,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                 prosody: data['prosody'] ?? 0,
                 passed: passed,
               );
-              // Cập nhật hoặc thêm mới
+
               if (_currentIndex < _sentenceResults.length) {
                 _sentenceResults[_currentIndex] = resultEntry;
               } else {
@@ -488,20 +488,20 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   void _toggleMode(bool isBlind) {
     setState(() {
       _isBlindMode = isBlind;
-      _showFeedback = false; 
+      _showFeedback = false;
     });
   }
-  
+
   void _nextSentence() {
     if (_currentIndex < _sentences.length - 1) {
-      // ── Câu trung gian: chuyển sang câu tiếp theo ──────────────────────
+
       setState(() {
         _currentIndex++;
         _isBlindMode = false;
         _showFeedback = false;
       });
     } else {
-      // ── Câu cuối: hiện BottomSheet Sakura Pink trước khi tổng kết ──────
+
       final plan = _lastActionPlan ?? ActionPlan(
         message: 'Bạn đã hoàn thành bài học! Tiếp tục luyện tập mỗi ngày nhé 🌸',
         action: ActionType.celebrate,
@@ -523,14 +523,14 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     }
   }
 
-  /// Xử lý khi người dùng nhấn Action Button trong BottomSheet
+
   void _handleActionPlanPress() {
     final plan = _lastActionPlan;
     if (plan == null) return;
 
     switch (plan.action) {
       case ActionType.activateSlowMode:
-        // Kích hoạt slow-mo 0.75x và đóng sheet
+
         setState(() => _currentSpeed = 0.75);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -541,7 +541,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         break;
 
       case ActionType.showHanVietMode:
-        // Tắt blind mode để hiện Hán-Việt
+
         setState(() {
           _isBlindMode = false;
           _showFeedback = false;
@@ -555,7 +555,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         break;
 
       case ActionType.openVocabulary:
-        // TODO: Navigate tới màn hình từ vựng với target_word
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('📖 Mở từ: ${plan.targetWord ?? "kho từ vựng"}'),
@@ -569,11 +569,11 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     }
   }
 
-  /// Navigate đến LessonSummaryScreen (sau khi lưu tiến độ)
+
   Future<void> _navigateToSummary() async {
     final totalSentences = _sentences.length;
     final failedCount = _failedSentences.length;
-    // Dung diem accuracy thuc te thay vi ti le pass/fail nhi phan
+
     final double shadowingScore;
     if (_sentenceResults.isNotEmpty) {
       final avgAcc = _sentenceResults
@@ -594,8 +594,8 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     if (!mounted) return;
 
     if (widget.lessonId == 0) {
-      // Standalone: hiện màn hình tổng kết shadowing
-      // Đảm bảo có đủ kết quả cho tất cả câu (pad nếu cần)
+
+
       while (_sentenceResults.length < _sentences.length) {
         _sentenceResults.add(SentenceResult(
           kanji: _sentences[_sentenceResults.length].kanji,
@@ -652,7 +652,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Soft Sakura gradient background
+
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -688,17 +688,17 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                     child: Column(
                       children: [
                     const SizedBox(height: 24),
-                    
-                    if (!_isBlindMode && !_showFeedback) 
+
+                    if (!_isBlindMode && !_showFeedback)
                       const WaveformVisualizer(
-                        isUser: false, 
-                        isRecording: true, 
+                        isUser: false,
+                        isRecording: true,
                       ),
-                    
+
                     if (!_isBlindMode) const SizedBox(height: 32),
-                    
+
                     ShadowingCard(
-                      sentence: currentSentence, 
+                      sentence: currentSentence,
                       isBlindMode: _isBlindMode,
                     ),
 
@@ -718,7 +718,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                           onPressed: () {
                             setState(() {
                               if ((_dynamicFeedback?.accuracy ?? 0) < 50) {
-                                // Ép đọc lại
+
                                 _showFeedback = false;
                               } else if (!_isBlindMode) {
                                 _isBlindMode = true;
@@ -740,7 +740,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                           ),
                           child: Text(
                             ((_dynamicFeedback?.accuracy ?? 0) < 50) ? 'Chưa Pass: Cần đọc lại thử thách' :
-                            (!_isBlindMode ? 'Bước tiếp theo: Đọc ẩn chữ' : 
+                            (!_isBlindMode ? 'Bước tiếp theo: Đọc ẩn chữ' :
                                (_currentIndex < _sentences.length - 1 ? 'Câu tiếp theo' : 'Hoàn thành bài học')),
                             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                           ),
@@ -783,7 +783,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                 ),
               ),
             ),
-            
+
             ShadowingControls(
               isRecording: _isRecording,
               isPlayingSample: _isPlayingSample,
@@ -833,7 +833,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ── Header ──────────────────────────────────────
+
           Row(
             children: [
               Container(
@@ -854,7 +854,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
           const SizedBox(height: 16),
 
-          // ── Score pills ──────────────────────────────────
+
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
@@ -866,7 +866,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
           const SizedBox(height: 16),
 
-          // ── Nhận diện + màu chữ ──────────────────────────
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -903,7 +903,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
             ),
           ),
 
-          // ── AI gợi ý (Gemini) — duy nhất, luôn hiện ──────
+
           if (feedback.tip.isNotEmpty) ...[
             const SizedBox(height: 14),
             _buildAiTipBox(feedback.tip, allCorrect),
@@ -913,7 +913,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     );
   }
 
-  /// Hộp gợi ý AI (Gemini) — hiển thị sau mỗi lần shadowing
+
   Widget _buildAiTipBox(String tip, bool isGood) {
     final bgColor   = isGood ? const Color(0xFFECFDF5) : const Color(0xFFF5F3FF);
     final iconColor = isGood ? AppColors.successGreen   : const Color(0xFF7C3AED);
@@ -961,9 +961,9 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     );
   }
 
-  /// Chỉ ra vị trí ngắt âm đúng trong câu mẫu
+
   Widget _buildRhythmHint(String text) {
-    // Tìm các vị trí ngắt (、。！？)
+
     final pauseChars = ['、', '。', '！', '？', '!', '?'];
     final hasPause = pauseChars.any((c) => text.contains(c));
 
@@ -995,7 +995,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
               style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
             ),
             const SizedBox(height: 6),
-            // Hiển thị câu với ▼ đánh dấu chỗ ngắt
+
             RichText(
               text: TextSpan(
                 style: const TextStyle(fontSize: 15, height: 1.8, color: Color(0xFF1E293B)),
@@ -1012,7 +1012,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     );
   }
 
-  /// Tạo RichText đánh dấu ▼ tại vị trí ngắt (、。！？)
+
   List<TextSpan> _buildPauseMarkedText(String text) {
     final markers = RegExp(r'[、。！？!?]');
     final spans = <TextSpan>[];
@@ -1041,7 +1041,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     return spans;
   }
 
-  /// Recommend về ngữ điệu (Pitch-accent)
+
   Widget _buildProsodyRecommend() {
     return Container(
       width: double.infinity,
@@ -1097,11 +1097,11 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     if (words.isEmpty) {
       return [TextSpan(text: originalText, style: const TextStyle(color: AppColors.successGreen))];
     }
-    
+
     return words.map((wordObj) {
       if (wordObj.isCorrect) {
         return TextSpan(
-          text: wordObj.text, 
+          text: wordObj.text,
           style: const TextStyle(color: AppColors.successGreen)
         );
       } else {

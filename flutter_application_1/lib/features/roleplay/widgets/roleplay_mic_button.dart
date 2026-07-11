@@ -62,7 +62,7 @@ class _RoleplayMicButtonState extends State<RoleplayMicButton>
       child: Stack(
         alignment: Alignment.center,
         children: [
-          // Hiệu ứng vòng tròn xung quanh khi thu âm
+
           if (widget.isRecording)
             ScaleTransition(
               scale: _pulseAnimation,
@@ -76,7 +76,7 @@ class _RoleplayMicButtonState extends State<RoleplayMicButton>
               ),
             ),
 
-          // Nút Mic chính
+
           AnimatedContainer(
             duration: const Duration(milliseconds: 300),
             width: widget.isRecording ? 64 : 56,

@@ -6,7 +6,7 @@ class ShadowingHeader extends StatelessWidget {
   final int totalCount;
   final bool isBlindMode;
   final ValueChanged<bool> onModeChanged;
-  final String? segmentTitle;  // Tiêu đề hiển thị của segment đang luyện
+  final String? segmentTitle;
 
   const ShadowingHeader({
     super.key,
@@ -29,7 +29,7 @@ class ShadowingHeader extends StatelessWidget {
             children: [
                GestureDetector(
                 onTap: () {
-                  // Hiển thị dialog xác nhận nếu muốn hoặc back về luồng trước / thoát thẳng về home
+
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 child: Container(
@@ -79,7 +79,7 @@ class ShadowingHeader extends StatelessWidget {
               ),
             ],
           ),
-          // Toggle Switch Design removed as requested
+
         ],
       ),
     );

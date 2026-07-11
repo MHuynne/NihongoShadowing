@@ -17,7 +17,7 @@ def create_bulk(bodies: List[ShadowingSegmentCreate], db: Session = Depends(get_
         data = body.model_dump()
         seg = ShadowingSegment(**data)
         db.add(seg)
-        db.flush()          # lấy id ngay, chưa commit
+        db.flush()
         created.append(seg)
     db.commit()
     for seg in created:

@@ -1,16 +1,16 @@
 ﻿import 'package:flutter/material.dart';
 
 class AppColors {
-  // Sakura Theme Update
+
   static const Color primary = Color(
     0xFFFF9EB1,
-  ); // A more vibrant Sakura pink for primary brand color
+  );
   static const Color backgroundLight = Color(
     0xFFFFF7F9,
-  ); // Very soft warm pinkish-white
+  );
   static const Color backgroundDark = Color(
     0xFF26181A,
-  ); // Dark brownish-pink for dark mode
+  );
   static const Color surfaceDark = Color(0xFF332023);
   static const Color elevatedSurfaceDark = Color(0xFF40282C);
   static const Color borderDark = Color(0xFF5A3940);
@@ -26,8 +26,8 @@ class AppColors {
   static const Color slate800 = Color(0xFF1e293b);
   static const Color slate900 = Color(0xFF0f172a);
 
-  // Custom Project Colors
-  static const Color sunRed = primary; // Replaced with Sakura primary
+
+  static const Color sunRed = primary;
   static const Color sakuraPink = Color(0xFFFFB7C5);
   static const Color progressTeal = Color(0xFF38A3A5);
   static const Color buttonYellow = Color(0xFFE9C46A);
@@ -40,9 +40,9 @@ class AppColors {
   static const Color lightPinkBackground = Color(0xFFFFEAEB);
   static const Color lightPurpleBackground = Color(0xFFF3E8FF);
 
-  // Aliases used by the main branch screens.
-  static const Color toriiRed = primary; // Update to Sakura
-  static const Color toriiRedLight = sakuraPink; // Update to Sakura
+
+  static const Color toriiRed = primary;
+  static const Color toriiRedLight = sakuraPink;
   static const Color matcha = progressTeal;
   static const Color matchaLight = lightTealGreen;
   static const Color goldAccent = buttonYellow;
@@ -52,7 +52,7 @@ class AppColors {
   static const Color washi = backgroundLight;
   static const Color washiLight = surfaceBackground;
 
-  // Shadowing specific
+
   static const Color successGreen = Color(0xFF10B981);
   static const Color successGreenLight = Color(0xFFD1FAE5);
   static const Color errorRed = Color(0xFFEF4444);

@@ -2,7 +2,7 @@ from pydantic import BaseModel
 from typing import Optional, List
 
 class ShadowingSegmentBase(BaseModel):
-    title: Optional[str] = None           # Tiêu đề hiển thị
+    title: Optional[str] = None
     order_index: int
     start_time: Optional[float] = None
     end_time: Optional[float] = None
@@ -14,8 +14,8 @@ class ShadowingSegmentBase(BaseModel):
     image_url: Optional[str] = None
 
 class ShadowingSegmentCreate(ShadowingSegmentBase):
-    topic_id: Optional[int] = None          # Cho phép tạo segment độc lập
-    segment_topic_id: Optional[int] = None  # Gắn vào SegmentTopic
+    topic_id: Optional[int] = None
+    segment_topic_id: Optional[int] = None
 
 class ShadowingSegment(ShadowingSegmentBase):
     id: int

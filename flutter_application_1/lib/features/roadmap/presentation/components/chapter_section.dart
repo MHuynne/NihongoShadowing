@@ -99,7 +99,7 @@ class _ChapterSectionState extends State<ChapterSection>
         ),
         child: Row(
           children: [
-            // Mountain icon
+
             Container(
               width: 44,
               height: 44,
@@ -179,19 +179,19 @@ class _ChapterSectionState extends State<ChapterSection>
     );
   }
 
-  /// Điều hướng đúng bước dựa trên tiến độ đã lưu
+
   void _navigateToLesson(LessonModel lesson) {
     if (lesson.status == LessonStatus.locked || lesson.id == 'err_msg') return;
 
-    // Bài đã hoàn thành → hỏi muốn học lại bước nào
+
     if (lesson.status == LessonStatus.completed) {
       _showReplayDialog(lesson);
       return;
     }
 
-    // Đang học dở → nhảy thẳng vào bước đang dở
+
     if (lesson.testPassed) {
-      // Đã qua Test → vào Shadowing
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -203,7 +203,7 @@ class _ChapterSectionState extends State<ChapterSection>
         ),
       );
     } else if (lesson.flashcardDone) {
-      // Đã xong Flashcard → vào Test
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -215,7 +215,7 @@ class _ChapterSectionState extends State<ChapterSection>
         ),
       );
     } else {
-      // Chưa xong Flashcard → vào Flashcard (SharedPreferences sẽ tự resume)
+
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -228,7 +228,7 @@ class _ChapterSectionState extends State<ChapterSection>
     }
   }
 
-  /// Dialog chọn học lại khi bài đã hoàn thành
+
   void _showReplayDialog(LessonModel lesson) {
     showDialog(
       context: context,
@@ -344,7 +344,7 @@ class _ChapterSectionState extends State<ChapterSection>
   }
 }
 
-/// Paints a dashed zigzag path behind the lesson nodes.
+
 class _ZigzagPathPainter extends CustomPainter {
   final int lessonCount;
   final Color tealColor;
@@ -366,9 +366,9 @@ class _ZigzagPathPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
-    final double nodeHeight = 140.0; // approx height per node slot
+    final double nodeHeight = 140.0;
 
-    // Zigzag x positions
+
     final positions = List.generate(lessonCount, (i) {
       final mod = i % 4;
       if (mod == 0) return size.width * 0.15;
@@ -391,7 +391,7 @@ class _ZigzagPathPainter extends CustomPainter {
       }
     }
 
-    // Draw as dashes
+
     _drawDashedPath(canvas, path, paint);
   }
 

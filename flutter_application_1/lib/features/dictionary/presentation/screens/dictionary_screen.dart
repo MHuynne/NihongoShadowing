@@ -69,14 +69,14 @@ class _DictionaryScreenState extends State<DictionaryScreen>
   }
 
   Future<void> _saveRecentSearch(String query) async {
-    _recentSearches.remove(query);     // tránh trùng
-    _recentSearches.insert(0, query);  // mới nhất lên đầu
+    _recentSearches.remove(query);
+    _recentSearches.insert(0, query);
     if (_recentSearches.length > 10) _recentSearches.removeLast();
     final prefs = await SharedPreferences.getInstance();
     await prefs.setStringList('dict_recent_searches', _recentSearches);
   }
 
-  // ── Search logic ─────────────────────────────────────────────────────────
+
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
@@ -101,7 +101,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
       final result = await DictionaryService.search(query);
       if (!mounted) return;
       setState(() { _entries = result.entries; _isLoading = false; });
-      _saveRecentSearch(query);  // lưu lịch sử thực tế
+      _saveRecentSearch(query);
       _animCtrl.forward();
     } catch (e) {
       if (!mounted) return;
@@ -118,7 +118,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     _doSearch(word);
   }
 
-  // ── Build ─────────────────────────────────────────────────────────────────
+
 
   @override
   Widget build(BuildContext context) {
@@ -126,7 +126,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Purple-tinted gradient background
+
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -154,7 +154,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     );
   }
 
-  // ── Header ────────────────────────────────────────────────────────────────
+
 
   Widget _buildHeader() {
     return Padding(
@@ -219,7 +219,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     );
   }
 
-  // ── Search bar ────────────────────────────────────────────────────────────
+
 
   Widget _buildSearchBar() {
     return Padding(
@@ -277,7 +277,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     );
   }
 
-  // ── Body dispatcher ───────────────────────────────────────────────────────
+
 
   Widget _buildBody() {
     if (_isLoading) return _buildLoading();
@@ -286,7 +286,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     return _buildEmpty();
   }
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+
 
   Widget _buildLoading() {
     return Center(
@@ -312,7 +312,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     );
   }
 
-  // ── Error ─────────────────────────────────────────────────────────────────
+
 
   Widget _buildError() {
     return Center(
@@ -355,7 +355,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     );
   }
 
-  // ── Empty state ───────────────────────────────────────────────────────────
+
 
   Widget _buildEmpty() {
     return SingleChildScrollView(
@@ -459,7 +459,7 @@ class _DictionaryScreenState extends State<DictionaryScreen>
     );
   }
 
-  // ── Results list ──────────────────────────────────────────────────────────
+
 
   Widget _buildResults() {
     return FadeTransition(
@@ -474,9 +474,9 @@ class _DictionaryScreenState extends State<DictionaryScreen>
   }
 }
 
-// ════════════════════════════════════════════════════════════════════════════
-// Entry Card — hiển thị 1 từ
-// ════════════════════════════════════════════════════════════════════════════
+
+
+
 
 class _EntryCard extends StatefulWidget {
   final DictionaryEntry entry;
@@ -546,7 +546,7 @@ class _EntryCardState extends State<_EntryCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Row 1: word + reading + badges ────────────────────────
+
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -602,10 +602,10 @@ class _EntryCardState extends State<_EntryCard>
 
               const SizedBox(height: 12),
 
-              // ── First sense (preview) ──────────────────────────────────
+
               if (firstSense != null) _buildSenseTile(firstSense, index: 1),
 
-              // ── Expanded: remaining senses ─────────────────────────────
+
               SizeTransition(
                 sizeFactor: _expandAnim,
                 child: Column(
@@ -614,7 +614,7 @@ class _EntryCardState extends State<_EntryCard>
                       const Divider(height: 18, thickness: 0.5),
                       _buildSenseTile(entry.senses[i], index: i + 1),
                     ],
-                    // Kanji variants
+
                     if (entry.japanese.length > 1) ...[
                       const Divider(height: 18, thickness: 0.5),
                       _buildVariantsRow(entry.japanese),
@@ -623,7 +623,7 @@ class _EntryCardState extends State<_EntryCard>
                 ),
               ),
 
-              // ── Expand toggle ──────────────────────────────────────────
+
               if (entry.senses.length > 1) ...[
                 const SizedBox(height: 6),
                 Center(
@@ -664,7 +664,7 @@ class _EntryCardState extends State<_EntryCard>
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Index circle
+
         Container(
           width: 22,
           height: 22,
@@ -686,7 +686,7 @@ class _EntryCardState extends State<_EntryCard>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Parts of speech
+
               if (posList.isNotEmpty)
                 Text(
                   posList.join(' · '),
@@ -699,7 +699,7 @@ class _EntryCardState extends State<_EntryCard>
                 ),
               if (posList.isNotEmpty) const SizedBox(height: 4),
 
-              // Vietnamese definition (chính)
+
               if (hasVi)
                 Text(
                   viDefs.join(', '),
@@ -711,7 +711,7 @@ class _EntryCardState extends State<_EntryCard>
                   ),
                 ),
 
-              // English definition (phụ, nhỏ hơn)
+
               if (enDefs.isNotEmpty) ...[
                 const SizedBox(height: 3),
                 Text(
@@ -724,7 +724,7 @@ class _EntryCardState extends State<_EntryCard>
                 ),
               ],
 
-              // Info / tags
+
               if (sense.info.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(

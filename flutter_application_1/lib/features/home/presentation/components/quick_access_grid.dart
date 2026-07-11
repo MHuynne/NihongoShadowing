@@ -123,4 +123,3 @@ class QuickAccessGrid extends StatelessWidget {
     );
   }
 }
-

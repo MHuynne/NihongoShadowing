@@ -8,7 +8,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const primaryRed = Color(0xFFC8102E); // Deep red as seen in image
+    const primaryRed = Color(0xFFC8102E);
     const bgWhite = Color(0xFFF9FAFB);
 
     return Scaffold(
@@ -17,7 +17,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            // Header
+
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
               child: Center(
@@ -33,7 +33,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
               ),
             ),
 
-            // Image Cover
+
             Expanded(
               flex: 4,
               child: Container(
@@ -41,14 +41,14 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                 decoration: const BoxDecoration(
                   image: DecorationImage(
                     image: NetworkImage(
-                        'https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=800&auto=format&fit=crop'), // Sakura avenue placeholder
+                        'https://images.unsplash.com/photo-1522383225653-ed111181a951?q=80&w=800&auto=format&fit=crop'),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
             ),
 
-            // Content
+
             Expanded(
               flex: 6,
               child: Container(
@@ -61,7 +61,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                   child: Column(
                     children: [
                       const SizedBox(height: 24),
-                      // Title
+
                       RichText(
                         textAlign: TextAlign.center,
                         text: const TextSpan(
@@ -70,7 +70,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                             height: 1.3,
                             fontWeight: FontWeight.w900,
                             color: Color(0xFF1E293B),
-                            fontFamily: 'Roboto', // Replace with app default if needed
+                            fontFamily: 'Roboto',
                           ),
                           children: [
                             TextSpan(text: 'Chinh phục tiếng Nhật\n'),
@@ -82,7 +82,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      // Subtitle
+
                       const Padding(
                         padding: EdgeInsets.symmetric(horizontal: 16.0),
                         child: Text(
@@ -97,7 +97,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 28),
 
-                      // Feature Cards
+
                       _buildFeatureCard(
                         iconColor: primaryRed,
                         title: 'Phương pháp SRS',
@@ -112,7 +112,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
 
                       const SizedBox(height: 32),
 
-                      // Indicator
+
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -125,7 +125,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
 
-                    // Button
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -161,7 +161,7 @@ class OnboardingWelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Bottom Login Text
+
                     GestureDetector(
                       onTap: () {
                         Navigator.of(context).push(

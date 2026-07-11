@@ -10,7 +10,7 @@ import 'package:flutter_application_1/features/roleplay/screens/scenario_selecti
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
-  /// Gọi từ LessonSummaryScreen sau khi hoàn thành bài để force-refresh RoadmapScreen
+
   static void refreshRoadmap(BuildContext context) {
     final state = context.findAncestorStateOfType<_MainScreenState>();
     state?._forceRefreshRoadmap();
@@ -29,7 +29,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
-  // Tăng key này để force rebuild RoadmapScreen sau khi hoàn thành bài
+
   int _roadmapRefreshKey = 0;
 
   final _homeScreen = const HomeScreen();
@@ -39,8 +39,8 @@ class _MainScreenState extends State<MainScreen> {
 
   void _forceRefreshRoadmap() {
     setState(() {
-      _currentIndex = 1; // Chuyển sang tab Roadmap
-      _roadmapRefreshKey++; // Đổi key → AnimatedSwitcher rebuild RoadmapScreen
+      _currentIndex = 1;
+      _roadmapRefreshKey++;
     });
   }
 
@@ -48,7 +48,7 @@ class _MainScreenState extends State<MainScreen> {
     switch (_currentIndex) {
       case 0:
         return _homeScreen;
-      case 1: // Key thay đổi mỗi khi hoàn thành bài → RoadmapScreen.initState() chạy lại
+      case 1:
         return RoadmapScreen(key: ValueKey('roadmap_$_roadmapRefreshKey'));
       case 2:
         return _shadowingScreen;

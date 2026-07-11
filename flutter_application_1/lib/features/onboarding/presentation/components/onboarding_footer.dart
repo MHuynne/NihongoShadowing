@@ -22,26 +22,26 @@ class OnboardingFooter extends StatelessWidget {
       color: isDark ? AppColors.backgroundDark : AppColors.backgroundLight,
       child: Column(
         children: [
-          // Pagination Dots
-          // Row(
-          //   mainAxisAlignment: MainAxisAlignment.center,
-          //   children: List.generate(totalSteps, (index) {
-          //     final isCurrent = index + 1 == currentStep;
-          //     return Container(
-          //       margin: const EdgeInsets.symmetric(horizontal: 4),
-          //       height: 6,
-          //       width: isCurrent ? 24 : 6,
-          //       decoration: BoxDecoration(
-          //         color: isCurrent
-          //             ? AppColors.primary
-          //             : (isDark ? AppColors.slate700 : AppColors.slate300),
-          //         borderRadius: BorderRadius.circular(3),
-          //       ),
-          //     );s
-          //   }),
-          // ),
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
           const SizedBox(height: 32),
-          // Primary Button
+
           ElevatedButton(
             onPressed: onNext,
             style: ElevatedButton.styleFrom(

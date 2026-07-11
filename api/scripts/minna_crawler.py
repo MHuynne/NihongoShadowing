@@ -28,14 +28,14 @@ from models.vocabulary import Vocabulary
 from models.lesson import Lesson, LevelEnum
 
 GEMINI_MODEL = "gemini-2.0-flash"
-AI_SLEEP     = 4  # giây delay giữa các call
+AI_SLEEP     = 4
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Dữ liệu chương Minna no Nihongo (offline — không cần crawl web)
-# N5: Chương 1–25 | N4: Chương 26–50
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
 MINNA_CHAPTERS = {
-    # ── N5 (Bài 1–25) ─────────────────────────────────────────────────────
+
     1:  {"title": "はじめまして",          "grammar": ["～は ～です", "～は ～ですか", "～じゃありません"],
          "situation": "Tự giới thiệu bản thân lần đầu gặp gỡ"},
     2:  {"title": "あれは なんですか",      "grammar": ["これ/それ/あれ", "この/その/あの", "～の"],
@@ -87,7 +87,7 @@ MINNA_CHAPTERS = {
     25: {"title": "えきの 前に ありますよ",  "grammar": ["te-form + あります (kết quả)", "てから", "Review N5"],
          "situation": "Ôn tập tổng hợp N5"},
 
-    # ── N4 (Bài 26–50) ────────────────────────────────────────────────────
+
     26: {"title": "迎えに 行きましょうか",  "grammar": ["て-form + あげます/もらいます/くれます"],
          "situation": "Nhờ giúp đỡ, làm ơn cho nhau"},
     27: {"title": "日本語が 上手に なりたい","grammar": ["～たい", "～たがっています"],
@@ -140,16 +140,16 @@ MINNA_CHAPTERS = {
          "situation": "Ôn tập và tổng kết N4"},
 }
 
-# Ngữ pháp theo level để Gemini tập trung
+
 GRAMMAR_FOCUS = {
     "N5": "Dùng ngữ pháp N5 cơ bản: です/ます, て-form cơ bản, を/に/で/が, こそあど, 形容詞 đơn giản.",
     "N4": "Dùng ngữ pháp N4: passive, causative, potential, conditional (たら/ば/と), ようだ/らしい, te-form phức hợp.",
 }
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Gemini: Tạo hội thoại + từ vựng chuẩn Minna no Nihongo
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def generate_dialogue_with_gemini(chapter: int, info: dict, level: str) -> dict | None:
     grammar_list = ", ".join(info["grammar"])
     grammar_focus = GRAMMAR_FOCUS.get(level, "")
@@ -188,7 +188,7 @@ vocabularies: 6-8 từ vựng cốt lõi của bài, quan trọng cho JLPT {leve
             resp  = _client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
             raw   = resp.text.strip()
 
-            # Làm sạch markdown fence nếu có
+
             raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
             raw = re.sub(r"\s*```$", "", raw, flags=re.MULTILINE)
             raw = raw.strip()
@@ -210,15 +210,15 @@ vocabularies: 6-8 từ vựng cốt lõi của bài, quan trọng cho JLPT {leve
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Lưu vào DB
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def save_to_db(db, chapter: int, info: dict, level_enum: LevelEnum,
                ai_result: dict, order_index: int) -> tuple:
     chapter_name = f"Bài {chapter}: {info['title']}"
     grammar_str  = " | ".join(info["grammar"])
 
-    # 1 Lesson = 1 chương Minna
+
     lesson = Lesson(
         level=level_enum,
         chapter_name=chapter_name,
@@ -228,7 +228,7 @@ def save_to_db(db, chapter: int, info: dict, level_enum: LevelEnum,
     db.commit()
     db.refresh(lesson)
 
-    # ShadowingTopic = hội thoại của chương
+
     dialogue_title = ai_result.get("dialogue_title", chapter_name)
     segments_data  = ai_result.get("segments", [])
     full_script    = "　".join(
@@ -249,7 +249,7 @@ def save_to_db(db, chapter: int, info: dict, level_enum: LevelEnum,
     db.commit()
     db.refresh(topic)
 
-    # ShadowingSegment — mỗi lượt thoại = 1 segment
+
     for idx, seg in enumerate(segments_data, 1):
         speaker_prefix = f"【{seg.get('speaker', '')}】 " if seg.get("speaker") else ""
         db.add(ShadowingSegment(
@@ -264,7 +264,7 @@ def save_to_db(db, chapter: int, info: dict, level_enum: LevelEnum,
             translation_vi =seg.get("vi", ""),
         ))
 
-    # Vocabulary — từ vựng của chương
+
     for v in ai_result.get("vocabularies", []):
         word    = v.get("word", "").strip()
         meaning = v.get("meaning", "").strip()
@@ -286,9 +286,9 @@ def save_to_db(db, chapter: int, info: dict, level_enum: LevelEnum,
     return lesson, topic
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def run(level: str, start: int, end: int, dry_run: bool = False):
     level_enum = LevelEnum[level]
     db = SessionLocal() if not dry_run else None
@@ -314,7 +314,7 @@ def run(level: str, start: int, end: int, dry_run: bool = False):
             print(f"  [DRY-RUN] Sẽ gọi Gemini tạo hội thoại & từ vựng → lưu DB")
             continue
 
-        # Kiểm tra đã tồn tại chưa
+
         dup = db.query(Lesson).filter(
             Lesson.chapter_name.like(f"%Bài {chapter}:%")
         ).first()
@@ -352,7 +352,7 @@ if __name__ == "__main__":
                         help="Chạy thử, không ghi DB")
     args = parser.parse_args()
 
-    # Tự động điều chỉnh range theo level
+
     if args.level == "N5" and args.end == 25 and args.start == 1:
         start, end = 1, 25
     elif args.level == "N4" and args.end == 25 and args.start == 1:

@@ -17,7 +17,7 @@ class LessonCreate(BaseModel):
     level:        Optional[LevelEnum] = None
     chapter_name: Optional[str] = None
     order_index:  Optional[int] = None
-    vocabularies: Optional[List[VocabularyCreate]] = []  # từ vựng cấp chương
+    vocabularies: Optional[List[VocabularyCreate]] = []
 
 class Lesson(LessonCreate):
     id:           int

@@ -39,14 +39,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
       _errorMessage = null;
     });
     try {
-      // Đăng ký → AuthService tự động lưu token sau khi tạo xong
+
       await _authService.registerWithEmail(
         email: _emailCtrl.text.trim(),
         password: _passwordCtrl.text,
         displayName: _nameCtrl.text.trim(),
       );
       if (mounted) {
-        // Đăng ký thành công, đóng RegisterScreen để AuthGate hiển thị MainScreen
+
         Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } on FirebaseAuthException catch (e) {
@@ -62,7 +62,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       backgroundColor: Colors.white,
       body: Stack(
         children: [
-          // Sakura gradient background
+
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -89,7 +89,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Back button
+
                     GestureDetector(
                       onTap: () => Navigator.pop(context),
                       child: Container(
@@ -104,7 +104,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     ),
                     const SizedBox(height: 28),
 
-                    // Title
+
                     const Text(
                       'Tạo tài khoản',
                       style: TextStyle(
@@ -123,7 +123,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 32),
 
-                    // Name field
+
                     _buildLabel('Họ và tên'),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -139,7 +139,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Email field
+
                     _buildLabel('Email'),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -156,7 +156,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Password field
+
                     _buildLabel('Mật khẩu'),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -185,7 +185,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 20),
 
-                    // Confirm password
+
                     _buildLabel('Xác nhận mật khẩu'),
                     const SizedBox(height: 8),
                     _buildTextField(
@@ -213,7 +213,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
                     const SizedBox(height: 14),
 
-                    // Error message
+
                     if (_errorMessage != null) ...[
                       Container(
                         padding: const EdgeInsets.symmetric(
@@ -241,7 +241,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       const SizedBox(height: 14),
                     ],
 
-                    // Register button
+
                     SizedBox(
                       width: double.infinity,
                       height: 56,

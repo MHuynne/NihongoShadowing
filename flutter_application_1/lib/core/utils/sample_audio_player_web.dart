@@ -1,9 +1,9 @@
-﻿// ignore: avoid_web_libraries_in_flutter
+﻿
 import 'dart:async';
 import 'dart:html' as html;
 import 'sample_audio_player.dart';
 
-/// Implementation cho Flutter Web — dùng dart:html AudioElement.
+
 class WebSampleAudioPlayer implements SampleAudioPlayer {
   html.AudioElement? _audioElement;
   String? _blobUrl;
@@ -34,7 +34,7 @@ class WebSampleAudioPlayer implements SampleAudioPlayer {
     _audioElement = html.AudioElement(url);
     _audioElement!.preload = 'auto';
 
-    // Khi có thể phát → seek tới startSec
+
     _canPlaySub = _audioElement!.onCanPlay.listen((_) {
       _canPlaySub?.cancel();
       _canPlaySub = null;
@@ -43,7 +43,7 @@ class WebSampleAudioPlayer implements SampleAudioPlayer {
     });
 
     if (endSec > startSec) {
-      // Dừng khi vượt qua endSec
+
       _timeUpdateSub = _audioElement!.onTimeUpdate.listen((_) {
         if ((_audioElement?.currentTime ?? 0) >= endSec) {
           _timeUpdateSub?.cancel();
@@ -80,5 +80,5 @@ class WebSampleAudioPlayer implements SampleAudioPlayer {
   void dispose() { stop(); }
 }
 
-/// Factory function
+
 SampleAudioPlayer createSampleAudioPlayer() => WebSampleAudioPlayer();

@@ -54,7 +54,7 @@ class ShadowingCard extends StatelessWidget {
           ),
           const SizedBox(height: 16),
 
-          // --- KANJI & FURIGANA ---
+
           FuriganaText(
             text: sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
             furigana: sentence.furiganaHtml,
@@ -66,7 +66,7 @@ class ShadowingCard extends StatelessWidget {
           const Divider(color: AppColors.slate100),
           const SizedBox(height: 20),
 
-          // --- CÁC DÒNG DỊCH (Data thật từ API) ---
+
           if (sentence.romaji.isNotEmpty)
             _buildTranslationRow('ROMAJI', sentence.romaji, AppColors.lightPinkBackground, AppColors.sunRed),
           if (sentence.romaji.isNotEmpty) const SizedBox(height: 12),
@@ -117,7 +117,7 @@ class ShadowingCard extends StatelessWidget {
   }
 
   Widget _buildBlindModeCard() {
-    // Lấy 2-3 ký tự đầu của Kanji làm gợi ý mờ
+
     final hintText = sentence.kanji.isNotEmpty
         ? sentence.kanji.substring(0, sentence.kanji.length.clamp(0, 3))
         : '？';
@@ -168,7 +168,7 @@ class ShadowingCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 20),
-                  // Gợi ý mờ từ data thật
+
                   Text(
                     hintText,
                     style: TextStyle(
@@ -195,7 +195,7 @@ class ShadowingCard extends StatelessWidget {
   }
 }
 
-/// Dashed border painter for blind mode card.
+
 class DashedBorderPainter extends CustomPainter {
   final Color color;
   DashedBorderPainter({required this.color});

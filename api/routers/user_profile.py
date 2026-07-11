@@ -29,7 +29,7 @@ def get_user_profile(
     """Lấy thông tin profile người dùng bao gồm cấp độ JLPT đã chọn."""
     profile = crud.get_profile(db, user_firebase_id=uid)
     if profile is None:
-        # Trả về đối tượng trống thay vì báo lỗi 404
+
         return schemas.UserProfile(user_firebase_id=uid, jlpt_level=None)
     return profile
 

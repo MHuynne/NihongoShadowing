@@ -3,8 +3,8 @@ import 'package:http/http.dart' as _http;
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
-// Timeout mặc định cho tất cả request
-// evaluate/shadowing cần lâu hơn vì phải gọi Gemini AI + Google STT
+
+
 const _kDefaultTimeout = Duration(seconds: 90);
 const _kShortTimeout   = Duration(seconds: 30);
 
@@ -50,4 +50,3 @@ Future<_http.Response> delete(Uri url, {Map<String, String>? headers, Object? bo
   _logResponse('DELETE', url, res);
   return res;
 }
-

@@ -11,12 +11,12 @@ headers = {
     "Accept-Language": "ja",
 }
 
-# NHK co nhieu RSS feed - thu tat ca category
+
 rss_urls = [
-    "https://www3.nhk.or.jp/rss/news/cat0.xml",  # all
-    "https://www3.nhk.or.jp/rss/news/cat1.xml",  # soc hoi
-    "https://www3.nhk.or.jp/rss/news/cat2.xml",  # khoa hoc
-    "https://www3.nhk.or.jp/rss/news/cat3.xml",  # the thao
+    "https://www3.nhk.or.jp/rss/news/cat0.xml",
+    "https://www3.nhk.or.jp/rss/news/cat1.xml",
+    "https://www3.nhk.or.jp/rss/news/cat2.xml",
+    "https://www3.nhk.or.jp/rss/news/cat3.xml",
 ]
 
 all_links = []
@@ -36,7 +36,7 @@ for rss_url in rss_urls:
 
 print(f"\nTong: {len(all_links)} bai")
 
-# Thu truy cap tu bai thu nhat
+
 if all_links:
     art = all_links[0]
     print(f"\nThu bai: {art['title']}")
@@ -46,7 +46,7 @@ if all_links:
         print(f"Status: {r2.status_code}")
         soup = BeautifulSoup(r2.text, "html.parser")
 
-        # NHK thuong dung cac class khac nhau theo phien ban
+
         selectors = [
             "div.content--detail-main",
             "section.content--body",
@@ -59,7 +59,7 @@ if all_links:
             el = soup.select_one(sel)
             if el:
                 print(f"[Found: {sel}]")
-                # Xoa ruby tag de lay kanji goc
+
                 for rt in el.find_all("rt"): rt.decompose()
                 for rp in el.find_all("rp"): rp.decompose()
                 text = el.get_text(separator="。", strip=True)
@@ -70,7 +70,7 @@ if all_links:
                 break
         else:
             print("Khong tim thay content div")
-            # In HTML preview
+
             print("HTML:", r2.text[:600])
     except Exception as e:
         print(f"ERROR: {e}")

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
-/// Trang quản lý Shadowing Segment độc lập và Category
+
 class AdminSegmentsPage extends StatefulWidget {
   const AdminSegmentsPage({super.key, required this.api});
 
@@ -69,9 +69,9 @@ class _AdminSegmentsPageState extends State<AdminSegmentsPage>
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TAB 1 – Shadowing Segments (độc lập)
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class _SegmentsTab extends StatefulWidget {
   const _SegmentsTab({required this.api});
@@ -138,7 +138,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Tiêu đề hiển thị ─────────────────────────────────
+
                     TextFormField(
                       controller: titleCtrl,
                       decoration: const InputDecoration(
@@ -150,7 +150,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     ),
                     const SizedBox(height: 16),
 
-                    // ── Thuộc Topic ──────────────────────────────────────
+
                     DropdownButtonFormField<int>(
                       value: selectedTopicId,
                       decoration: const InputDecoration(
@@ -174,7 +174,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     ),
                     const SizedBox(height: 20),
 
-                    // ── Nội dung câu Shadowing ────────────────────────────
+
                     const Text(
                       'Nội dung câu Shadowing',
                       style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
@@ -262,10 +262,10 @@ class _SegmentsTabState extends State<_SegmentsTab> {
 
 
 
-  // ─── Bulk add wizard ────────────────────────────────────────────────────
+
 
   Future<void> _openBulkDialog() async {
-    // Danh sách các dòng, mỗi dòng là map controller
+
     final rows = <Map<String, TextEditingController>>[
       _newBulkRow(),
     ];
@@ -288,7 +288,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // ── Thuộc Topic ──────────────────────────────────────
+
                   SizedBox(
                     width: 300,
                     child: DropdownButtonFormField<int>(
@@ -316,7 +316,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                   ),
                   const SizedBox(height: 12),
 
-                  // ── Table header ──────────────────────────────────────
+
                   Container(
                     decoration: BoxDecoration(
                       color: AdminPalette.sidebarSelectedBackground.withValues(alpha: 0.3),
@@ -325,7 +325,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       children: const [
-                        SizedBox(width: 32), // số thứ tự
+                        SizedBox(width: 32),
                         SizedBox(width: 8),
                         Expanded(flex: 3, child: Text('漢字 (Câu gốc)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
                         SizedBox(width: 8),
@@ -334,12 +334,12 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                         Expanded(flex: 4, child: Text('Dịch nghĩa (Việt)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
                         SizedBox(width: 8),
                         Expanded(flex: 2, child: Text('Tiêu đề', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
-                        SizedBox(width: 40), // delete btn
+                        SizedBox(width: 40),
                       ],
                     ),
                   ),
                   const SizedBox(height: 6),
-                  // ── Rows ──────────────────────────────────────────────
+
                   Expanded(
                     child: ListView.separated(
                       itemCount: rows.length,
@@ -349,7 +349,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-                            // Số thứ tự
+
                             Container(
                               width: 32,
                               height: 32,
@@ -368,7 +368,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Kanji
+
                             Expanded(
                               flex: 3,
                               child: _compactField(
@@ -377,7 +377,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Furigana
+
                             Expanded(
                               flex: 3,
                               child: _compactField(
@@ -386,7 +386,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Translation
+
                             Expanded(
                               flex: 4,
                               child: _compactField(
@@ -395,7 +395,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-                            // Title
+
                             Expanded(
                               flex: 2,
                               child: _compactField(
@@ -403,7 +403,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                                 hint: 'Tiêu đề',
                               ),
                             ),
-                            // Delete row
+
                             IconButton(
                               tooltip: 'Xóa dòng này',
                               onPressed: rows.length > 1
@@ -425,7 +425,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  // ── Add row button ─────────────────────────────────────
+
                   TextButton.icon(
                     onPressed: () => setDS(() {
                       rows.add(_newBulkRow());
@@ -454,7 +454,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
 
     if (saved != true || !mounted) return;
 
-    // Lọc dòng trống (kanji hoặc trans phải có ít nhất 1)
+
     final payloads = rows
         .map((r) => {
               'title': r['title']!.text.trim().isEmpty ? null : r['title']!.text.trim(),
@@ -494,7 +494,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
           .showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
 
-    // dispose controllers
+
     for (final r in rows) {
       for (final c in r.values) {
         c.dispose();
@@ -567,7 +567,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
             Text('${_segments.length} câu Shadowing',
                 style: const TextStyle(color: AdminPalette.textMuted)),
             const Spacer(),
-            // ── Thêm nhiều câu Shadowing cùng lúc ──
+
             OutlinedButton.icon(
               onPressed: _openBulkDialog,
               icon: const Icon(Icons.playlist_add_rounded, size: 18),
@@ -623,7 +623,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // ── Ảnh thumbnail ──────────────────────────────
+
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: fullImgUrl.isNotEmpty
@@ -638,7 +638,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                       ),
                       const SizedBox(width: 16),
 
-                      // ── Nội dung ───────────────────────────────────
+
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -690,7 +690,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                         ),
                       ),
 
-                      // ── Actions ────────────────────────────────────
+
                       Column(
                         children: [
                           IconButton(
@@ -728,9 +728,9 @@ class _SegmentsTabState extends State<_SegmentsTab> {
       );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TAB 2 – Categories
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class _CategoriesTab extends StatefulWidget {
   const _CategoriesTab({required this.api});
@@ -966,9 +966,9 @@ class _CategoriesTabState extends State<_CategoriesTab> {
 }
 
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TAB 2 – Segment Topics
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class _SegmentTopicsTab extends StatefulWidget {
   const _SegmentTopicsTab({required this.api});
@@ -1114,7 +1114,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                         final previewBytes = imgState['bytes'] as Uint8List?;
                         final uploading = imgState['uploading'] as bool;
                         final currentUrl = imageCtrl.text.trim();
-                        
+
                         if (uploading) {
                           return const Center(
                               child: Column(

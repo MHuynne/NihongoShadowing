@@ -12,7 +12,7 @@ from typing import List, Optional
 from fastapi import APIRouter, File, UploadFile, Form, HTTPException
 from difflib import SequenceMatcher
 
-# pykakasi: chuyển Kanji → Hiragana để so sánh với Google STT output
+
 try:
     import pykakasi as _pykakasi
     _kks = _pykakasi.kakasi()
@@ -21,36 +21,36 @@ try:
         result = _kks.convert(text)
         return "".join(item["hira"] or item["orig"] for item in result)
 except Exception:
-    def _kanji_to_hira(text: str) -> str:  # type: ignore
+    def _kanji_to_hira(text: str) -> str:
         return text
 
 router = APIRouter(prefix="/evaluate", tags=["AI Speech Evaluation"])
 
-# =====================================================================
-# Ưu tiên 1: Azure (thêm key để dùng đánh giá Pronunciation chính xác nhất)
-# =====================================================================
+
+
+
 AZURE_SPEECH_KEY    = os.getenv("AZURE_SPEECH_KEY", "")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "eastasia")
 
-# =====================================================================
-# Ưu tiên 2: Google Cloud Speech key (tùy chọn)
-# =====================================================================
+
+
+
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY", "")
 
-# =====================================================================
-# Gemini AI key — hỗ trợ nhiều key để rotate khi hết quota
-# Cách dùng: set GEMINI_API_KEYS=key1,key2,key3 trong .env
-#            hoặc set GEMINI_API_KEY=single_key
-# =====================================================================
+
+
+
+
+
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "") or GOOGLE_API_KEY
 
-# Pool nhiều key để rotate — tránh hết quota
+
 _raw_keys = os.getenv("GEMINI_API_KEYS", "")
 _GEMINI_KEY_POOL: list[str] = [k.strip() for k in _raw_keys.split(",") if k.strip()]
 if GEMINI_API_KEY and GEMINI_API_KEY not in _GEMINI_KEY_POOL:
-    _GEMINI_KEY_POOL.insert(0, GEMINI_API_KEY)  # key chính luôn ở đầu
+    _GEMINI_KEY_POOL.insert(0, GEMINI_API_KEY)
 
-_key_index = 0  # round-robin index
+_key_index = 0
 
 def _next_gemini_key() -> str:
     """Trả về key tiếp theo theo vòng tròn. Thread-safe cho single-process."""
@@ -62,33 +62,33 @@ def _next_gemini_key() -> str:
     return key
 
 
-# Trợ từ & từ pitch-accent quan trọng trong tiếng Nhật
+
 _JP_PITCH_PARTICLES = {"は", "が", "を", "に", "で", "と", "も", "の", "へ", "から", "まで", "より", "ね", "よ", "か"}
 
-# ==============================================================================
-# SECTION 0: RecommendationEngine — Hệ thống gợi ý học tập AI
-# ==============================================================================
+
+
+
 
 class ErrorType(str, Enum):
-    PRONUNCIATION = "pronunciation"   # Sai âm cụ thể — nghe nhầm mora
-    PROSODY       = "prosody"         # Ngữ điệu/pitch-accent sai
-    RHYTHM        = "rhythm"          # Nhịp ngắt sai chỗ
-    PITCH_ACCENT  = "pitch_accent"    # Trường âm tiếng Nhật (っ, ん, ー, ざ行)
+    PRONUNCIATION = "pronunciation"
+    PROSODY       = "prosody"
+    RHYTHM        = "rhythm"
+    PITCH_ACCENT  = "pitch_accent"
 
 class ActionType(str, Enum):
-    SHOW_HAN_VIET_MODE  = "show_han_viet_mode"   # Hiện Hán-Việt để làm điểm tựa
-    OPEN_VOCABULARY     = "open_vocabulary"       # Mở kho từ vựng ôn từ đó
-    ACTIVATE_SLOW_MODE  = "activate_slow_mode"    # Kích hoạt chế độ Slow-mo 0.75x
-    SHOW_PITCH_GUIDE    = "show_pitch_guide"      # Hiện hướng dẫn Pitch-accent
-    CELEBRATE           = "celebrate"             # Không lỗi — động viên
-    RETRY               = "retry"                 # Điểm quá thấp — cần thử lại
+    SHOW_HAN_VIET_MODE  = "show_han_viet_mode"
+    OPEN_VOCABULARY     = "open_vocabulary"
+    ACTIVATE_SLOW_MODE  = "activate_slow_mode"
+    SHOW_PITCH_GUIDE    = "show_pitch_guide"
+    CELEBRATE           = "celebrate"
+    RETRY               = "retry"
 
 @dataclass
 class ActionPlan:
     message: str
     action: ActionType
     target_word: Optional[str] = None
-    severity: int = 1  # 1=nhẹ, 2=trung bình, 3=nghiêm trọng
+    severity: int = 1
 
     def to_dict(self) -> dict:
         return {
@@ -106,8 +106,8 @@ class RecommendationEngine:
     Output: ActionPlan với message tiếng Việt + action type cho Flutter xử lý
     """
 
-    # Danh sách âm Hán-Việt phổ biến người Việt hay nhầm trong tiếng Nhật
-    # (danh sách mở rộng dần theo thực tế lỗi)
+
+
     _SINO_JAPANESE_PATTERNS = [
         "学", "語", "音", "字", "校", "会", "社", "国", "人", "文",
         "生", "先", "大", "小", "中", "高", "新", "本", "日", "年",
@@ -115,7 +115,7 @@ class RecommendationEngine:
         "農", "業", "市", "府", "県", "区", "町", "村", "道", "京",
     ]
 
-    # Pattern âm ngắt (っ), âm mũi (ん), âm dài (ー) — đặc trưng tiếng Nhật
+
     _PITCH_ACCENT_CHARS = ["っ", "ッ", "ん", "ン", "ー", "〜"]
 
     def _has_sino_japanese_error(self, words: List[str]) -> bool:
@@ -150,7 +150,7 @@ class RecommendationEngine:
         Trả về ActionPlan phù hợp nhất dựa trên kết quả phân tích.
         Thứ tự ưu tiên: điểm quá thấp → lỗi Hán-Việt → câu dài khó → pitch-accent → prosody → celebrate
         """
-        # ── Case 1: Điểm quá thấp → ép thử lại với hỗ trợ ──────────────────
+
         if accuracy < 50:
             return ActionPlan(
                 message=(
@@ -161,7 +161,7 @@ class RecommendationEngine:
                 severity=3,
             )
 
-        # ── Case 2: Sai Kanji Hán-Việt → mở kho từ vựng ──────────────────
+
         if mispronounced_words and self._has_sino_japanese_error(mispronounced_words):
             word = mispronounced_words[0]
             return ActionPlan(
@@ -174,7 +174,7 @@ class RecommendationEngine:
                 severity=2,
             )
 
-        # ── Case 3: Câu dài + fluency thấp → kích hoạt Slow-mo ─────────
+
         if fluency < 65 and sentence_length > 20:
             return ActionPlan(
                 message=(
@@ -185,7 +185,7 @@ class RecommendationEngine:
                 severity=2,
             )
 
-        # ── Case 4: Lỗi trường âm/pitch-accent (っ ん ー) ─────────────────
+
         if self._has_pitch_accent_error(mispronounced_words, error_types):
             bad_word = (error_types.get("pitch_accent") or mispronounced_words or [""])[0]
             return ActionPlan(
@@ -198,7 +198,7 @@ class RecommendationEngine:
                 severity=2,
             )
 
-        # ── Case 5: Prosody thấp → gợi ý nghe lại và bắt chước ngữ điệu ─
+
         if prosody < 60:
             return ActionPlan(
                 message=(
@@ -209,7 +209,7 @@ class RecommendationEngine:
                 severity=2,
             )
 
-        # ── Case 6: Tốt! Động viên ────────────────────────────────────────
+
         if accuracy >= 85 and fluency >= 75:
             return ActionPlan(
                 message=(
@@ -220,7 +220,7 @@ class RecommendationEngine:
                 severity=0,
             )
 
-        # ── Default: Khuyến khích tiếp tục ───────────────────────────────
+
         return ActionPlan(
             message="Khá tốt! Hãy luyện thêm để đồng bộ nhịp điệu và ngữ điệu với mẫu. 💪",
             action=ActionType.CELEBRATE,
@@ -228,12 +228,12 @@ class RecommendationEngine:
         )
 
 
-# Singleton engine
+
 _recommendation_engine = RecommendationEngine()
 
-# ==============================================================================
-# SECTION 1: Audio Pre-processing
-# ==============================================================================
+
+
+
 
 def _trim_silence(audio_bytes: bytes) -> bytes:
     """Chuyen doi moi dinh dang nen (OGG/WEBM/M4A) sang WAV LINEAR16 16kHz Mono bang ffmpeg.
@@ -279,9 +279,9 @@ def _trim_silence(audio_bytes: bytes) -> bytes:
         return audio_bytes
 
 
-# ==============================================================================
-# SECTION 2: Text Helpers
-# ==============================================================================
+
+
+
 
 def _normalize(text: str) -> str:
     """NFKC normalize + lowercase. Dùng để so sánh text thô."""
@@ -296,7 +296,7 @@ def _normalize_jp(text: str) -> str:
     3. Bỏ dấu câu, khoảng trắng
     """
     text = unicodedata.normalize("NFKC", text).strip()
-    text = _kanji_to_hira(text)  # Kanji → Hiragana
+    text = _kanji_to_hira(text)
     text = re.sub(r"[。、！？!?.,・ー…「」『』【】〔〕（）()\s]", "", text)
     return text.lower()
 
@@ -308,7 +308,7 @@ def _jp_mora_split(text: str) -> list[str]:
     """
     SMALL = set("ぁぃぅぇぉっゃゅょァィゥェォッャュョ")
     PUNCT = set("。、！？!?.,・ー…「」『』【】〔〕（）()")
-    # Convert Kanji → Hiragana để đồng nhất với Google STT
+
     text = unicodedata.normalize("NFKC", _kanji_to_hira(text))
     moras = []
     for ch in text:
@@ -346,14 +346,14 @@ def _pitch_particle_coverage(expected: str, recognized: str) -> float:
     """
     exp_particles = [ch for ch in expected if ch in _JP_PITCH_PARTICLES]
     if not exp_particles:
-        return 1.0  # Không có trợ từ → không bị phạt
+        return 1.0
     matched = sum(1 for ch in exp_particles if ch in recognized)
     return matched / len(exp_particles)
 
 
-# ==============================================================================
-# SECTION 3: Scoring Logic
-# ==============================================================================
+
+
+
 
 def _compute_scores(expected: str, recognized: str) -> tuple[int, int, int]:
     """
@@ -363,30 +363,30 @@ def _compute_scores(expected: str, recognized: str) -> tuple[int, int, int]:
     - fluency  : tỉ lệ mora khớp + guard cho câu ngắn (tránh điểm nhiễu)
     - prosody  : kết hợp độ dài tương đối + độ phủ trợ từ pitch-accent
     """
-    # --- Accuracy (mora-level) ---
+
     accuracy = _mora_accuracy(expected, recognized)
 
-    # --- Fluency: positional SequenceMatcher (chính xác hơn naive `in`) ---
+
     exp_moras = _jp_mora_split(expected)
     rec_moras = _jp_mora_split(recognized)
     fluency_ratio = SequenceMatcher(None, exp_moras, rec_moras).ratio()
     fluency = min(int(fluency_ratio * 100), 100)
 
-    # --- Prosody: độ phủ trợ từ + tỉ lệ độ dài ---
+
     pitch_cov   = _pitch_particle_coverage(expected, recognized)
     mora_ratio  = min(len(rec_moras), len(exp_moras)) / max(len(exp_moras), 1)
     prosody     = min(int((mora_ratio * 0.5 + pitch_cov * 0.5) * accuracy * 0.95), 100)
 
-    # ----------------------------------------------------------------
-    # GUARD — Câu ngắn (< 15 ký tự): giảm ảnh hưởng của Fluency nhiễu
-    # ----------------------------------------------------------------
+
+
+
     is_short = len(expected.strip()) < 15
     if is_short:
         if accuracy >= 90:
-            fluency  = max(fluency, 75)   # Đọc đúng → Fluency tối thiểu 75
+            fluency  = max(fluency, 75)
         elif accuracy >= 75:
-            fluency  = max(fluency, 50)   # Khá đúng → Fluency tối thiểu 50
-        # Với câu ngắn, prosody nặng về accuracy hơn fluency
+            fluency  = max(fluency, 50)
+
         prosody = min(int(accuracy * 0.85 + fluency * 0.10), 100)
 
     return accuracy, fluency, prosody
@@ -401,16 +401,16 @@ def _compute_shadowing_scores(expected: str, recognized: str) -> tuple[int, int,
     """
     accuracy, fluency, prosody = _compute_scores(expected, recognized)
 
-    # Rhythm: so sánh số lần ngắt câu trong expected vs recognized
+
     exp_pauses = _count_pauses(expected)
     rec_pauses = _count_pauses(recognized)
     if exp_pauses == 0:
-        rhythm_score = 100  # Câu không có ngắt → không bị phạt
+        rhythm_score = 100
     else:
         pause_ratio  = 1.0 - abs(exp_pauses - rec_pauses) / max(exp_pauses, 1)
         rhythm_score = max(int(pause_ratio * 100), 0)
 
-    # Prosody cho shadowing: kết hợp thêm rhythm
+
     prosody = min(int(prosody * 0.7 + rhythm_score * 0.3), 100)
 
     return accuracy, fluency, prosody, rhythm_score
@@ -420,8 +420,8 @@ def _find_error_word(expected: str, recognized: str) -> str:
     """Tìm từ/cụm bị sai — normalize cả 2 về Hiragana trước khi so sánh."""
     exp_hira = _normalize_jp(expected)
     rec_hira = _normalize_jp(recognized)
-    # Tìm từ kanji trong expected mà Hiragana tương ứng không có trong recognized
-    # Dùng pykakasi để tách từ
+
+
     try:
         from janome.tokenizer import Tokenizer
         t = Tokenizer()
@@ -432,7 +432,7 @@ def _find_error_word(expected: str, recognized: str) -> str:
                 return tok
     except Exception:
         pass
-    # Fallback: tìm từ space-separated
+
     rec_lower = _normalize(recognized)
     for word in _normalize(expected).split():
         word_clean = re.sub(r'[。、！？!?.,・ー…「」『』【】〔〕（）()]', '', word)
@@ -443,9 +443,9 @@ def _find_error_word(expected: str, recognized: str) -> str:
     return ""
 
 
-# ==============================================================================
-# SECTION 4: Tip / Feedback Builder
-# ==============================================================================
+
+
+
 
 def _build_tip(accuracy: int, fluency: int, prosody: int, error_word: str,
                rhythm_score: int = None, mode: str = "normal") -> str:
@@ -469,7 +469,7 @@ def _build_tip(accuracy: int, fluency: int, prosody: int, error_word: str,
             return "🌟 Shadowing xuất sắc! Nhịp ngắt, ngữ điệu và phát âm rất gần với mẫu bản ngữ!"
         return "👍 Khá tốt! Tiếp tục luyện Shadowing để đồng bộ nhịp điệu và ngữ điệu với mẫu."
 
-    # Normal mode
+
     if prosody < 60:
         return "Ngữ điệu (Prosody) chưa đạt. Tiếng Nhật là ngôn ngữ Pitch-accent — lên/xuống giọng đúng ở trợ từ は・が・を."
     if fluency < 60:
@@ -481,9 +481,9 @@ def _build_tip(accuracy: int, fluency: int, prosody: int, error_word: str,
     return "Khá tốt! Luyện thêm nhấn âm và ngắt nghỉ để tăng Fluency!"
 
 
-# ==============================================================================
-# SECTION 4b: Gemini AI — sinh gợi ý cải thiện thông minh
-# ==============================================================================
+
+
+
 
 async def _ai_generate_tip(
     accuracy: int,
@@ -520,7 +520,7 @@ async def _ai_generate_tip(
         "Trả lời bằng tiếng Việt, không dùng markdown, tối đa 100 từ."
     )
 
-    # Dùng _gemini_post (có sẵn fallback model) thay vì gọi thẳng 1 model
+
     result = await _gemini_post(prompt, timeout=30)
     text = result.get("_text", "").strip()
     if text:
@@ -528,15 +528,15 @@ async def _ai_generate_tip(
 
     return fallback_tip
 
-# Danh sách model fallback theo thứ tự ưu tiên (model tồn tại, hỗ trợ generateContent)
-# Nếu một model bị ReadTimeout hoặc quota, tự chuyển sang model tiếp theo
+
+
 _GEMINI_MODELS = [
-    "gemini-2.0-flash-lite",   # Nhanh nhất, ưu tiên đầu
-    "gemini-2.0-flash",        # Nhanh, ổn định
-    "gemini-2.5-flash",        # Mạnh nhất, dùng khi các model nhẹ fail
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash",
+    "gemini-2.5-flash",
 ]
 
-# Timeout riêng cho từng model (giây) — model nhẹ thì timeout ngắn hơn
+
 _MODEL_TIMEOUT = {
     "gemini-2.0-flash-lite": 20,
     "gemini-2.0-flash": 35,
@@ -555,7 +555,7 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
     payload = {"contents": [{"parts": [{"text": prompt}]}]}
 
     for model in _GEMINI_MODELS:
-        # Thử tất cả key trong pool cho mỗi model
+
         tried_keys: set = set()
         for _ in range(max(len(_GEMINI_KEY_POOL), 1)):
             api_key = _next_gemini_key()
@@ -574,7 +574,7 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
 
                 if resp.status_code == 429:
                     print(f"[Gemini] {model} key=...{api_key[-6:]} quota exceeded, trying next...")
-                    continue  # thử key khác
+                    continue
 
                 if resp.status_code == 200:
                     data = resp.json()
@@ -585,14 +585,14 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
                         .get("text", "")
                         .strip()
                     )
-                    # Clean markdown
+
                     text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
                     text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE)
                     text = text.strip()
                     match = re.search(r"\{.*\}", text, re.DOTALL)
                     if match:
                         return _json.loads(match.group())
-                    return {"_text": text}  # text bình thường
+                    return {"_text": text}
 
                 print(f"[Gemini] {model} HTTP {resp.status_code}")
             except httpx.ReadTimeout:
@@ -614,12 +614,12 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
     if not recognized_text or recognized_text == "(Được đọc)":
         return {}
 
-    # --- Tính quick_ratio trước để dùng cho early-exit và sanity-boost ---
+
     exp_hira_norm = _normalize_jp(expected_text)
     rec_hira_norm = _normalize_jp(recognized_text)
     quick_ratio   = SequenceMatcher(None, list(exp_hira_norm), list(rec_hira_norm)).ratio()
 
-    # Early-exit: STT nhận ra gần như hoàn hảo — không cần Gemini
+
     if quick_ratio >= 0.95:
         acc = min(int(quick_ratio * 100), 100)
         return {
@@ -632,7 +632,7 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
             "words_analysis": [{"text": expected_text, "is_correct": True}],
         }
 
-    # Convert expected sang Hiragana để Gemini so sánh dễ hơn
+
     expected_hira = _kanji_to_hira(expected_text)
 
     prompt = (
@@ -670,11 +670,11 @@ async def _ai_full_evaluation(expected_text: str, recognized_text: str) -> dict:
 
     result = await _gemini_post(prompt, timeout=45)
     if result and "accuracy" in result:
-        # Validate và clamp điểm
+
         for k in ["accuracy", "fluency", "prosody", "rhythm"]:
             if k in result:
                 result[k] = max(0, min(100, int(result[k])))
-        # Sanity-boost: nếu Gemini cho điểm quá thấp nhưng text khớp tốt
+
         if quick_ratio >= 0.80 and result.get("accuracy", 0) < 60:
             boost = int(quick_ratio * 85)
             result["accuracy"] = max(result["accuracy"], boost)
@@ -688,18 +688,18 @@ def _fallback_word_analysis(expected_text: str, recognized_text: str) -> list:
     try:
         from janome.tokenizer import Tokenizer
         import pykakasi
-        
+
         t = Tokenizer()
         kks = pykakasi.kakasi()
         words_analysis = []
         rec_clean = recognized_text.replace(' ', '').replace('、', '').replace('。', '')
-        
+
         tokens = [token.surface for token in t.tokenize(expected_text)]
         for token in tokens:
             if token in '。、！？!?.,・ー…「」『』【】〔〕（）()':
                 words_analysis.append({'text': token, 'is_correct': True})
                 continue
-                
+
             if token in rec_clean:
                 words_analysis.append({'text': token, 'is_correct': True})
             else:
@@ -708,7 +708,7 @@ def _fallback_word_analysis(expected_text: str, recognized_text: str) -> list:
                     words_analysis.append({'text': token, 'is_correct': True})
                 else:
                     words_analysis.append({'text': token, 'is_correct': False})
-                    
+
         merged = []
         for item in words_analysis:
             if merged and merged[-1]['is_correct'] == item['is_correct']:
@@ -725,9 +725,9 @@ def _fallback_word_analysis(expected_text: str, recognized_text: str) -> list:
 
 
 
-# ==============================================================================
-# SECTION 5: Google STT
-# ==============================================================================
+
+
+
 
 async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int]:
     """
@@ -751,9 +751,9 @@ async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int
         config["audioChannelCount"] = 1
     elif audio_bytes.startswith(b"\x1a\x45\xdf\xa3") or filename.endswith(".webm"):
         config["encoding"] = "WEBM_OPUS"
-        # Browser MediaRecorder always records stereo (2-channel) WEBM/OPUS.
-        # Google STT defaults audioChannelCount to 1 when unset, which causes
-        # a 400 INVALID_ARGUMENT error if the WEBM header reports 2 channels.
+
+
+
         config["audioChannelCount"] = 2
     elif audio_bytes.startswith(b"OggS") or filename.endswith(".ogg") or filename.endswith(".opus"):
         config["encoding"] = "OGG_OPUS"
@@ -781,8 +781,8 @@ async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int
             alt = results[0]["alternatives"][0]
             transcript = alt.get("transcript", "").strip()
             words = alt.get("words", [])
-            
-            # Tính toán số lần ngắt nghỉ > 400ms trên audio thực tế
+
+
             measured_pauses = 0
             for i in range(len(words) - 1):
                 try:
@@ -799,9 +799,9 @@ async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int
         return "", 0
 
 
-# ==============================================================================
-# SECTION 6: Endpoints
-# ==============================================================================
+
+
+
 
 @router.post("/")
 async def evaluate_voice(
@@ -820,16 +820,16 @@ async def evaluate_voice(
     print("GOOGLE_API_KEY", GOOGLE_API_KEY)
 
     try:
-        # --- DEBUG: Lưu file âm thanh nhận được từ mobile/web ---
+
         raw_audio_bytes = b""
         if audio:
             raw_audio_bytes = await audio.read()
             with open("debug_raw_voice.raw", "wb") as f:
                 f.write(raw_audio_bytes)
 
-        # ----------------------------------------------------------------
-        # LUỒNG 1: Azure Pronunciation Assessment
-        # ----------------------------------------------------------------
+
+
+
         if audio and AZURE_SPEECH_KEY and raw_audio_bytes:
             audio_bytes = _trim_silence(raw_audio_bytes)
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
@@ -860,9 +860,9 @@ async def evaluate_voice(
                 recognized_text = result.text
                 error_word      = _find_error_word(expected_text, recognized_text)
 
-                # Azure chấm phoneme quality nhưng không phạt khi nói sai từ.
-                # Blend với text-level accuracy để phản ánh thực tế: nói sai từ → điểm thấp.
-                # scale = 0.25 (sai hoàn toàn) → 1.0 (đúng hết)
+
+
+
                 text_match = _mora_accuracy(expected_text, recognized_text) / 100.0
                 if text_match < 0.85:
                     scale = 0.25 + 0.75 * text_match
@@ -870,7 +870,7 @@ async def evaluate_voice(
                     fluency_score  = int(fluency_score  * scale)
                     prosody_score  = int(prosody_score  * scale)
 
-                # Áp dụng guard câu ngắn cho Azure cũng
+
                 is_short = len(expected_text.strip()) < 15
                 if is_short:
                     if accuracy_score >= 90:
@@ -880,18 +880,18 @@ async def evaluate_voice(
             else:
                 raise ValueError("Azure không nhận diện được giọng nói.")
 
-        # ----------------------------------------------------------------
-        # LUỒNG 2: Google Speech REST API
-        # ----------------------------------------------------------------
+
+
+
         elif audio and GOOGLE_API_KEY and raw_audio_bytes:
             audio_bytes = raw_audio_bytes
             recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
             accuracy_score, fluency_score, prosody_score = _compute_scores(expected_text, recognized_text)
             error_word = _find_error_word(expected_text, recognized_text)
 
-        # ----------------------------------------------------------------
-        # LUỒNG 3: MOCK DEMO
-        # ----------------------------------------------------------------
+
+
+
         elif audio:
             import random
             words = expected_text.split("、") if "、" in expected_text else expected_text.split()
@@ -909,9 +909,9 @@ async def evaluate_voice(
             fluency_score   = max(0, fluency_score)
             prosody_score   = max(0, prosody_score)
 
-        # ----------------------------------------------------------------
-        # LUỒNG 4: Không có audio
-        # ----------------------------------------------------------------
+
+
+
         else:
             recognized_text = "(Không nhận được audio)"
 
@@ -934,9 +934,9 @@ async def evaluate_voice(
         raise HTTPException(status_code=500, detail=str(e))
 
 
-# ==============================================================================
-# Endpoint Shadowing
-# ==============================================================================
+
+
+
 
 @router.post("/shadowing")
 async def evaluate_shadowing(
@@ -956,19 +956,19 @@ async def evaluate_shadowing(
     fluency_score   = 0
     prosody_score   = 0
     rhythm_score    = 0
-    used_azure      = False  # track nếu Azure đã chấm điểm trực tiếp từ audio
+    used_azure      = False
 
     try:
-        # --- DEBUG: Lưu file âm thanh nhận được từ mobile/web ---
+
         raw_audio_bytes = b""
         if audio:
             raw_audio_bytes = await audio.read()
             with open("debug_raw_shadowing.raw", "wb") as f:
                 f.write(raw_audio_bytes)
 
-        # ----------------------------------------------------------------
-        # LUỒNG 1: Azure
-        # ----------------------------------------------------------------
+
+
+
         if audio and AZURE_SPEECH_KEY and raw_audio_bytes:
             audio_bytes = _trim_silence(raw_audio_bytes)
             with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp:
@@ -997,21 +997,21 @@ async def evaluate_shadowing(
                 fluency_score   = int(pr.fluency_score)
                 recognized_text = result.text
                 error_word      = _find_error_word(expected_text, recognized_text)
-                used_azure      = True  # Azure đã chấm từ audio — tin cậy nhất
+                used_azure      = True
 
-                # Azure chấm phoneme quality nhưng không phạt khi nói sai từ.
-                # Blend với text-level accuracy để phản ánh được: nói sai từ → điểm thấp.
+
+
                 text_match = _mora_accuracy(expected_text, recognized_text) / 100.0
                 if text_match < 0.85:
                     scale = 0.25 + 0.75 * text_match
                     accuracy_score    = int(accuracy_score * scale)
                     fluency_score     = int(fluency_score  * scale)
-                    # azure_prosody sẽ tính lại sau, lưu raw để scale
+
                     _azure_prosody_raw = int(pr.prosody_score * scale)
                 else:
                     _azure_prosody_raw = int(pr.prosody_score)
 
-                # Tính rhythm và prosody shadowing
+
                 exp_pauses = _count_pauses(expected_text)
                 rec_pauses = _count_pauses(recognized_text)
                 if exp_pauses == 0:
@@ -1022,7 +1022,7 @@ async def evaluate_shadowing(
 
                 prosody_score = min(int(_azure_prosody_raw * 0.7 + rhythm_score * 0.3), 100)
 
-                # Guard câu ngắn
+
                 is_short = len(expected_text.strip()) < 15
                 if is_short:
                     if accuracy_score >= 90:
@@ -1032,27 +1032,27 @@ async def evaluate_shadowing(
             else:
                 raise ValueError("Azure không nhận diện được giọng nói.")
 
-        # ----------------------------------------------------------------
-        # LUỒNG 2: Google STT
-        # ----------------------------------------------------------------
+
+
+
         elif audio and GOOGLE_API_KEY and raw_audio_bytes:
             audio_bytes = raw_audio_bytes
             recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
             accuracy_score, fluency_score, prosody_score, rhythm_score = _compute_shadowing_scores(
                 expected_text, recognized_text
             )
-            
-            # Ghi đè rhythm bằng measured_pauses từ Google Timestamps nếu có
+
+
             exp_pauses = _count_pauses(expected_text)
             if exp_pauses > 0:
                 pause_ratio = 1.0 - abs(exp_pauses - measured_pauses) / max(exp_pauses, 1)
                 rhythm_score = max(int(pause_ratio * 100), 0)
-            
+
             error_word = _find_error_word(expected_text, recognized_text)
 
-        # ----------------------------------------------------------------
-        # LUỒNG 3: MOCK DEMO Shadowing
-        # ----------------------------------------------------------------
+
+
+
         elif audio:
             import random
             accuracy_score  = random.randint(78, 100)
@@ -1065,9 +1065,9 @@ async def evaluate_shadowing(
         else:
             recognized_text = "(Không nhận được audio)"
 
-        # ----------------------------------------------------------------
-        # BƯỚC 1: Đánh giá AI toàn diện (Gemini) → lấy structured errors
-        # ----------------------------------------------------------------
+
+
+
         words_analysis       = []
         mispronounced_words  = []
         error_types          = {"pronunciation": [], "prosody": [], "pitch_accent": [], "rhythm": []}
@@ -1075,10 +1075,10 @@ async def evaluate_shadowing(
         if recognized_text and recognized_text != "(Không nhận được audio)":
             ai_eval = await _ai_full_evaluation(expected_text, recognized_text)
             if ai_eval:
-                # Nếu Azure đã chấm điểm trực tiếp từ audio thì GIỮ điểm Azure.
-                # Gemini chỉ bổ sung words_analysis / mispronounced_words / error_types.
-                # Lý do: Azure phân tích phoneme từ waveform — chính xác hơn so sánh text.
-                # Gemini so sánh text STT vs text gốc nên bị ảnh hưởng bởi lỗi nhận dạng.
+
+
+
+
                 if not used_azure:
                     accuracy_score = ai_eval.get("accuracy", accuracy_score)
                     fluency_score  = ai_eval.get("fluency", fluency_score)
@@ -1091,13 +1091,13 @@ async def evaluate_shadowing(
         if not words_analysis:
             words_analysis = _fallback_word_analysis(expected_text, recognized_text)
 
-        # Cập nhật error_word từ mispronounced_words nếu có
+
         if mispronounced_words and not error_word:
             error_word = mispronounced_words[0]
 
-        # ----------------------------------------------------------------
-        # BƯỚC 2: Sinh tip AI với đầy đủ thông tin lỗi
-        # ----------------------------------------------------------------
+
+
+
         fallback_tip = _build_tip(
             accuracy_score, fluency_score, prosody_score, error_word,
             rhythm_score=rhythm_score, mode="shadowing"
@@ -1113,9 +1113,9 @@ async def evaluate_shadowing(
             mispronounced_words=mispronounced_words,
         )
 
-        # ----------------------------------------------------------------
-        # BƯỚC 2: RecommendationEngine → sinh ActionPlan cá nhân hóa
-        # ----------------------------------------------------------------
+
+
+
         action_plan = _recommendation_engine.analyze(
             accuracy=accuracy_score,
             fluency=fluency_score,

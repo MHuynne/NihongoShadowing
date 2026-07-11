@@ -22,7 +22,7 @@ class MountainProgressWidget extends StatelessWidget {
         totalLessons > 0 ? completedLessons / totalLessons : 0;
     final int pct = (progress * 100).round();
 
-    // Map level to Japanese traditional trail names or milestones
+
     String trailName = 'Gotemba Trail';
     String levelJapanese = '富士山';
     if (levelLabel == 'N5') {
@@ -53,9 +53,9 @@ class MountainProgressWidget extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0F172A), // Midnight Dark
-              Color(0xFF1E1B4B), // Deep Indigo
-              Color(0xFF311042), // Dark Sunset Violet
+              Color(0xFF0F172A),
+              Color(0xFF1E1B4B),
+              Color(0xFF311042),
             ],
             stops: [0.0, 0.5, 1.0],
           ),
@@ -76,7 +76,7 @@ class MountainProgressWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(24),
           child: Stack(
             children: [
-              // Stylized Mt. Fuji Silhouette in the background (Custom Paint)
+
               Positioned(
                 bottom: -20,
                 right: -40,
@@ -93,7 +93,7 @@ class MountainProgressWidget extends StatelessWidget {
                 ),
               ),
 
-              // Decorative Sun glow in background
+
               Positioned(
                 top: -30,
                 right: 30,
@@ -112,18 +112,18 @@ class MountainProgressWidget extends StatelessWidget {
                 ),
               ),
 
-              // Content Layout
+
               Padding(
                 padding: const EdgeInsets.all(22),
                 child: Row(
                   children: [
-                    // Left Text Column
+
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Top Header Badge
+
                           Row(
                             children: [
                               Container(
@@ -162,7 +162,7 @@ class MountainProgressWidget extends StatelessWidget {
                           ),
                           const SizedBox(height: 8),
 
-                          // Goal / Level Title
+
                           Text(
                             '$levelLabel Mastery',
                             style: const TextStyle(
@@ -182,7 +182,7 @@ class MountainProgressWidget extends StatelessWidget {
                           ),
                           const SizedBox(height: 2),
 
-                          // Subtitle (Trail)
+
                           Text(
                             trailName,
                             style: TextStyle(
@@ -195,7 +195,7 @@ class MountainProgressWidget extends StatelessWidget {
                           ),
                           const SizedBox(height: 10),
 
-                          // Station progress pill
+
                           Container(
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
@@ -224,7 +224,7 @@ class MountainProgressWidget extends StatelessWidget {
                       ),
                     ),
 
-                    // Right Progress Circle
+
                     Container(
                       width: 96,
                       height: 96,
@@ -232,7 +232,7 @@ class MountainProgressWidget extends StatelessWidget {
                       child: Stack(
                         alignment: Alignment.center,
                         children: [
-                          // Circular Outer Glow
+
                           Container(
                             width: 82,
                             height: 82,
@@ -249,7 +249,7 @@ class MountainProgressWidget extends StatelessWidget {
                             ),
                           ),
 
-                          // Circular Track Background
+
                           SizedBox(
                             width: 76,
                             height: 76,
@@ -262,7 +262,7 @@ class MountainProgressWidget extends StatelessWidget {
                             ),
                           ),
 
-                          // Value Indicator
+
                           SizedBox(
                             width: 76,
                             height: 76,
@@ -277,7 +277,7 @@ class MountainProgressWidget extends StatelessWidget {
                             ),
                           ),
 
-                          // Text Info
+
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
@@ -343,7 +343,7 @@ class MountainProgressCard extends StatelessWidget {
   }
 }
 
-/// Custom Painter for drawing a clean, minimalist silhouette of Mount Fuji.
+
 class FujiPainter extends CustomPainter {
   final Color mountainColor;
   final Color snowCapColor;
@@ -362,7 +362,7 @@ class FujiPainter extends CustomPainter {
     final w = size.width;
     final h = size.height;
 
-    // Draw Mt Fuji Silhouette
+
     final path = Path();
     path.moveTo(0, h);
     path.cubicTo(w * 0.25, h * 0.95, w * 0.40, h * 0.22, w * 0.45, h * 0.15);
@@ -371,7 +371,7 @@ class FujiPainter extends CustomPainter {
     path.close();
     canvas.drawPath(path, paint);
 
-    // Draw Snow Cap
+
     final capPaint = Paint()
       ..color = snowCapColor
       ..style = PaintingStyle.fill;
@@ -380,9 +380,9 @@ class FujiPainter extends CustomPainter {
     capPath.moveTo(w * 0.45, h * 0.15);
     capPath.lineTo(w * 0.55, h * 0.15);
 
-    // Top right of slope cap
+
     capPath.cubicTo(w * 0.57, h * 0.25, w * 0.54, h * 0.32, w * 0.51, h * 0.38);
-    // Wavy edge of snow cap
+
     capPath.quadraticBezierTo(w * 0.5, h * 0.32, w * 0.49, h * 0.38);
     capPath.cubicTo(w * 0.46, h * 0.32, w * 0.43, h * 0.25, w * 0.45, h * 0.15);
     capPath.close();

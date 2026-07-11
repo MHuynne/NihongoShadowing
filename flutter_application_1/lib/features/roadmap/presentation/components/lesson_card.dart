@@ -14,7 +14,7 @@ class LessonCard extends StatelessWidget {
       decoration: _getBoxDecoration(lesson.status),
       child: Row(
         children: [
-          // Icon Circle
+
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
@@ -28,8 +28,8 @@ class LessonCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 16),
-          
-          // Text Details
+
+
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -62,8 +62,8 @@ class LessonCard extends StatelessWidget {
               ],
             ),
           ),
-          
-          // Trailing Icon
+
+
           _buildTrailingIcon(lesson.status),
         ],
       ),
@@ -98,11 +98,11 @@ class LessonCard extends StatelessWidget {
         ],
       );
     } else {
-      // Locked
+
       return BoxDecoration(
         color: AppColors.slate50.withValues(alpha: 0.5),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.slate200, width: 1, style: BorderStyle.solid), // Ideally dashed
+        border: Border.all(color: AppColors.slate200, width: 1, style: BorderStyle.solid),
       );
     }
   }
@@ -150,7 +150,7 @@ class LessonCard extends StatelessWidget {
         child: const Icon(Icons.play_arrow_rounded, color: AppColors.progressTeal, size: 16),
       );
     } else {
-      // Locked
+
       return const Icon(Icons.lock_rounded, color: AppColors.slate400, size: 20);
     }
   }

@@ -77,7 +77,7 @@ def delete(seg_topic_id: int, db: Session = Depends(get_db)):
     return None
 
 
-# ─── Gán Categories cho SegmentTopic ─────────────────────────────────────────
+
 
 @router.put("/{seg_topic_id}/set-categories")
 def set_categories(
@@ -95,12 +95,12 @@ def set_categories(
     return {"message": "Categories updated", "count": len(cats)}
 
 
-# ─── Gán Segments vào SegmentTopic ───────────────────────────────────────────
+
 
 @router.get("/{seg_topic_id}/segments", response_model=List[SegSchema])
 def get_segments(seg_topic_id: int, db: Session = Depends(get_db)):
     """Lấy tất cả segments thuộc một Segment Topic."""
-    _load(seg_topic_id, db)   # validate exists
+    _load(seg_topic_id, db)
     return (
         db.query(ShadowingSegment)
         .filter(ShadowingSegment.segment_topic_id == seg_topic_id)

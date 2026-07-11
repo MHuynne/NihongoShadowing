@@ -50,7 +50,7 @@ class LeaderboardList extends StatelessWidget {
               separatorBuilder: (context, index) => const Divider(
                 color: AppColors.slate100,
                 height: 1,
-                indent: 64, // roughly align with name text
+                indent: 64,
                 endIndent: 20,
               ),
               itemBuilder: (context, index) {
@@ -59,7 +59,7 @@ class LeaderboardList extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                   child: Row(
                     children: [
-                      // Rank
+
                       SizedBox(
                         width: 24,
                         child: Text(
@@ -74,14 +74,14 @@ class LeaderboardList extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 16),
-                      // Avatar
+
                       CircleAvatar(
                         radius: 20,
                         backgroundImage: NetworkImage(user.avatarUrl),
                         backgroundColor: AppColors.slate200,
                       ),
                       const SizedBox(width: 16),
-                      // Name & XP
+
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -104,7 +104,7 @@ class LeaderboardList extends StatelessWidget {
                           ],
                         ),
                       ),
-                      // Badges
+
                       if (user.rank == 1)
                         const Icon(Icons.workspace_premium, color: AppColors.goldAccent, size: 24),
                     ],
@@ -121,11 +121,11 @@ class LeaderboardList extends StatelessWidget {
   Color _getRankColor(int rank) {
     switch (rank) {
       case 1:
-        return AppColors.goldAccent; // Gold/Yellow
+        return AppColors.goldAccent;
       case 2:
-        return AppColors.slate400; // Silver/Grey
+        return AppColors.slate400;
       case 3:
-        return Colors.brown.shade400; // Bronze
+        return Colors.brown.shade400;
       default:
         return AppColors.slate300;
     }

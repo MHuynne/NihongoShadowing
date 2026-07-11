@@ -32,14 +32,14 @@ from models.shadowing_segment import ShadowingSegment
 from models.vocabulary import Vocabulary
 from models.lesson import Lesson, LevelEnum
 
-# ─────────────────────────────────────────────────────────────────────────────
-# CONFIG
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 RSS_FEEDS = [
-    "https://www3.nhk.or.jp/rss/news/cat0.xml",  # tổng hợp (nhiều nhất)
-    "https://www3.nhk.or.jp/rss/news/cat1.xml",  # xã hội
-    "https://www3.nhk.or.jp/rss/news/cat2.xml",  # khoa học
-    "https://www3.nhk.or.jp/rss/news/cat3.xml",  # thể thao
+    "https://www3.nhk.or.jp/rss/news/cat0.xml",
+    "https://www3.nhk.or.jp/rss/news/cat1.xml",
+    "https://www3.nhk.or.jp/rss/news/cat2.xml",
+    "https://www3.nhk.or.jp/rss/news/cat3.xml",
 ]
 
 HEADERS = {
@@ -52,21 +52,21 @@ HEADERS = {
     "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.5",
 }
 
-AI_SLEEP      = 5    # giây delay giữa các call Gemini
-MAX_SENTENCES = 4    # số câu tối đa mỗi bài (shadowing segments)
+AI_SLEEP      = 5
+MAX_SENTENCES = 4
 GEMINI_MODEL  = "gemini-2.0-flash"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 1: Lấy danh sách bài từ RSS
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def fetch_rss_articles(limit: int) -> list[dict]:
     print(f"\n[1/4] Lấy danh sách bài từ RSS NHK...")
     articles = []
     seen_ids = set()
 
     for rss_url in RSS_FEEDS:
-        if len(articles) >= limit * 4:  # lấy dư để bù skip
+        if len(articles) >= limit * 4:
             break
         try:
             r = httpx.get(rss_url, headers=HEADERS, follow_redirects=True, timeout=12)
@@ -78,7 +78,7 @@ def fetch_rss_articles(limit: int) -> list[dict]:
                 link  = item.findtext("link", "")
                 title = item.findtext("title", "NHK News")
 
-                # Trích news_id: .../html/YYYYMMDD/kXXXXXXXXXXXXXX000.html
+
                 m = re.search(r"/(k\d{14})(?:000)?\.html", link)
                 if not m:
                     continue
@@ -102,9 +102,9 @@ def fetch_rss_articles(limit: int) -> list[dict]:
     return articles
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 2: Cào nội dung 1 bài NHK Web Easy
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def scrape_article(easy_url: str, fallback_url: str = "") -> dict:
     """Trả về {"sentences": [...], "image_url": "..."}"""
     for url in filter(None, [easy_url, fallback_url]):
@@ -115,17 +115,17 @@ def scrape_article(easy_url: str, fallback_url: str = "") -> dict:
 
             soup = BeautifulSoup(r.text, "html.parser")
 
-            # Lấy ảnh OG
+
             image_url = ""
             og = soup.find("meta", property="og:image")
             if og:
                 image_url = og.get("content", "")
 
-            # Xóa ruby (rt/rp) để giữ kanji gốc
+
             for tag in soup.find_all(["rt", "rp"]):
                 tag.decompose()
 
-            # Tìm vùng nội dung chính
+
             body = None
             for sel in [
                 {"class": re.compile(r"article-main__body|article__body|content--detail-main|p-article-body")},
@@ -143,7 +143,7 @@ def scrape_article(easy_url: str, fallback_url: str = "") -> dict:
             if body:
                 raw_text = body.get_text(separator="", strip=True)
             else:
-                # Fallback: gom các đoạn có tiếng Nhật
+
                 paras = [
                     p.get_text(strip=True)
                     for p in soup.find_all("p")
@@ -154,7 +154,7 @@ def scrape_article(easy_url: str, fallback_url: str = "") -> dict:
                     continue
                 raw_text = "。".join(paras)
 
-            # Tách câu theo dấu câu Nhật
+
             parts = re.split(r"(?<=[。！？])", raw_text)
             sentences = [
                 p.strip() for p in parts
@@ -171,9 +171,9 @@ def scrape_article(easy_url: str, fallback_url: str = "") -> dict:
     return {"sentences": [], "image_url": ""}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 3: Gemini phân tích ngôn ngữ
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def analyze_with_gemini(sentences: list[str], level: str) -> dict | None:
     joined = "\n".join(f"{i+1}. {s}" for i, s in enumerate(sentences))
     prompt = f"""Bạn là giáo viên dạy tiếng Nhật chuyên nghiệp. Hãy phân tích đoạn tin tức NHK dưới đây dành cho học viên trình độ JLPT {level}.
@@ -202,7 +202,7 @@ Trả về JSON THUẦN (không có markdown, không có ```json):
             resp  = _client.models.generate_content(model=GEMINI_MODEL, contents=prompt)
             raw   = resp.text.strip()
 
-            # Làm sạch markdown
+
             raw = re.sub(r"^```(?:json)?\s*", "", raw, flags=re.MULTILINE)
             raw = re.sub(r"\s*```$", "", raw, flags=re.MULTILINE)
             raw = raw.strip()
@@ -221,9 +221,9 @@ Trả về JSON THUẦN (không có markdown, không có ```json):
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 4: Lưu vào DB
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def save_to_db(
     db,
     title: str,
@@ -237,7 +237,7 @@ def save_to_db(
     Tạo: 1 Lesson + 1 ShadowingTopic + N ShadowingSegment + M Vocabulary
     Trả về (lesson, topic)
     """
-    # ── Tạo Lesson riêng cho mỗi bài ──────────────────────────────────────
+
     lesson = Lesson(
         level=level_enum,
         chapter_name=title[:120],
@@ -247,7 +247,7 @@ def save_to_db(
     db.commit()
     db.refresh(lesson)
 
-    # ── Tạo ShadowingTopic ─────────────────────────────────────────────────
+
     full_script = "。".join(sentences) + ("。" if not sentences[-1].endswith("。") else "")
     topic = ShadowingTopic(
         title=title[:200],
@@ -262,7 +262,7 @@ def save_to_db(
     db.commit()
     db.refresh(topic)
 
-    # ── Tạo ShadowingSegment ───────────────────────────────────────────────
+
     segments_data = (ai_result or {}).get("segments", [])
     for idx, sent in enumerate(sentences, 1):
         seg = segments_data[idx - 1] if idx - 1 < len(segments_data) else {}
@@ -278,7 +278,7 @@ def save_to_db(
             translation_vi=seg.get("vi", "(chưa dịch)"),
         ))
 
-    # ── Tạo Vocabulary (kèm cả lesson_id và topic_id) ─────────────────────
+
     vocabs_data = (ai_result or {}).get("vocabularies", [])
     for v in vocabs_data:
         word    = v.get("word", "").strip()
@@ -286,8 +286,8 @@ def save_to_db(
         if not word or not meaning:
             continue
         db.add(Vocabulary(
-            lesson_id=lesson.id,          # ← Hiển thị trong Flashcard
-            topic_id=topic.id,            # ← Liên kết với shadowing
+            lesson_id=lesson.id,
+            topic_id=topic.id,
             word=word,
             reading=v.get("reading", ""),
             meaning=meaning,
@@ -300,13 +300,13 @@ def save_to_db(
     return lesson, topic
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def run(limit: int, levels: list[str]):
     db = SessionLocal()
 
-    # Đếm lesson hiện có để tính order_index liên tục
+
     existing_count = db.query(Lesson).count()
 
     try:
@@ -328,7 +328,7 @@ def run(limit: int, levels: list[str]):
 
                 print(f"\n  Bài {saved+1}/{limit}: {art['title'][:65]}")
 
-                # Kiểm tra trùng tiêu đề
+
                 dup = db.query(ShadowingTopic).filter(
                     ShadowingTopic.title.like(f"%{art['news_id']}%")
                 ).first()
@@ -337,7 +337,7 @@ def run(limit: int, levels: list[str]):
                     skipped += 1
                     continue
 
-                # Cào nội dung
+
                 result    = scrape_article(art["easy_url"], art["rss_url"])
                 sentences = result["sentences"]
                 image_url = result["image_url"]

@@ -8,8 +8,8 @@ class VocabularyBase(BaseModel):
     example: Optional[str] = None
 
 class VocabularyCreate(VocabularyBase):
-    lesson_id: Optional[int] = None  # thuộc lesson (cấp chương)
-    topic_id:  Optional[int] = None  # thuộc topic  (cấp tình huống)
+    lesson_id: Optional[int] = None
+    topic_id:  Optional[int] = None
 
 class Vocabulary(VocabularyBase):
     id:        int

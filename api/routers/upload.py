@@ -18,14 +18,14 @@ async def upload_file(file: UploadFile = File(...)):
         ext = os.path.splitext(file.filename)[1].lower()
         if ext not in ALLOWED_EXTENSIONS:
             raise HTTPException(status_code=400, detail=f"Dinh dang '{ext}' khong duoc ho tro.")
-        
+
         unique_filename = f"{uuid.uuid4().hex}{ext}"
         file_path = os.path.join(UPLOAD_DIR, unique_filename)
-        
+
         contents = await file.read()
         with open(file_path, "wb") as buffer:
             buffer.write(contents)
-            
+
         file_url = f"/static/uploads/{unique_filename}"
         return {"url": file_url, "filename": file.filename}
     except HTTPException:

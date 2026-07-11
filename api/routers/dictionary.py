@@ -19,17 +19,17 @@ JISHO_BASE  = "https://jisho.org/api/v1/search/words"
 KANJI_BASE  = "https://kanjiapi.dev/v1/kanji"
 GTRANS_URL  = "https://translate.googleapis.com/translate_a/single"
 
-# Client-level limits để tránh quá tải
-MAX_ENTRIES      = 8   # số entry trả về tối đa
-MAX_SENSES       = 4   # số nghĩa mỗi entry
+
+MAX_ENTRIES      = 8
+MAX_SENSES       = 4
 TRANSLATE_TIMEOUT = 6.0
 JISHO_TIMEOUT    = 12.0
 KANJI_TIMEOUT    = 10.0
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Map từ loại → tiếng Việt
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 _POS_MAP: dict[str, str] = {
     "Noun":                                "Danh từ",
     "Suru verb":                           "Động từ する",
@@ -61,9 +61,9 @@ def _pos_vi(pos_en: str) -> str:
     return _POS_MAP.get(pos_en, pos_en)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Google Translate — dùng client được truyền vào, KHÔNG tạo mới
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 async def _translate_batch(client: httpx.AsyncClient, texts: list[str]) -> list[str]:
     """
     Dịch một list string sang tiếng Việt bằng cách gộp thành 1 request duy nhất.
@@ -96,19 +96,19 @@ async def _translate_batch(client: httpx.AsyncClient, texts: list[str]) -> list[
             raw_vi      = "".join(part[0] for part in data[0] if part[0])
             parts       = raw_vi.split("||")
             result      = [p.strip() for p in parts]
-            # Đảm bảo số phần tử khớp
+
             while len(result) < len(texts):
                 result.append(texts[len(result)])
             return result[: len(texts)]
     except Exception:
         pass
 
-    return texts  # fallback: giữ nguyên tiếng Anh
+    return texts
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Parse Jisho + dịch — TUẦN TỰ, 1 client duy nhất
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 async def _parse_and_translate(raw: dict, client: httpx.AsyncClient) -> list[dict]:
     """
     Xử lý từng entry Jisho tuần tự với 1 client chung.
@@ -126,9 +126,9 @@ async def _parse_and_translate(raw: dict, client: httpx.AsyncClient) -> list[dic
 
         senses_raw = item.get("senses", [])[:MAX_SENSES]
 
-        # ── Gộp TẤT CẢ definitions của entry thành 1 batch dịch ──────────
+
         all_en_defs: list[str] = []
-        sense_en_ranges: list[tuple[int, int]] = []  # (start_idx, end_idx)
+        sense_en_ranges: list[tuple[int, int]] = []
 
         for sense in senses_raw:
             en_defs = sense.get("english_definitions", [])
@@ -136,10 +136,10 @@ async def _parse_and_translate(raw: dict, client: httpx.AsyncClient) -> list[dic
             all_en_defs.extend(en_defs)
             sense_en_ranges.append((start, len(all_en_defs)))
 
-        # Dịch toàn bộ 1 lần
+
         all_vi_defs = await _translate_batch(client, all_en_defs)
 
-        # ── Build senses output ───────────────────────────────────────────
+
         senses_out = []
         for i, sense in enumerate(senses_raw):
             pos_en  = sense.get("parts_of_speech", [])
@@ -171,9 +171,9 @@ async def _parse_and_translate(raw: dict, client: httpx.AsyncClient) -> list[dic
     return results
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Routes
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @router.get("/search")
 async def search_word(
@@ -185,7 +185,7 @@ async def search_word(
     Hỗ trợ: Kanji, Hiragana, Katakana, Romaji, tiếng Anh.
     Nghĩa tự động dịch sang tiếng Việt.
     """
-    # Dùng 1 client chung cho cả Jisho lẫn Google Translate
+
     async with httpx.AsyncClient(timeout=JISHO_TIMEOUT) as client:
         try:
             resp = await client.get(

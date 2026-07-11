@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 
 class LessonModel {
-  final String id;       // display ID (chuỗi dùng cho UI)
-  final int lessonId;    // ID thật trong bảng lessons
-  final int topicId;     // ID của shadowing_topic tương ứng
+  final String id;
+  final int lessonId;
+  final int topicId;
   final String title;
   final String subtitle;
   final IconData icon;
   final LessonStatus status;
-  final double? progress; // 0.0 – 1.0
-  // Trạng thái chi tiết để điều hướng đúng bước
+  final double? progress;
+
   final bool flashcardDone;
   final bool testPassed;
 
@@ -36,7 +36,7 @@ enum LessonStatus {
 class ChapterModel {
   final String id;
   final String title;
-  final String? statusBadge; // e.g. "80% Hoàn thành" or "Khóa"
+  final String? statusBadge;
   final bool isLocked;
   final List<LessonModel> lessons;
 

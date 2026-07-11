@@ -4,16 +4,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter/foundation.dart';
 
-/// Service gọi API /progress — lưu tiến độ học của user theo từng lesson.
+
 class ProgressService {
   static String get _base => ApiConfig.baseUrl;
 
-  // ── Lấy Firebase UID hiện tại ─────────────────────────────────────────
+
   static Future<String> _getUid() async {
     return FirebaseAuth.instance.currentUser?.uid ?? 'mock_user_id';
   }
 
-  // ── Headers chung (kèm X-Firebase-UID) ───────────────────────────────
+
   static Future<Map<String, String>> _headers() async {
     final uid = await _getUid();
     return {
@@ -22,7 +22,7 @@ class ProgressService {
     };
   }
 
-  // ── Lấy tiến độ của 1 lesson ─────────────────────────────────────────
+
   static Future<Map<String, dynamic>?> getProgress(int lessonId) async {
     try {
       final res = await http.get(
@@ -38,7 +38,7 @@ class ProgressService {
     return null;
   }
 
-  /// Lấy tiến độ của TẤT CẢ lesson (dùng cho Roadmap Screen).
+
   static Future<List<Map<String, dynamic>>> getAllProgress() async {
     try {
       final res = await http.get(
@@ -55,13 +55,13 @@ class ProgressService {
     return [];
   }
 
-  // ── Cập nhật sau khi xem xong Flashcard ──────────────────────────────
+
   static Future<void> markFlashcardDone(int lessonId) async {
     await _patch(lessonId, {'flashcard_done': true});
   }
 
-  // ── Cập nhật sau khi hoàn thành Vocabulary Test ───────────────────────
-  /// [score] là điểm phần trăm (0–100).
+
+
   static Future<void> saveTestResult(int lessonId, double score) async {
     final passed = score >= 70.0;
     await _patch(lessonId, {
@@ -70,8 +70,8 @@ class ProgressService {
     });
   }
 
-  // ── Cập nhật sau khi hoàn thành Shadowing ────────────────────────────
-  /// [score] là điểm phần trăm (0–100).
+
+
   static Future<void> saveShadowingResult(int lessonId, double score) async {
     final passed = score >= 80.0;
     await _patch(lessonId, {
@@ -80,13 +80,13 @@ class ProgressService {
     });
   }
 
-  // ── Đánh dấu hoàn thành lesson (mở khoá bài kế tiếp) ─────────────────
-  /// Gọi sau khi user hoàn thành bước Shadowing — dù điểm cao hay thấp.
+
+
   static Future<void> markLessonCompleted(int lessonId) async {
     await _patch(lessonId, {'lesson_completed': true});
   }
 
-  // ── Gửi PATCH request ─────────────────────────────────────────────────
+
   static Future<void> _patch(int lessonId, Map<String, dynamic> body) async {
     try {
       final res = await http.patch(

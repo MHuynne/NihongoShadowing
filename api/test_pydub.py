@@ -2,7 +2,7 @@ from pydub import AudioSegment
 import io
 import urllib.request
 
-# Download a sample opus file
+
 url = 'https://upload.wikimedia.org/wikipedia/commons/b/b8/Record_opus.ogg'
 req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
 audio_bytes = urllib.request.urlopen(req).read()

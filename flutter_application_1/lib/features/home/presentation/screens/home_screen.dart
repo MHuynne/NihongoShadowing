@@ -26,7 +26,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int _totalLessons = 25;
   String _levelLabel = 'N5';
 
-  // Roadmap specific progress
+
   int _flashcardDone = 0;
   int _shadowingDone = 0;
 
@@ -36,15 +36,15 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    // Chờ Firebase Auth xác nhận trạng thái đăng nhập trước rồi mới load
+
     _authSub = FirebaseAuth.instance.authStateChanges().listen((user) {
       if (user != null) {
-        // Đã đăng nhập → tải dữ liệu (chỉ 1 lần)
+
         _authSub?.cancel();
         _authSub = null;
         _loadProgress();
       } else {
-        // Chưa đăng nhập
+
         if (mounted) setState(() => _loadingProgress = false);
       }
     });
@@ -73,7 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
       final all = await ProgressService.getAllProgress();
       final totalCompletedGlobal = all.where((p) => p['lesson_completed'] == true).length;
 
-      // Ưu tiên dùng level do người dùng tự chọn (lưu trong SharedPreferences)
+
       String level = 'N5';
       final uid = FirebaseAuth.instance.currentUser?.uid;
       if (uid != null) {
@@ -81,18 +81,18 @@ class _HomeScreenState extends State<HomeScreen> {
         if (savedLevel != null && savedLevel.isNotEmpty) {
           level = savedLevel;
         } else {
-          // Fallback: tính theo số bài đã hoàn thành
+
           if (totalCompletedGlobal >= 25) level = 'N4';
           if (totalCompletedGlobal >= 50) level = 'N3';
           if (totalCompletedGlobal >= 75) level = 'N2';
         }
       }
 
-      // Lọc các bài học thuộc level hiện tại
+
       final levelLessons = allLessons.where((l) => l['level'] == level).toList();
       final levelTotal = levelLessons.isNotEmpty ? levelLessons.length : 12;
 
-      // Đếm số bài đã hoàn thành trong level này
+
       final levelLessonIds = levelLessons.map((l) => l['id'] as int).toSet();
       final levelCompleted = all.where((p) {
         final lid = p['lesson_id'] as int;
@@ -153,7 +153,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE), // Light background like image
+      backgroundColor: const Color(0xFFF8F9FE),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -169,7 +169,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     children: [
                       const SizedBox(height: 16),
-                      // Mountain Progress
+
                       _loadingProgress
                           ? const SizedBox(
                               height: 180,
@@ -263,7 +263,7 @@ class _HomeScreenState extends State<HomeScreen> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  _completedLessons > 0 
+                  _completedLessons > 0
                     ? '"Bạn đã hoàn thành ${_completedLessons} bài học. Tiếp tục phát huy nhé!"'
                     : '"Hãy bắt đầu bài học đầu tiên để chinh phục đỉnh núi!"',
                   style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic, color: Colors.black54),
@@ -372,5 +372,4 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
-
 

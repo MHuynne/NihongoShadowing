@@ -3,10 +3,10 @@ import 'package:flutter_application_1/core/theme/app_colors.dart';
 
 class ShadowingControls extends StatelessWidget {
   final bool isRecording;
-  final bool isPlayingSample;   // THÊM: đang phát audio mẫu hay không
+  final bool isPlayingSample;
   final VoidCallback onRecordPressed;
   final VoidCallback onPlaySample;
-  final VoidCallback onSpeedToggle;  // THÊM: thay đổi tốc độ
+  final VoidCallback onSpeedToggle;
   final double currentSpeed;
 
   const ShadowingControls({
@@ -28,13 +28,13 @@ class ShadowingControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          // ── Play Sample Button ──────────────────────────────────────
+
           _SampleButton(
             isPlaying: isPlayingSample,
             onPressed: onPlaySample,
           ),
 
-          // ── Main Record Button ──────────────────────────────────────
+
           GestureDetector(
             onTap: onRecordPressed,
             child: AnimatedContainer(
@@ -66,7 +66,7 @@ class ShadowingControls extends StatelessWidget {
             ),
           ),
 
-          // ── Speed Toggle Button ────────────────────────────────────
+
           _buildSideButton(
             icon: Icons.speed_rounded,
             label: '×${currentSpeed == 1.0 ? "1.0" : currentSpeed.toString()}',
@@ -112,7 +112,7 @@ class ShadowingControls extends StatelessWidget {
   }
 }
 
-// ── Sample Button với animation loading ──────────────────────────────────────
+
 class _SampleButton extends StatelessWidget {
   final bool isPlaying;
   final VoidCallback onPressed;

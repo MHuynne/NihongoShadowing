@@ -3,7 +3,7 @@ from sqlalchemy import Column, Integer, String, Text, Table, ForeignKey, Enum
 from sqlalchemy.orm import relationship
 from database import Base
 
-# Bảng join nhiều-nhiều: SegmentTopic <-> Category
+
 segment_topic_category_table = Table(
     "segment_topic_categories",
     Base.metadata,
@@ -37,16 +37,16 @@ class SegmentTopic(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     image_url = Column(Text, nullable=True)
-    level = Column(Enum(LevelEnum), nullable=True)  # e.g. N5, N4, N3, N2, N1
+    level = Column(Enum(LevelEnum), nullable=True)
 
-    # Quan hệ nhiều-nhiều với Category
+
     categories = relationship(
         "Category",
         secondary=segment_topic_category_table,
         back_populates="segment_topics",
     )
 
-    # Quan hệ 1-nhiều với ShadowingSegment
+
     segments = relationship(
         "ShadowingSegment",
         back_populates="segment_topic",

@@ -3,9 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 
-/// Màn hình chọn cấp độ JLPT — hiện ra ngay sau lần đăng nhập đầu tiên.
+
 class LevelSelectionScreen extends StatefulWidget {
-  /// Nếu [isChanging] = true, hiển thị nút Back để quay lại (chỉnh sửa từ Profile).
+
   final bool isChanging;
 
   const LevelSelectionScreen({super.key, this.isChanging = false});
@@ -24,7 +24,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
 
   static const _toriiRed = Color(0xFFBC2428);
 
-  // Thông tin các cấp độ
+
   static const _levels = [
     _LevelInfo(
       code: 'N5',
@@ -80,7 +80,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
 
-    // Nếu đang thay đổi, load level hiện tại để pre-select
+
     if (widget.isChanging) _loadCurrentLevel();
   }
 
@@ -108,10 +108,10 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     if (!mounted) return;
 
     if (widget.isChanging) {
-      // Quay lại màn hình trước (Profile)
+
       Navigator.of(context).pop(_selectedLevel);
     } else {
-      // Lần đầu chọn → vào MainScreen, xoá hết stack
+
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainScreen()),
         (route) => false,
@@ -152,7 +152,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     );
   }
 
-  // ── Header ─────────────────────────────────────────────────────────────────
+
 
   Widget _buildHeader() {
     return Container(
@@ -231,7 +231,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     );
   }
 
-  // ── Confirm button ──────────────────────────────────────────────────────────
+
 
   Widget _buildConfirmButton() {
     final isEnabled = _selectedLevel != null && !_isSaving;
@@ -279,7 +279,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
   }
 }
 
-// ── Level Card ──────────────────────────────────────────────────────────────────
+
 
 class _LevelCard extends StatelessWidget {
   final _LevelInfo info;
@@ -331,7 +331,7 @@ class _LevelCard extends StatelessWidget {
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Emoji badge ──────────────────────────────────────────────
+
               Container(
                 width: 56,
                 height: 56,
@@ -352,14 +352,14 @@ class _LevelCard extends StatelessWidget {
               ),
               const SizedBox(width: 16),
 
-              // ── Content ──────────────────────────────────────────────────
+
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-                        // Level badge
+
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
@@ -387,7 +387,7 @@ class _LevelCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        // Check icon
+
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 200),
                           child: isSelected
@@ -422,7 +422,7 @@ class _LevelCard extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    // Keywords chips
+
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -464,7 +464,7 @@ class _LevelCard extends StatelessWidget {
   }
 }
 
-// ── Data class ──────────────────────────────────────────────────────────────────
+
 
 class _LevelInfo {
   final String code;

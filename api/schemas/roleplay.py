@@ -11,7 +11,7 @@ class GrammarCorrectionSchema(BaseModel):
     error: str
     correction: str
     explanation: str
-    
+
 class RoleplayScenarioBase(BaseModel):
     title: str
     description: Optional[str] = None
@@ -19,7 +19,7 @@ class RoleplayScenarioBase(BaseModel):
 
 class RoleplayScenarioResp(RoleplayScenarioBase):
     id: int
-    
+
     class Config:
         from_attributes = True
 
@@ -37,7 +37,7 @@ class SessionResp(BaseModel):
     user_id: int
     mode: RoleplayMode
     created_at: datetime
-    
+
     class Config:
         from_attributes = True
 

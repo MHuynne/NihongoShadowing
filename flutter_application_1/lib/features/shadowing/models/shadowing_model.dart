@@ -5,8 +5,8 @@
   final String romaji;
   final String hanViet;
   final String meaning;
-  final double startTime; // start_time của segment (giây)
-  final double endTime;   // end_time của segment (giây)
+  final double startTime;
+  final double endTime;
 
   ShadowingSentenceModel({
     this.title = '',
@@ -34,7 +34,7 @@ class WordAnalysisModel {
   }
 }
 
-// ─── Error Type ─────────────────────────────────────────────────────────────
+
 class ErrorTypes {
   final List<String> pronunciation;
   final List<String> prosody;
@@ -65,7 +65,7 @@ class ErrorTypes {
       rhythm.isNotEmpty;
 }
 
-// ─── Action Plan từ RecommendationEngine ─────────────────────────────────────
+
 enum ActionType {
   showHanVietMode,
   openVocabulary,
@@ -79,7 +79,7 @@ class ActionPlan {
   final String message;
   final ActionType action;
   final String? targetWord;
-  final int severity; // 0=OK, 1=nhẹ, 2=trung bình, 3=nghiêm trọng
+  final int severity;
 
   const ActionPlan({
     required this.message,
@@ -117,7 +117,7 @@ class ActionPlan {
   }
 }
 
-// ─── Feedback Model tổng hợp ─────────────────────────────────────────────────
+
 class ShadowingFeedbackModel {
   final int accuracy;
   final int fluency;

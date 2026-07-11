@@ -5,7 +5,7 @@ import 'package:flutter_application_1/core/network/app_http_client.dart' as http
 class RoleplayService {
   static String get baseUrl => '${ApiConfig.baseUrl}/roleplay';
 
-  // 1. Tao hoac lay Scenario
+
   Future<int> getOrCreateScenario(String title, String description) async {
     final response = await http.post(
       Uri.parse('$baseUrl/scenarios'),
@@ -23,7 +23,7 @@ class RoleplayService {
     }
   }
 
-  // 2. Khoi tao Session
+
   Future<int> createSession(int scenarioId, String mode) async {
     final response = await http.post(
       Uri.parse('$baseUrl/session'),
@@ -42,7 +42,7 @@ class RoleplayService {
     }
   }
 
-  // 3. Chat voi AI
+
   Future<Map<String, dynamic>> chatWithAI(int sessionId, String message) async {
     final response = await http.post(
       Uri.parse('$baseUrl/chat'),

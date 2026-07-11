@@ -23,7 +23,7 @@ def _get_uid(x_firebase_uid: Optional[str] = Header(None)) -> str:
     return x_firebase_uid
 
 
-# ── GET /progress/ — Toàn bộ tiến độ của user ─────────────────────────────────
+
 @router.get("/", response_model=List[schemas.UserProgress])
 def get_all_progress(
     uid: str = Depends(_get_uid),
@@ -33,7 +33,7 @@ def get_all_progress(
     return crud.get_all_progress(db, user_firebase_id=uid)
 
 
-# ── GET /progress/summary — Tổng hợp kết quả học tập cho Profile ──────────────
+
 @router.get("/summary")
 def get_progress_summary(
     uid: str = Depends(_get_uid),
@@ -47,14 +47,14 @@ def get_progress_summary(
     """
     progress_list = crud.get_all_progress(db, user_firebase_id=uid)
 
-    # Lấy danh sách lesson_id có tiến độ
+
     lesson_ids = [p.lesson_id for p in progress_list]
 
-    # Join với bảng lessons để lấy tên bài
+
     lessons = db.query(Lesson).filter(Lesson.id.in_(lesson_ids)).all()
     lesson_map = {l.id: l for l in lessons}
 
-    # Tính toán thống kê tổng hợp
+
     total_completed = sum(1 for p in progress_list if p.lesson_completed)
     total_flashcard_done = sum(1 for p in progress_list if p.flashcard_done)
 
@@ -64,7 +64,7 @@ def get_progress_summary(
     avg_test_score = round(sum(test_scores) / len(test_scores), 1) if test_scores else 0.0
     avg_shadowing_score = round(sum(shadowing_scores) / len(shadowing_scores), 1) if shadowing_scores else 0.0
 
-    # Tính XP: Test (max 85 XP) + Shadowing (max 85 XP) + flashcard (15 XP)
+
     total_xp = 0
     for p in progress_list:
         if p.flashcard_done:
@@ -74,7 +74,7 @@ def get_progress_summary(
         if p.shadowing_score is not None:
             total_xp += int((p.shadowing_score / 100) * 85)
 
-    # Xây dựng danh sách chi tiết từng bài
+
     lesson_details = []
     for p in sorted(progress_list, key=lambda x: x.lesson_id):
         lesson = lesson_map.get(p.lesson_id)
@@ -103,7 +103,7 @@ def get_progress_summary(
     }
 
 
-# ── GET /progress/{lesson_id} — Tiến độ của 1 lesson ─────────────────────────
+
 @router.get("/{lesson_id}", response_model=schemas.UserProgress)
 def get_lesson_progress(
     lesson_id: int,
@@ -113,7 +113,7 @@ def get_lesson_progress(
     """Lấy tiến độ của user cho 1 lesson cụ thể."""
     record = crud.get_progress(db, user_firebase_id=uid, lesson_id=lesson_id)
     if record is None:
-        # Trả về trạng thái mặc định (chưa bắt đầu) thay vì 404
+
         return schemas.UserProgress(
             id=0,
             user_firebase_id=uid,
@@ -128,7 +128,7 @@ def get_lesson_progress(
     return record
 
 
-# ── PATCH /progress/{lesson_id} — Cập nhật tiến độ ───────────────────────────
+
 @router.patch("/{lesson_id}", response_model=schemas.UserProgress)
 def update_progress(
     lesson_id: int,
@@ -153,7 +153,7 @@ def update_progress(
     )
 
 
-# ── DELETE /progress/{lesson_id} — Reset tiến độ 1 lesson ────────────────────
+
 @router.delete("/{lesson_id}", status_code=204)
 def reset_progress(
     lesson_id: int,

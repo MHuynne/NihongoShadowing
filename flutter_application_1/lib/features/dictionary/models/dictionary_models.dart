@@ -1,4 +1,4 @@
-﻿// ── Dictionary Models — Từ điển Nhật - Việt ─────────────────────────────────
+﻿
 
 class DictionaryEntry {
   final String word;
@@ -33,10 +33,10 @@ class DictionaryEntry {
     );
   }
 
-  /// Ưu tiên hiển thị kanji, nếu không có thì dùng reading
+
   String get displayWord => word.isNotEmpty ? word : reading;
 
-  /// JLPT label: "jlpt-n3" → "N3"
+
   String get jlptLabel {
     if (jlpt.isEmpty) return '';
     return jlpt.first.replaceAll('jlpt-', '').toUpperCase();
@@ -44,16 +44,16 @@ class DictionaryEntry {
 }
 
 class DictionarySense {
-  /// Từ loại tiếng Việt (Danh từ, Động từ nhóm 2, ...)
+
   final List<String> partsOfSpeechVi;
 
-  /// Từ loại tiếng Anh (gốc từ Jisho)
+
   final List<String> partsOfSpeechEn;
 
-  /// Nghĩa tiếng Việt (đã dịch qua Google Translate)
+
   final List<String> viDefinitions;
 
-  /// Nghĩa tiếng Anh gốc
+
   final List<String> englishDefinitions;
 
   final List<String> tags;
@@ -89,11 +89,11 @@ class DictionarySense {
     );
   }
 
-  /// Trả về nghĩa hiển thị: ưu tiên tiếng Việt, fallback tiếng Anh
+
   List<String> get displayDefinitions =>
       viDefinitions.isNotEmpty ? viDefinitions : englishDefinitions;
 
-  /// Từ loại hiển thị: ưu tiên tiếng Việt
+
   List<String> get displayPos =>
       partsOfSpeechVi.isNotEmpty ? partsOfSpeechVi : partsOfSpeechEn;
 }

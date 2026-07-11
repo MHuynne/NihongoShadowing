@@ -24,7 +24,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final result = await _authService.signInWithGoogle();
       if (result != null && mounted) {
-        // Đăng nhập thành công, đóng màn hình Login để AuthGate xử lý (hiển thị MainScreen)
+
         Navigator.of(context).popUntil((route) => route.isFirst);
       } else if (mounted) {
         setState(() => _isLoading = false);
@@ -48,7 +48,7 @@ class _LoginScreenState extends State<LoginScreen> {
       backgroundColor: const Color(0xFFF6F6F6),
       body: Stack(
         children: [
-          // ── Background Image (Fuji & Sakura) ───────────────────────────
+
           Positioned(
             top: 0,
             left: 0,
@@ -57,7 +57,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Image.asset('assets/images/fuji_bg.png', fit: BoxFit.cover),
           ),
 
-          // ── Top Bar (IRASSHAI + Close Icon) ────────────────────────────
+
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -78,7 +78,7 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
           ),
 
-          // ── Bottom Sheet (White rounded container) ─────────────────────
+
           Align(
             alignment: Alignment.bottomCenter,
             child: Container(
@@ -95,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Title
+
                   const Text(
                     'Master Japanese',
                     style: TextStyle(
@@ -107,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   const SizedBox(height: 12),
 
-                  // Subtitle
+
                   const Text(
                     'Begin your journey to fluency with\nthe modern Sensei.',
                     style: TextStyle(
@@ -119,7 +119,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const SizedBox(height: 40),
 
-                  // Lỗi (nếu có)
+
                   if (_errorMessage != null) ...[
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -154,7 +154,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                   ],
 
-                  // ── Google Sign In Button ──────────────────────────────
+
                   SizedBox(
                     width: double.infinity,
                     height: 56,
@@ -193,7 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
                   const Spacer(),
 
-                  // ── Create Account Link ────────────────────────────────
+
                   Center(
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -217,7 +217,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           child: const Text(
                             'Create Account',
                             style: TextStyle(
-                              color: Color(0xFFBC2428), // Torii Red
+                              color: Color(0xFFBC2428),
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
                             ),

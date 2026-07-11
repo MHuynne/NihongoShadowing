@@ -12,7 +12,7 @@ class ChatBubble extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final timeString = DateFormat('h:mm a').format(message.timestamp);
-    
+
     if (message.isUser) {
       return Padding(
         padding: const EdgeInsets.only(bottom: 16.0, right: 16.0, left: 64.0),
@@ -56,7 +56,7 @@ class ChatBubble extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Bot Avatar
+
             Container(
               width: 32,
               height: 32,
@@ -90,7 +90,7 @@ class ChatBubble extends StatelessWidget {
                           FuriganaText(words: message.furiganaText!, textColor: AppColors.textDark)
                         else if (message.plainText != null)
                           Text(message.plainText!, style: const TextStyle(fontSize: 16, color: AppColors.textDark, height: 1.5)),
-                        
+
                         if (message.translation != null) ...[
                           const SizedBox(height: 12),
                           const Divider(height: 1, color: AppColors.slate300),

@@ -21,10 +21,10 @@ from models.shadowing_topic import ShadowingTopic
 from models.shadowing_segment import ShadowingSegment
 from models.vocabulary import Vocabulary
 
-# Kho tàng 25 bài N5 siêu xịn chuẩn chỉnh (Mỗi bài có 2 câu đơn giản)
+
 N5_DATABASE = [
     {
-        "title": "Chào hỏi mỗi sáng", 
+        "title": "Chào hỏi mỗi sáng",
         "sentences": [
             {"kanji": "おはようございます。", "furigana": "おはようございます。", "romaji": "Ohayou gozaimasu.", "vi": "Chào buổi sáng."},
             {"kanji": "今日もいい天気ですね。", "furigana": "<ruby>今日<rt>きょう</rt></ruby>もいい<ruby>天気<rt>てんき</rt></ruby>ですね。", "romaji": "Kyou mo ii tenki desu ne.", "vi": "Hôm nay thời tiết đẹp nhỉ."}
@@ -60,7 +60,7 @@ N5_DATABASE = [
     }
 ]
 
-# Tương tự cho N4
+
 N4_DATABASE = [
     {
         "title": "Dọn nhà đi làm",
@@ -92,7 +92,7 @@ Trả về DUY NHẤT một mảng JSON (không bọc trong markdown) theo đị
 ]
 """
     try:
-        time.sleep(3) # Cân đối để tránh nghẽn API quota cho phiên bản miễn phí
+        time.sleep(3)
         response = _client.models.generate_content(model='gemini-2.5-flash', contents=prompt)
         raw_text = response.text.strip()
         if raw_text.startswith("```json"): raw_text = raw_text[7:]
@@ -160,9 +160,9 @@ def scrape_article_body(url):
 def scrape_nhk_news():
     print("Bắt đầu sinh dữ liệu siêu chuẩn xác cho App Shadowing bằng Gemini AI...")
     db = SessionLocal()
-    
+
     try:
-        # Xóa SẠCH toàn bộ data cũ
+
         print("Đang dọn dẹp sạch Database cũ...")
         db.query(ShadowingSegment).delete()
         db.query(Vocabulary).delete()
@@ -170,7 +170,7 @@ def scrape_nhk_news():
         db.query(Lesson).delete()
         db.commit()
 
-        # Tạo Lesson Mới
+
         lessons = {}
         for lvl in [LevelEnum.N5, LevelEnum.N4, LevelEnum.N3, LevelEnum.N2]:
             chapter_name = f"Minna No Nihongo ({lvl.value})" if lvl in [LevelEnum.N5, LevelEnum.N4] else f"NHK News ({lvl.value})"
@@ -181,9 +181,9 @@ def scrape_nhk_news():
             lessons[lvl] = lesson
 
         print("\\n--- Bắt đầu nhúng dữ liệu N5 & N4 (Tin chuẩn Minna) ---")
-        
+
         for i in range(25):
-            # N5
+
             n5_data = N5_DATABASE[i % len(N5_DATABASE)]
             topic_n5 = ShadowingTopic(
                 title=f"[N5] {n5_data['title']} - Bài {i+1}",
@@ -193,17 +193,17 @@ def scrape_nhk_news():
             )
             db.add(topic_n5)
             db.commit(); db.refresh(topic_n5)
-            
+
             for o, sent in enumerate(n5_data['sentences'], 1):
                 db.add(ShadowingSegment(topic_id=topic_n5.id, order_index=o, kanji_content=sent['kanji'], furigana=sent['furigana'], romaji=sent['romaji'], translation_vi=sent['vi']))
-            
+
             ai_vocabs_n5 = extract_vocab_with_ai(topic_n5.full_script_ja, "N5", count=4)
             for v in ai_vocabs_n5:
                 if 'word' in v and 'reading' in v and 'meaning' in v:
                     db.add(Vocabulary(lesson_id=lessons[LevelEnum.N5].id, topic_id=topic_n5.id, word=v['word'], reading=v['reading'], meaning=v['meaning']))
             db.commit()
 
-            # N4
+
             n4_data = N4_DATABASE[i % len(N4_DATABASE)]
             topic_n4 = ShadowingTopic(
                 title=f"[N4] {n4_data['title']} - Bài {i+1}",
@@ -216,7 +216,7 @@ def scrape_nhk_news():
 
             for o, sent in enumerate(n4_data['sentences'], 1):
                 db.add(ShadowingSegment(topic_id=topic_n4.id, order_index=o, kanji_content=sent['kanji'], furigana=sent['furigana'], romaji=sent['romaji'], translation_vi=sent['vi']))
-            
+
             ai_vocabs_n4 = extract_vocab_with_ai(topic_n4.full_script_ja, "N4", count=4)
             for v in ai_vocabs_n4:
                 if 'word' in v and 'reading' in v and 'meaning' in v:
@@ -227,27 +227,27 @@ def scrape_nhk_news():
         print("\\n--- Bắt đầu Cào Dữ Liệu N3 & N2 bằng API NHK & GEMINI ---")
         items = fetch_rss_items(RSS_FEEDS[0]) + fetch_rss_items(RSS_FEEDS[1])
         unique_items = {i.find('link').text: i for i in items if i.find('link') is not None}
-        nhk_list = list(unique_items.values())[:30] # Limit to 30 to respect AI quotas
-        
+        nhk_list = list(unique_items.values())[:30]
+
         saved_count = 0
         lvl_counter = 0
         for item in nhk_list:
             lvl = LevelEnum.N3 if lvl_counter < 15 else LevelEnum.N2
-            
+
             link = item.find('link').text
             title = item.find('title').text
             sentences = scrape_article_body(link)
             if len(sentences) < 2: continue
-            
+
             sentences = sentences[:2] if lvl == LevelEnum.N3 else sentences[:3]
-            
+
             ai_result = analyze_shadowing_nhk_with_ai(sentences, lvl.value)
-            
+
             topic = ShadowingTopic(
                 title=f"[{lvl.value}] {title[:30]}...",
                 level=lvl.value,
                 lesson_id=lessons[lvl].id,
-                image_url=f"https://picsum.photos/seed/nhk_{saved_count}/400/250", 
+                image_url=f"https://picsum.photos/seed/nhk_{saved_count}/400/250",
                 full_audio_url="",
                 full_script_ja="".join(sentences),
                 total_duration=20.0
@@ -255,20 +255,20 @@ def scrape_nhk_news():
             db.add(topic)
             db.commit()
             db.refresh(topic)
-            
+
             if ai_result and 'sentences' in ai_result:
                 for o, sent_obj in enumerate(ai_result['sentences'], 1):
                     db.add(ShadowingSegment(
-                        topic_id=topic.id, order_index=o, 
+                        topic_id=topic.id, order_index=o,
                         kanji_content=sent_obj.get('kanji', sentences[o-1] if o <= len(sentences) else ''),
-                        furigana=sent_obj.get('furigana', ''), 
-                        romaji=sent_obj.get('romaji', ''), 
+                        furigana=sent_obj.get('furigana', ''),
+                        romaji=sent_obj.get('romaji', ''),
                         translation_vi=sent_obj.get('vi', '')
                     ))
             else:
                 for o, sent in enumerate(sentences, 1):
                     db.add(ShadowingSegment(topic_id=topic.id, order_index=o, kanji_content=sent, furigana=sent, romaji="Auto-generated blocked", translation_vi="Auto-generated blocked"))
-            
+
             if ai_result and 'vocabularies' in ai_result:
                 for v in ai_result['vocabularies']:
                     if 'word' in v and 'reading' in v and 'meaning' in v:
@@ -279,7 +279,7 @@ def scrape_nhk_news():
                             reading=v['reading'],
                             meaning=v['meaning']
                         ))
-            
+
             db.commit()
             saved_count += 1
             lvl_counter += 1

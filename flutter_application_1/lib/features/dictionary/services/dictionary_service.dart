@@ -7,7 +7,7 @@ import 'package:flutter_application_1/core/config/api_config.dart';
 class DictionaryService {
   static String get _baseUrl => ApiConfig.baseUrl;
 
-  /// Tìm kiếm từ điển — trả về danh sách entry.
+
   static Future<DictionarySearchResult> search(String keyword,
       {int page = 1}) async {
     final uri = Uri.parse(
@@ -20,7 +20,7 @@ class DictionaryService {
     throw Exception('Search failed: HTTP ${response.statusCode}');
   }
 
-  /// Tra chi tiết 1 chữ Kanji
+
   static Future<KanjiDetail> fetchKanjiDetail(String character) async {
     final uri =
         Uri.parse('$_baseUrl/dictionary/kanji/${Uri.encodeComponent(character)}');

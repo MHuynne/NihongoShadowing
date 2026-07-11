@@ -7,7 +7,7 @@ class RoadmapHeader extends StatelessWidget {
   final double progress;
   final int completed;
   final int total;
-  final String? levelBadge; // Level đã chọn
+  final String? levelBadge;
 
   const RoadmapHeader({
     super.key,
@@ -36,7 +36,7 @@ class RoadmapHeader extends StatelessWidget {
         bottom: false,
         child: Column(
           children: [
-            // Top bar
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               child: Column(
@@ -98,7 +98,7 @@ class RoadmapHeader extends StatelessWidget {
               ),
             ),
 
-            // Progress bar section
+
             Container(
               margin: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),

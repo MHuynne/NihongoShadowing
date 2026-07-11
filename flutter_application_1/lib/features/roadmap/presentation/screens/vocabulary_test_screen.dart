@@ -14,7 +14,7 @@ const _kTextGray = Color(0xFF94A3B8);
 
 class VocabularyTestScreen extends StatefulWidget {
   final int topicId;
-  final int lessonId; // ← THÊM
+  final int lessonId;
   final bool isReview;
 
   const VocabularyTestScreen({super.key, required this.topicId, required this.lessonId, required this.isReview});
@@ -31,11 +31,11 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
 
   bool _isAnswered = false;
   String? _selectedAnswer;
-  final List<dynamic> _wrongWords = [];  // Danh sách từ trả lời sai
-  
+  final List<dynamic> _wrongWords = [];
+
   List<String> _currentOptions = [];
 
-  // Từ vựng dự phòng để luôn đổ đủ 4 đáp án kể cả khi bài học có quá ít từ
+
   final List<String> _fallbackMeanings = [
     'Giám đốc', 'Sách vở', 'Thời tiết', 'Người yêu', 'Nhà hàng',
     'Chó mèo', 'Nhật Bản', 'Đi công tác', 'Ngủ nướng', 'Đại học',
@@ -57,7 +57,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
           final List<dynamic> data = json.decode(utf8.decode(response.bodyBytes));
           setState(() {
             _vocabularies = data;
-            _vocabularies.shuffle(); // Đảo trộn list từ
+            _vocabularies.shuffle();
             _isLoading = false;
           });
           if (_vocabularies.isNotEmpty) {
@@ -71,24 +71,24 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
 
   void _generateOptions() {
     if (_currentIndex >= _vocabularies.length) return;
-    
+
     final correctMeaning = _vocabularies[_currentIndex]['meaning'];
     Set<String> optionsSet = {correctMeaning};
-    
-    // Gom các nghĩa khác từ chính list bài học này
+
+
     for (var v in _vocabularies) {
       optionsSet.add(v['meaning']);
     }
-    
-    // Nếu vẫn chưa đủ 4 lựa chọn, lấy từ list dự phòng
+
+
     _fallbackMeanings.shuffle();
     int fallbackIndex = 0;
     while (optionsSet.length < 4 && fallbackIndex < _fallbackMeanings.length) {
       optionsSet.add(_fallbackMeanings[fallbackIndex]);
       fallbackIndex++;
     }
-    
-    // Đảo danh sách cẩn thận và lưu Option
+
+
     _currentOptions = optionsSet.take(4).toList();
     _currentOptions.shuffle();
     _isAnswered = false;
@@ -103,7 +103,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
       if (selected == _vocabularies[_currentIndex]['meaning']) {
         _score++;
       } else {
-        // Lưu từ trả lời sai để ôn lại bằng flashcard
+
         final wrong = _vocabularies[_currentIndex];
         if (!_wrongWords.any((w) => w['word'] == wrong['word'])) {
           _wrongWords.add(wrong);
@@ -118,7 +118,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
         _currentIndex++;
         _generateOptions();
       } else {
-        // Đã hoàn thành câu hỏi cuối cùng
+
         _currentIndex++;
       }
     });
@@ -160,7 +160,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
       );
     }
 
-    // HIỂN THỊ KẾT QUẢ KHI LÀM XONG
+
     if (_currentIndex >= _vocabularies.length) {
       final bool isPerfect = _score == _vocabularies.length;
       final bool hasWrong  = _wrongWords.isNotEmpty;
@@ -197,7 +197,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                     style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _kPrimary),
                   ),
                   const SizedBox(height: 32),
-                  // Nết ôn lại từ sai bằng flashcard (chỉ hiện khi có từ sai)
+
                   if (hasWrong && !isPerfect) ...[
                     SizedBox(
                       width: double.infinity,
@@ -237,14 +237,14 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
       );
     }
 
-    // HIỂN THỊ KHUNG QUIZ TRẮC NGHIỆM
+
     final currentVocab = _vocabularies[_currentIndex];
 
     return Scaffold(
       backgroundColor: _kBg,
       appBar: AppBar(
         title: Text(
-           widget.isReview ? 'Review: Câu ${_currentIndex + 1}/${_vocabularies.length}' : 'Test Từ Vựng (${_currentIndex + 1}/${_vocabularies.length})', 
+           widget.isReview ? 'Review: Câu ${_currentIndex + 1}/${_vocabularies.length}' : 'Test Từ Vựng (${_currentIndex + 1}/${_vocabularies.length})',
            style: const TextStyle(fontSize: 16, color: _kTextDark, fontWeight: FontWeight.w800, letterSpacing: 0.5)
         ),
         backgroundColor: Colors.transparent,
@@ -266,7 +266,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            // Thanh tiến trình xịn xò
+
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
               child: ClipRRect(
@@ -279,7 +279,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                 ),
               ),
             ),
-            
+
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
@@ -287,7 +287,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Khung Hiển thị Câu hỏi mang tính Game
+
                     Container(
                       padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
                       decoration: BoxDecoration(
@@ -299,7 +299,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Text('Nghĩa của từ dưới đây là gì?', 
+                          const Text('Nghĩa của từ dưới đây là gì?',
                             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700, color: _kTextGray, letterSpacing: 0.5)),
                           const SizedBox(height: 20),
                           Text(
@@ -315,29 +315,29 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                                 color: _kPrimaryLight,
                                 borderRadius: BorderRadius.circular(12),
                               ),
-                              child: Text(currentVocab['reading'], 
+                              child: Text(currentVocab['reading'],
                                 style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: _kPrimary)),
                             ),
                         ],
                       ),
                     ),
-                    
+
                     const SizedBox(height: 40),
-                    
-                    // Sinh ra các Đáp án
+
+
                     ..._currentOptions.map((option) {
                       Color bgColor = Colors.white;
                       Color textColor = _kTextDark;
                       Color borderColor = const Color(0xFFE2E8F0);
                       IconData? trailIcon;
-                      
+
                       if (_isAnswered) {
-                         if (option == currentVocab['meaning']) { // Luôn tô xanh đáp án đúng
+                         if (option == currentVocab['meaning']) {
                            bgColor = const Color(0xFFF0FDF4);
                            textColor = const Color(0xFF16A34A);
                            borderColor = const Color(0xFF16A34A);
                            trailIcon = Icons.check_circle;
-                         } else if (option == _selectedAnswer) { // Tô đỏ nếu đang chọn sai
+                         } else if (option == _selectedAnswer) {
                            bgColor = _kPrimaryLight;
                            textColor = _kPrimary;
                            borderColor = _kPrimary;
@@ -381,8 +381,8 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
                 ),
               ),
             ),
-            
-            // Nút Chuyển câu + phản hồi (Chỉ hiện khi đã chọn đáp án)
+
+
             if (_isAnswered)
               AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
@@ -462,7 +462,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
     );
   }
 
-  // Nút chuyển hướng
+
   Widget _buildNavigateNextButton() {
     return ElevatedButton(
       style: ElevatedButton.styleFrom(
@@ -477,7 +477,7 @@ class _VocabularyTestScreenState extends State<VocabularyTestScreen> {
         if (widget.isReview) {
           Navigator.popUntil(context, (route) => route.isFirst);
         } else {
-          // Lưu điểm test vào backend
+
           final double scorePercent = _vocabularies.isEmpty
               ? 0
               : (_score / _vocabularies.length) * 100;

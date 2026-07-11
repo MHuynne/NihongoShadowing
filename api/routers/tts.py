@@ -29,19 +29,19 @@ router = APIRouter(prefix="/tts", tags=["Text-to-Speech (Shadowing Sample)"])
 STATIC_UPLOAD_DIR = Path("static/uploads")
 STATIC_UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
-# ── API Keys ─────────────────────────────────────────────────────────────────
+
 AZURE_SPEECH_KEY    = os.getenv("AZURE_SPEECH_KEY", "")
 AZURE_SPEECH_REGION = os.getenv("AZURE_SPEECH_REGION", "eastasia")
 GOOGLE_API_KEY      = os.getenv("GOOGLE_API_KEY", "")
 
-# ── Cache thư mục (tránh gọi API lại với cùng text+speed) ────────────────────
+
 _CACHE_DIR = Path(tempfile.gettempdir()) / "koe_tts_cache"
 _CACHE_DIR.mkdir(parents=True, exist_ok=True)
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Request / Response Models
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 class TTSRequest(BaseModel):
     text: str = Field(..., description="Văn bản tiếng Nhật cần đọc (tối đa 500 ký tự)")
@@ -60,18 +60,18 @@ class TTSRequest(BaseModel):
     )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Cache helper
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 def _cache_key(text: str, speed: float, gender: str) -> Path:
     digest = hashlib.md5(f"{text}|{speed}|{gender}".encode()).hexdigest()
     return _CACHE_DIR / f"{digest}.mp3"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Priority 1: Azure Neural TTS
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 async def _azure_tts(text: str, speed: float, gender: str) -> bytes:
     """
@@ -79,7 +79,7 @@ async def _azure_tts(text: str, speed: float, gender: str) -> bytes:
     Voices: ja-JP-NanamiNeural (female) | ja-JP-KeitaNeural (male)
     """
     voice = "ja-JP-NanamiNeural" if gender == "female" else "ja-JP-KeitaNeural"
-    # Azure dùng rate theo percentage: 0.85 → "-15%"
+
     rate_pct = int((speed - 1.0) * 100)
     rate_str = f"{rate_pct:+d}%"
 
@@ -125,8 +125,8 @@ async def _google_tts(text: str, speed: float, gender: str) -> bytes:
         },
         "audioConfig": {
             "audioEncoding": "MP3",
-            "speakingRate": speed,          # 0.25–4.0, 1.0 = tự nhiên
-            "pitch": 0.0,                   # không thay đổi pitch
+            "speakingRate": speed,
+            "pitch": 0.0,
             "sampleRateHertz": 24000,
         },
     }
@@ -157,7 +157,7 @@ def _gtts_tts(text: str, speed: float) -> bytes:
     except ImportError:
         raise RuntimeError("gTTS chưa được cài. Chạy: pip install gtts")
 
-    slow = speed < 0.9  # gTTS chỉ có slow mode
+    slow = speed < 0.9
     tts = gTTS(text=text, lang="ja", slow=slow)
     buf = io.BytesIO()
     tts.write_to_fp(buf)
@@ -207,7 +207,7 @@ async def get_shadowing_sample(req: TTSRequest):
     source = "unknown"
     errors = []
 
-    # Priority 1: Azure
+
     if AZURE_SPEECH_KEY:
         try:
             audio_bytes = await _azure_tts(req.text, req.speed, req.voice_gender)
@@ -216,7 +216,7 @@ async def get_shadowing_sample(req: TTSRequest):
             errors.append(f"Azure: {e}")
             print(f"[TTS] Azure failed: {e}")
 
-    # Priority 2: Google Wavenet
+
     if audio_bytes is None and GOOGLE_API_KEY:
         try:
             audio_bytes = await _google_tts(req.text, req.speed, req.voice_gender)
@@ -225,7 +225,7 @@ async def get_shadowing_sample(req: TTSRequest):
             errors.append(f"Google: {e}")
             print(f"[TTS] Google failed: {e}")
 
-    # Priority 3: gTTS (free)
+
     if audio_bytes is None:
         try:
             audio_bytes = _gtts_tts(req.text, req.speed)
@@ -244,7 +244,7 @@ async def get_shadowing_sample(req: TTSRequest):
         cache_path.write_bytes(audio_bytes)
         print(f"[TTS] Cached → {cache_path.name} ({source})")
     except Exception:
-        pass  # Cache lỗi không crash app
+        pass
 
     return Response(
         content=audio_bytes,
@@ -277,7 +277,7 @@ async def generate_shadowing_audio(req: GenerateShadowingAudioRequest):
     source = "unknown"
     errors = []
 
-    # Priority 1: Azure
+
     if AZURE_SPEECH_KEY:
         try:
             audio_bytes = await _azure_tts(req.script, req.speed, req.voice_gender)
@@ -285,7 +285,7 @@ async def generate_shadowing_audio(req: GenerateShadowingAudioRequest):
         except Exception as e:
             errors.append(f"Azure: {e}")
 
-    # Priority 2: Google Wavenet
+
     if audio_bytes is None and GOOGLE_API_KEY:
         try:
             audio_bytes = await _google_tts(req.script, req.speed, req.voice_gender)
@@ -293,7 +293,7 @@ async def generate_shadowing_audio(req: GenerateShadowingAudioRequest):
         except Exception as e:
             errors.append(f"Google: {e}")
 
-    # Priority 3: gTTS (free)
+
     if audio_bytes is None:
         try:
             audio_bytes = _gtts_tts(req.script, req.speed)
@@ -307,7 +307,7 @@ async def generate_shadowing_audio(req: GenerateShadowingAudioRequest):
             detail=f"Không thể tạo audio. Lỗi: {'; '.join(errors)}",
         )
 
-    # Lưu file vào static/uploads/
+
     filename = f"shadowing_{uuid.uuid4().hex}.mp3"
     file_path = STATIC_UPLOAD_DIR / filename
     file_path.write_bytes(audio_bytes)
@@ -331,7 +331,7 @@ def list_voices():
     """
     return {
         "voices": [
-            # ── Azure Neural (chất lượng cao nhất) ──
+
             {
                 "id": "azure_nanami",
                 "name": "Nanami (Nữ - Azure Neural)",
@@ -352,7 +352,7 @@ def list_voices():
                 "description": "Giọng nam trầm ấm, tốc độ phát âm chuẩn Nhật hiện đại.",
                 "sample_text": "日本語の発音を練習しましょう。",
             },
-            # ── Google Wavenet ──
+
             {
                 "id": "google_wavenet_a",
                 "name": "Wavenet-A (Nữ - Google)",
@@ -373,14 +373,14 @@ def list_voices():
                 "description": "Giọng nam Google Wavenet, tông trung, phù hợp luyện nghe.",
                 "sample_text": "日本語の発音を練習しましょう。",
             },
-            # ── gTTS (free fallback) ──
+
             {
                 "id": "gtts_female",
                 "name": "Google Translate (Nữ - Miễn phí)",
                 "gender": "female",
                 "provider": "gtts",
                 "quality": "standard",
-                "available": True,  # Luôn có sẵn nếu cài gtts
+                "available": True,
                 "description": "Giọng Google Translate. Miễn phí, không cần API key.",
                 "sample_text": "おはようございます。",
             },

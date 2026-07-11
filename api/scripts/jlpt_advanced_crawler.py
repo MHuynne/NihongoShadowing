@@ -4,7 +4,7 @@ jlpt_advanced_crawler.py — Thu thập N3/N2 từ NHK + Lọc chuẩn JLPT
 Chiến lược:
   N3: NHK Web Easy (bài đơn giản hóa, câu 15-25 từ)
   N2: NHK News đầy đủ (câu phức 25-40 từ) + pattern ngữ pháp N2
-  
+
   Gemini AI:
     - Phân tích ngữ pháp mục tiêu JLPT theo từng level
     - Tạo chú thích, furigana, romaji, dịch Việt
@@ -36,7 +36,7 @@ from models.lesson import Lesson, LevelEnum
 
 GEMINI_MODEL  = "gemini-2.0-flash"
 AI_SLEEP      = 5
-MAX_SENTENCES = {"N3": 4, "N2": 5}  # N2 nhiều câu hơn vì phức tạp hơn
+MAX_SENTENCES = {"N3": 4, "N2": 5}
 
 HEADERS = {
     "User-Agent": (
@@ -47,7 +47,7 @@ HEADERS = {
     "Accept-Language": "ja-JP,ja;q=0.9,en;q=0.5",
 }
 
-# RSS feeds NHK
+
 RSS_EASY = [
     "https://www3.nhk.or.jp/rss/news/cat0.xml",
     "https://www3.nhk.or.jp/rss/news/cat1.xml",
@@ -55,11 +55,11 @@ RSS_EASY = [
 ]
 RSS_FULL = [
     "https://www3.nhk.or.jp/rss/news/cat0.xml",
-    "https://www3.nhk.or.jp/rss/news/cat6.xml",  # kinh tế
-    "https://www3.nhk.or.jp/rss/news/cat5.xml",  # chính trị
+    "https://www3.nhk.or.jp/rss/news/cat6.xml",
+    "https://www3.nhk.or.jp/rss/news/cat5.xml",
 ]
 
-# ── Ngữ pháp JLPT trọng tâm ─────────────────────────────────────────────────
+
 JLPT_GRAMMAR = {
     "N3": {
         "patterns": [
@@ -95,7 +95,7 @@ JLPT_GRAMMAR = {
     },
 }
 
-# Bộ lọc chất lượng N2 — từ khóa ngữ pháp phải xuất hiện
+
 N2_GRAMMAR_KEYWORDS = [
     "にもかかわらず", "において", "に対して", "によって", "をはじめ",
     "一方", "に伴", "ことから", "ことになって", "からこそ",
@@ -103,9 +103,9 @@ N2_GRAMMAR_KEYWORDS = [
 ]
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 1: Lấy danh sách bài từ RSS
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def fetch_rss_articles(limit: int, source: str) -> list[dict]:
     print(f"\n[1/4] Lấy danh sách bài NHK ({source})...")
     feeds = RSS_EASY if source == "easy" else RSS_FULL
@@ -147,12 +147,12 @@ def fetch_rss_articles(limit: int, source: str) -> list[dict]:
     return articles
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 2: Cào nội dung bài báo NHK
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def scrape_article(easy_url: str, rss_url: str, level: str) -> dict:
     max_sent = MAX_SENTENCES[level]
-    min_len  = 10 if level == "N3" else 18  # N2 cần câu dài hơn
+    min_len  = 10 if level == "N3" else 18
 
     for url in [easy_url, rss_url]:
         if not url:
@@ -164,17 +164,17 @@ def scrape_article(easy_url: str, rss_url: str, level: str) -> dict:
 
             soup = BeautifulSoup(r.text, "html.parser")
 
-            # OG image
+
             image_url = ""
             og = soup.find("meta", property="og:image")
             if og:
                 image_url = og.get("content", "")
 
-            # Xóa ruby rt/rp để giữ kanji gốc
+
             for tag in soup.find_all(["rt", "rp"]):
                 tag.decompose()
 
-            # Tìm body bài viết
+
             body = None
             for sel in [
                 {"class": re.compile(r"article-main__body|article__body|p-article-body")},
@@ -194,7 +194,7 @@ def scrape_article(easy_url: str, rss_url: str, level: str) -> dict:
                 ]
                 raw_text = "。".join(paras)
 
-            # Tách câu
+
             parts     = re.split(r"(?<=[。！？])", raw_text)
             sentences = [
                 p.strip() for p in parts
@@ -203,7 +203,7 @@ def scrape_article(easy_url: str, rss_url: str, level: str) -> dict:
             ]
 
             if level == "N2":
-                # Ưu tiên câu có ngữ pháp N2
+
                 priority = [s for s in sentences
                             if any(kw in s for kw in N2_GRAMMAR_KEYWORDS)]
                 rest     = [s for s in sentences if s not in priority]
@@ -220,9 +220,9 @@ def scrape_article(easy_url: str, rss_url: str, level: str) -> dict:
     return {"sentences": [], "image_url": ""}
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 3: Gemini phân tích — chuẩn JLPT
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def analyze_with_gemini(sentences: list[str], level: str) -> dict | None:
     g        = JLPT_GRAMMAR[level]
     patterns = "\n".join(f"  - {p}" for p in g["patterns"][:8])
@@ -249,7 +249,7 @@ Phân tích đoạn tin tức NHK sau đây cho học viên luyện thi JLPT {le
 
 **Từ vựng:** Trích 6-8 từ vựng trọng tâm JLPT {level}, ưu tiên:
   - Từ tần suất cao trong đề thi JLPT
-  - Từ có nhiều nghĩa, dễ nhầm lẫn  
+  - Từ có nhiều nghĩa, dễ nhầm lẫn
   - Từ Hán tự phức hợp
 
 Trả về JSON THUẦN (không markdown, không ```json):
@@ -269,7 +269,7 @@ Trả về JSON THUẦN (không markdown, không ```json):
             if match:
                 result = json.loads(match.group())
                 if "segments" in result and len(result["segments"]) > 0:
-                    # Log grammar points found
+
                     gp_list = [
                         s.get("grammar_point", "")
                         for s in result["segments"]
@@ -288,9 +288,9 @@ Trả về JSON THUẦN (không markdown, không ```json):
     return None
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 4: Bộ lọc chất lượng JLPT
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def quality_check(sentences: list[str], level: str) -> tuple[bool, str]:
     """Trả về (pass, reason)"""
     if len(sentences) < 2:
@@ -299,18 +299,18 @@ def quality_check(sentences: list[str], level: str) -> tuple[bool, str]:
     full_text = " ".join(sentences)
 
     if level == "N2":
-        # Phải có ít nhất 1 pattern ngữ pháp N2
+
         found = [kw for kw in N2_GRAMMAR_KEYWORDS if kw in full_text]
         if not found:
             return False, "Không có ngữ pháp N2 đặc trưng"
 
-        # Câu phải đủ dài (N2 cần câu phức tạp)
+
         avg_len = sum(len(s) for s in sentences) / len(sentences)
         if avg_len < 20:
             return False, f"Câu quá ngắn cho N2 (avg {avg_len:.0f} chữ)"
 
     if level == "N3":
-        # N3: câu không quá ngắn, không quá phức tạp
+
         avg_len = sum(len(s) for s in sentences) / len(sentences)
         if avg_len < 12:
             return False, f"Câu quá ngắn cho N3 (avg {avg_len:.0f} chữ)"
@@ -318,15 +318,15 @@ def quality_check(sentences: list[str], level: str) -> tuple[bool, str]:
     return True, "OK"
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 5: Lưu DB
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def save_to_db(db, art: dict, level_enum: LevelEnum,
                sentences: list[str], ai_result: dict | None,
                order_index: int, level: str) -> tuple:
     title = f"[{level}] {art['title']} [{art['news_id']}]"
 
-    # Lesson
+
     lesson = Lesson(
         level=level_enum,
         chapter_name=title[:120],
@@ -336,7 +336,7 @@ def save_to_db(db, art: dict, level_enum: LevelEnum,
     db.commit()
     db.refresh(lesson)
 
-    # ShadowingTopic
+
     full_script = "。".join(sentences)
     topic = ShadowingTopic(
         title=title[:200],
@@ -351,11 +351,11 @@ def save_to_db(db, art: dict, level_enum: LevelEnum,
     db.commit()
     db.refresh(topic)
 
-    # Segments
+
     segments_data = (ai_result or {}).get("segments", [])
     for idx, sent in enumerate(sentences, 1):
         seg = segments_data[idx - 1] if idx - 1 < len(segments_data) else {}
-        # Thêm grammar_point vào furigana nếu có
+
         gp_note = ""
         if seg.get("grammar_point"):
             gp_note = f"\n📌 {seg['grammar_point']}"
@@ -372,7 +372,7 @@ def save_to_db(db, art: dict, level_enum: LevelEnum,
             translation_vi =seg.get("vi", ""),
         ))
 
-    # Vocabulary
+
     vocabs_data = (ai_result or {}).get("vocabularies", [])
     for v in vocabs_data:
         word    = v.get("word", "").strip()
@@ -394,9 +394,9 @@ def save_to_db(db, art: dict, level_enum: LevelEnum,
     return lesson, topic
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN
-# ─────────────────────────────────────────────────────────────────────────────
+
+
+
 def run(level: str, limit: int, source: str):
     level_enum = LevelEnum[level]
     db         = SessionLocal()
@@ -418,7 +418,7 @@ def run(level: str, limit: int, source: str):
 
             print(f"\n  [{saved+1}/{limit}] {art['title'][:65]}")
 
-            # Kiểm tra trùng
+
             dup = db.query(ShadowingTopic).filter(
                 ShadowingTopic.title.like(f"%{art['news_id']}%")
             ).first()
@@ -427,12 +427,12 @@ def run(level: str, limit: int, source: str):
                 skipped += 1
                 continue
 
-            # Cào bài
+
             result    = scrape_article(art["easy_url"], art["rss_url"], level)
             sentences = result["sentences"]
             art["image_url"] = result["image_url"]
 
-            # Kiểm tra chất lượng
+
             ok, reason = quality_check(sentences, level)
             if not ok:
                 print(f"  [QC-FAIL] {reason} → bỏ qua")
@@ -441,12 +441,12 @@ def run(level: str, limit: int, source: str):
 
             print(f"  → {len(sentences)} câu đạt chất lượng | Gọi Gemini...")
 
-            # Phân tích AI
+
             ai_result = analyze_with_gemini(sentences, level)
             if not ai_result:
                 print("  [WARN] Gemini thất bại, lưu câu thô")
 
-            # Lưu DB
+
             save_to_db(db, art, level_enum, sentences, ai_result, order, level)
             saved += 1
             order += 1
@@ -476,7 +476,7 @@ if __name__ == "__main__":
                         help="easy=NHK Web Easy | full=NHK News đầy đủ | both=cả hai")
     args = parser.parse_args()
 
-    # N2 nên dùng full hoặc both để có câu phức tạp hơn
+
     if args.level == "N2" and args.source == "easy":
         print("[HINT] N2 nên dùng --source full hoặc --source both để có ngữ pháp N2 phức tạp hơn.")
 

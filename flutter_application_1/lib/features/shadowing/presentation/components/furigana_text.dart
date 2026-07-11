@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 
-/// Widget hiển thị furigana (chú âm) cho câu tiếng Nhật.
-/// Hỗ trợ 2 định dạng dữ liệu:
-///   1. HTML: <ruby>漢字<rt>かんじ</rt></ruby> — ánh xạ từng từ
-///   2. Hiragana thuần: toàn bộ chuỗi hiragana hiển thị nhỏ bên trên kanji
+
+
+
+
 class FuriganaText extends StatelessWidget {
-  final String text;       // kanji (câu gốc)
-  final String furigana;  // furigana (HTML ruby hoặc hiragana thuần)
+  final String text;
+  final String furigana;
   final double kanjiFontSize;
   final double furiganaFontSize;
   final Color kanjiColor;
@@ -26,13 +26,13 @@ class FuriganaText extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (furigana.isNotEmpty && furigana.contains('<ruby>')) {
-      // Format 1: HTML ruby tags
+
       return _buildFromRubyHtml(furigana);
     } else if (furigana.isNotEmpty) {
-      // Format 2: hiragana thuần — hiển thị trên dòng kanji
+
       return _buildSimpleFurigana(text, furigana);
     } else if (text.isNotEmpty) {
-      // Không có furigana — chỉ hiển thị kanji
+
       return Text(
         text,
         textAlign: TextAlign.center,
@@ -47,7 +47,7 @@ class FuriganaText extends StatelessWidget {
     return const SizedBox.shrink();
   }
 
-  // ── Format 1: Parse <ruby>kanji<rt>furi</rt></ruby> ──────────────────────────
+
   Widget _buildFromRubyHtml(String htmlText) {
     final RegExp rubyRegex = RegExp(r'<ruby>(.*?)<rt>(.*?)</rt></ruby>');
     final List<Widget> children = [];
@@ -76,7 +76,7 @@ class FuriganaText extends StatelessWidget {
     );
   }
 
-  // ── Format 2: Hiragana thuần trên dòng kanji ─────────────────────────────────
+
   Widget _buildSimpleFurigana(String kanji, String reading) {
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -108,7 +108,7 @@ class FuriganaText extends StatelessWidget {
     );
   }
 
-  // ── Helpers cho ruby HTML ────────────────────────────────────────────────────
+
   Widget _rubyPair(String kanji, String furi) {
     return Column(
       mainAxisSize: MainAxisSize.min,

@@ -8,11 +8,11 @@ import 'package:flutter_application_1/core/network/app_http_client.dart' as http
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 
-const _kBg      = Color(0xFFF8F9FE); // Light background with soft tint
+const _kBg      = Color(0xFFF8F9FE);
 const _kSurface = Colors.white;
-const _kOnSurface = Color(0xFF2D3142); // Softer dark text
+const _kOnSurface = Color(0xFF2D3142);
 const _kSubtext   = Color(0xFF9098A9);
-const _kPrimary   = Color(0xFFFF4D6D); // Sakura Pink / Dark Cherry Blossom
+const _kPrimary   = Color(0xFFFF4D6D);
 
 
 class ShadowingTopicListScreen extends StatefulWidget {
@@ -27,13 +27,13 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   bool _isLoading = true;
   String? _error;
 
-  /// Level đã chọn của user (từ onboarding)
+
   String _userLevel = 'N5';
 
-  /// Tất cả segment topics từ API
+
   List<Map<String, dynamic>> _topics = [];
 
-  /// Danh sách categories từ DB (thêm "Tất cả" ở đầu)
+
   List<String> _categoryNames = ['Tất cả'];
 
   String _selectedCategory = 'Tất cả';
@@ -64,7 +64,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     });
 
     try {
-      // Gọi song song: topics + categories
+
       final results = await Future.wait([
         http.get(Uri.parse('$_base/segment-topics/')),
         http.get(Uri.parse('$_base/categories/')),
@@ -87,7 +87,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
 
-      // Tên categories từ DB
+
       final catNames = rawCats
           .map((c) => (c as Map)['name']?.toString() ?? '')
           .where((n) => n.isNotEmpty)
@@ -110,16 +110,16 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     }
   }
 
-  /// Filter topics theo category đang chọn và level đã chọn
+
   List<Map<String, dynamic>> get _filteredTopics {
-    // Lọc theo level trước
+
     final byLevel = _topics.where((topic) {
       final topicLevel = (topic['level'] ?? '').toString();
-      // Nếu topic chưa gán level thì hiển thị cho tất cả (null/empty = không lọc)
+
       return topicLevel.isEmpty || topicLevel == _userLevel;
     }).toList();
 
-    // Tiếp theo lọc theo category
+
     if (_selectedCategory == 'Tất cả') return byLevel;
     return byLevel.where((topic) {
       final cats = (topic['categories'] as List?) ?? [];
@@ -156,17 +156,17 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  // ── Top bar ─────────────────────────────────────────────────────────────────
+
 
   Widget _buildTopBar() {
-    // Màu badge theo level
+
     Color levelColor;
     switch (_userLevel) {
       case 'N4': levelColor = const Color(0xFF2196F3); break;
       case 'N3': levelColor = const Color(0xFFFF9800); break;
       case 'N2': levelColor = const Color(0xFF9C27B0); break;
       case 'N1': levelColor = const Color(0xFFE91E63); break;
-      default:   levelColor = const Color(0xFF4CAF50); // N5
+      default:   levelColor = const Color(0xFF4CAF50);
     }
 
     return Container(
@@ -212,7 +212,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  // Level badge — chỉ hiển thị, không cho thay đổi
+
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
                     decoration: BoxDecoration(
@@ -253,7 +253,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  // ── Scroll body ──────────────────────────────────────────────────────────────
+
 
   Widget _buildScrollBody() {
     final filtered = _filteredTopics;
@@ -262,7 +262,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       children: [
         const SizedBox(height: 20),
-        // Hero header
+
         const Text(
           'Shadowing',
           style: TextStyle(
@@ -284,7 +284,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
         ),
         const SizedBox(height: 20),
 
-        // ── Category filter chips (từ DB) ──────────────────────────────────
+
         SizedBox(
           height: 42,
           child: ListView.separated(
@@ -337,7 +337,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
         ),
         const SizedBox(height: 20),
 
-        // ── Segment cards ──────────────────────────────────────────────────
+
         if (filtered.isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 60),
@@ -352,7 +352,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  // ── Error state ──────────────────────────────────────────────────────────────
+
 
   Widget _buildError() {
     return Center(
@@ -386,14 +386,14 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-  // ── Topic card ─────────────────────────────────────────────────────────────
+
 
   Widget _buildTopicCard(Map<String, dynamic> topic) {
     final title = (topic['title'] ?? '').toString().trim();
     final description = (topic['description'] ?? '').toString();
     final segmentsCount = (topic['segments'] as List?)?.length ?? 0;
 
-    // Categories chips
+
     final cats = (topic['categories'] as List?) ?? [];
     final catNames =
         cats.map((c) => (c as Map)['name']?.toString() ?? '').toList();
@@ -425,7 +425,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Banner / Image ──────────────────────────────────────────────
+
               SizedBox(
                 height: 100,
                 width: double.infinity,
@@ -434,8 +434,8 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                   children: [
                     if (topic['image_url'] != null && topic['image_url'].toString().isNotEmpty)
                       Image.network(
-                        topic['image_url'].toString().startsWith('http') 
-                          ? topic['image_url'].toString() 
+                        topic['image_url'].toString().startsWith('http')
+                          ? topic['image_url'].toString()
                           : '${ApiConfig.baseUrl}${topic['image_url']}',
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _buildGradientFallback(title, ''),
@@ -443,7 +443,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                     else
                       _buildGradientFallback(title, ''),
 
-                    // ID badge góc trái
+
                     Positioned(
                       top: 12,
                       left: 14,
@@ -464,7 +464,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                         ),
                       ),
                     ),
-                    // Play icon góc phải
+
                     Positioned(
                       right: 14,
                       bottom: 12,
@@ -482,13 +482,13 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                 ),
               ),
 
-              // ── Content ───────────────────────────────────────────────
+
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Title (tiêu đề chính)
+
                     Text(
                       title.isNotEmpty ? title : 'Chưa có tiêu đề',
                       style: const TextStyle(
@@ -517,7 +517,7 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
 
                     const SizedBox(height: 10),
 
-                    // Category chips
+
                     if (catNames.isNotEmpty)
                       Wrap(
                         spacing: 6,

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
 
-/// A single lesson node displayed on the zigzag path.
+
 class LessonNode extends StatefulWidget {
   final LessonModel lesson;
   final int index;
@@ -47,7 +47,7 @@ class _LessonNodeState extends State<LessonNode>
 
   @override
   Widget build(BuildContext context) {
-    // Zigzag: even index → aligned left, odd → center-right
+
     final alignment = _getAlignment();
 
     return Padding(
@@ -57,13 +57,13 @@ class _LessonNodeState extends State<LessonNode>
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Badge phía trên node
+
             if (widget.lesson.status == LessonStatus.inProgress)
               _InProgressBadge(progress: widget.lesson.progress),
             if (widget.lesson.status == LessonStatus.completed)
               const _CompletedBadge(),
 
-            // Vòng tròn node
+
             GestureDetector(
               onTap: widget.onTap,
               child: _buildNode(),
@@ -71,7 +71,7 @@ class _LessonNodeState extends State<LessonNode>
 
             const SizedBox(height: 6),
 
-            // Label bên dưới
+
             _NodeLabel(lesson: widget.lesson),
           ],
         ),
@@ -193,7 +193,7 @@ class _NodeLabel extends StatelessWidget {
         : isInProgress
             ? AppColors.toriiRed
             : isCompleted
-                ? const Color(0xFF16A34A)   // xanh lá cho completed
+                ? const Color(0xFF16A34A)
                 : const Color(0xFF94A3B8);
 
     final titleColor = isLocked
@@ -272,7 +272,7 @@ class _InProgressBadge extends StatelessWidget {
   }
 }
 
-/// Badge xanh lá hiện phía trên các node đã hoàn thành.
+
 class _CompletedBadge extends StatelessWidget {
   const _CompletedBadge();
 

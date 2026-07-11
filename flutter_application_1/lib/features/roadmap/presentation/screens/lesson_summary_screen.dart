@@ -31,13 +31,13 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
   late Animation<double> _scaleAnim;
   late Animation<double> _fadeAnim;
 
-  // Mountain progress state
+
   int _completedLessons = 0;
-  int _totalLessons     = 25; // default N5
+  int _totalLessons     = 25;
   String _levelLabel    = 'N5';
   bool _loadingProgress = true;
 
-  // XP gained
+
   int _xpGained = 0;
 
   @override
@@ -53,7 +53,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
         curve: const Interval(0.4, 1.0, curve: Curves.easeIn));
     _mainCtrl.forward();
 
-    // Tính XP
+
     final totalErrors = widget.testErrors + widget.shadowingErrors;
     _xpGained = _calcXp(totalErrors, widget.shadowingScore);
 
@@ -79,17 +79,17 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
       if (lessonsResp.statusCode == 200) {
         final List<dynamic> allLessons = json.decode(utf8.decode(lessonsResp.bodyBytes));
-        
-        // Xác định level của lesson hiện tại
+
+
         String currentLevel = 'N5';
         final currentLesson = allLessons.firstWhere(
-          (l) => l['id'] == widget.lessonId, 
+          (l) => l['id'] == widget.lessonId,
           orElse: () => null
         );
         if (currentLesson != null) {
           currentLevel = currentLesson['level'] ?? 'N5';
         } else {
-          // fallback ID range checks
+
           final id = widget.lessonId;
           if (id >= 1101 && id <= 1120) currentLevel = 'N1';
           else if (id >= 2201 && id <= 2220) currentLevel = 'N2';
@@ -99,11 +99,11 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
           else if (id >= 6101 && id <= 6112) currentLevel = 'N5';
         }
 
-        // Lọc các bài học thuộc level này
+
         final levelLessons = allLessons.where((l) => l['level'] == currentLevel).toList();
         final total = levelLessons.length;
 
-        // Đếm số bài đã hoàn thành trong level này
+
         final levelLessonIds = levelLessons.map((l) => l['id'] as int).toSet();
         final completed = progressList.where((p) {
           final lid = p['lesson_id'] as int;
@@ -123,7 +123,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
       }
     } catch (_) {
       if (mounted) {
-        // Fallback range check
+
         String level = 'N5';
         final id = widget.lessonId;
         if (id >= 1101 && id <= 1120) level = 'N1';
@@ -132,7 +132,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
         else if (id >= 4201 && id <= 4225) level = 'N4';
         else if (id >= 5101 && id <= 5125) level = 'N5';
         else if (id >= 6101 && id <= 6112) level = 'N5';
-        
+
         setState(() {
           _completedLessons = 1;
           _totalLessons     = 12;
@@ -175,7 +175,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
               children: [
                 const SizedBox(height: 20),
 
-                // ── Header ──────────────────────────────────────────────
+
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
@@ -210,7 +210,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
                 const SizedBox(height: 28),
 
-                // ── Trophy icon + XP ─────────────────────────────────────
+
                 ScaleTransition(
                   scale: _scaleAnim,
                   child: Stack(
@@ -242,7 +242,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
                               : AppColors.toriiRed,
                         ),
                       ),
-                      // XP badge
+
                       Positioned(
                         bottom: 0,
                         right: 0,
@@ -270,7 +270,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
                 const SizedBox(height: 16),
 
-                // ── Title ────────────────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Column(
@@ -303,7 +303,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
                 const SizedBox(height: 24),
 
-                // ── Stats row ────────────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Padding(
@@ -344,7 +344,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
                 const SizedBox(height: 28),
 
-                // ── Mountain Progress ─────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Column(
@@ -387,7 +387,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
 
                 const SizedBox(height: 32),
 
-                // ── CTA Button ────────────────────────────────────────────
+
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Padding(
@@ -395,7 +395,7 @@ class _LessonSummaryScreenState extends State<LessonSummaryScreen>
                         horizontal: 24, vertical: 8),
                     child: ElevatedButton(
                       onPressed: () {
-                        // Force refresh roadmap TRƯỚC khi pop
+
                         MainScreen.refreshRoadmap(context);
                         Navigator.popUntil(
                           context,

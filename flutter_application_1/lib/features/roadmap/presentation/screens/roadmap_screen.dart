@@ -18,8 +18,8 @@ class RoadmapScreen extends StatefulWidget {
 
 class _RoadmapScreenState extends State<RoadmapScreen> {
   Future<RoadmapModel>? futureRoadmap;
-  String? _userLevel; // level đã chọn khi onboarding
-  bool _levelUpShown = false; // tránh hiện dialog nhiều lần
+  String? _userLevel;
+  bool _levelUpShown = false;
 
   static const _levelOrder = ['N5', 'N4', 'N3', 'N2', 'N1'];
 
@@ -32,7 +32,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
   }
 
   Future<void> _initRoadmap() async {
-    // Load level trước, rồi mới fetch roadmap
+
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid != null) {
       final level = await UserPrefsService().getLevel(uid);
@@ -49,14 +49,14 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
     }
   }
 
-  // Trả về level tiếp theo (N5→N4→N3→N2→N1), null nếu đã là N1
+
   String? _nextLevel(String current) {
     final idx = _levelOrder.indexOf(current);
     if (idx == -1 || idx == _levelOrder.length - 1) return null;
     return _levelOrder[idx + 1];
   }
 
-  // Hiện dialog chúc mừng và hỏi có muốn lên cấp không
+
   Future<void> _showLevelUpDialog(String currentLevel, String nextLevel) async {
     if (!mounted || _levelUpShown) return;
     _levelUpShown = true;
@@ -152,14 +152,14 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
 
   Future<RoadmapModel> _fetchRoadmap() async {
     try {
-      // ── Firebase UID ──────────────────────────────────────────────────
+
       final uid = FirebaseAuth.instance.currentUser?.uid ?? 'mock_user_id';
       final headers = <String, String>{
         'Content-Type': 'application/json',
         'X-Firebase-UID': uid,
       };
 
-      // ── Gọi song song: danh sách lessons + tiến độ user ──────────────
+
       final results = await Future.wait([
         http.get(Uri.parse('$_base/lessons/?limit=200'), headers: headers),
         http.get(Uri.parse('$_base/progress/'), headers: headers),
@@ -175,7 +175,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
       final List<dynamic> lessonsData =
           json.decode(utf8.decode(lessonsResp.bodyBytes));
 
-      // Map lessonId → progress record
+
       Map<int, Map<String, dynamic>> progressMap = {};
       if (progressResp.statusCode == 200) {
         final List<dynamic> progList =
@@ -185,11 +185,11 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         }
       }
 
-      // ── Build grouped lessons ─────────────────────────────────────────
+
       const levelOrder = ['N5', 'N4', 'N3', 'N2', 'N1'];
       Map<String, List<LessonModel>> grouped = {};
 
-      // ━━ Sort theo level rồi order_index trước khi build (phòng ngừa API trả sai thứ tự)
+
       final sortedLessons = [...lessonsData];
       sortedLessons.sort((a, b) {
         final aRaw = a as Map<String, dynamic>;
@@ -209,13 +209,13 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         final chapterName = raw['chapter_name']?.toString() ?? 'Bài ${i + 1}';
         final orderIndex  = raw['order_index'] as int? ?? i;
 
-        // Lấy topicId từ shadowing_topics đầu tiên của lesson
+
         final topics = raw['shadowing_topics'] as List<dynamic>? ?? [];
         final topicId = topics.isNotEmpty
             ? (topics.first['id'] as int? ?? 0)
             : 0;
 
-        // Xác định trạng thái từ progress
+
         final prog = progressMap[lessonId];
         LessonStatus status;
         double? progress;
@@ -223,7 +223,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         bool testPassed    = false;
 
         if (prog == null) {
-          // Chưa có record — chỉ bài đầu tiên mỗi level được mở
+
           final lessonsInLevel = grouped[level]?.length ?? 0;
           status = lessonsInLevel == 0 ? LessonStatus.inProgress : LessonStatus.locked;
         } else if (prog['lesson_completed'] == true) {
@@ -232,7 +232,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           flashcardDone = true;
           testPassed    = true;
         } else {
-          // Đang học dở: tính % tiến độ 3 bước chính
+
           status = LessonStatus.inProgress;
           flashcardDone = prog['flashcard_done'] == true;
           testPassed    = prog['test_passed'] == true;
@@ -244,7 +244,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
         }
 
 
-        // Mở khoá bài kế tiếp nếu bài trước đã completed
+
         if (status == LessonStatus.locked) {
           final prevLessons = grouped[level] ?? [];
           if (prevLessons.isNotEmpty &&
@@ -268,13 +268,13 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
 
       }
 
-      // ── Build chapters ────────────────────────────────────────────────
+
       List<ChapterModel> chapters = [];
 
-      // Chỉ lấy các level mà user đã chọn
+
       final selectedLevel = _userLevel;
       final filteredLevels = selectedLevel != null
-          ? [selectedLevel]  // chỉ hiển thị đúng level đã chọn
+          ? [selectedLevel]
           : levelOrder.where((l) => grouped.containsKey(l)).toList();
 
       final sortedLevels = filteredLevels
@@ -300,7 +300,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
           .where((l) => l.status == LessonStatus.completed)
           .length;
 
-      // ── Kiểm tra hoàn thành cấp độ để đề xuất lên cấp ─────────────────
+
       if (_userLevel != null && chapters.isNotEmpty && !_levelUpShown) {
         final currentChapter = chapters.first;
         final allCompleted = currentChapter.lessons.isNotEmpty &&
@@ -308,7 +308,7 @@ class _RoadmapScreenState extends State<RoadmapScreen> {
                 .every((l) => l.status == LessonStatus.completed);
         final next = _nextLevel(_userLevel!);
         if (allCompleted && next != null) {
-          // Hiện dialog sau khi build xong
+
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _showLevelUpDialog(_userLevel!, next);
           });

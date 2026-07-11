@@ -10,7 +10,7 @@ import '../../../core/theme/app_colors.dart';
 class RoleplayChatScreen extends StatefulWidget {
   final String title;
   final String description;
-  final String mode; // 'keigo' hoặc 'plain'
+  final String mode;
 
   const RoleplayChatScreen({
     super.key,
@@ -34,13 +34,13 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
   final TextEditingController _textController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // Speech to Text
+
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isSpeechInitialized = false;
   bool _isRecording = false;
   String _currentVoiceText = '';
   String _textBeforeCurrentSegment =
-      ''; // Lưu trữ văn bản cũ trước khi bắt đầu lượt nghe mới
+      '';
 
   @override
   void initState() {
@@ -54,8 +54,8 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
       _isSpeechInitialized = await _speech.initialize(
         onStatus: (status) async {
           print('STT Status: $status');
-          // Nếu hệ thống tự ngắt mà mình vẫn muốn ghi âm (_isRecording)
-          // thì tự động kích hoạt lại vòng lặp nghe sau một khoảng nghỉ ngắn
+
+
           if ((status == 'done' || status == 'notListening') && _isRecording) {
             await Future.delayed(const Duration(milliseconds: 500));
             if (_isRecording && !_speech.isListening) {
@@ -66,9 +66,9 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
         onError: (error) {
           print('STT Error detail: $error');
 
-          // Các lỗi nên bỏ qua để đảm bảo tính liên tục:
-          // error_no_match (không nghe thấy tiếng)
-          // error_speech_timeout (hết thời gian chờ)
+
+
+
           if (error.errorMsg.contains('no_match') ||
               error.errorMsg.contains('timeout')) {
             print(
@@ -76,7 +76,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             return;
           }
 
-          // Ngăn chặn việc hiện SnackBar quá nhiều với các lỗi không cần thiết
+
           if (error.errorMsg.contains('error_busy')) return;
 
           if (mounted && _isRecording) {
@@ -91,7 +91,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
         },
       );
       if (_isSpeechInitialized) {
-        // Kiểm tra xem ja_JP có hỗ trợ không
+
         var locales = await _speech.locales();
         bool hasJapanese = locales.any((l) => l.localeId.contains('ja'));
         if (!hasJapanese) {
@@ -201,7 +201,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
         _isLoading ||
         _isRateLimited) return;
 
-    // Tắt mic và xóa bộ nhớ tạm của giọng nói khi bắt đầu gửi tin nhắn
+
     if (_isRecording) {
       _stopListening();
     }
@@ -221,10 +221,10 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
 
       setState(() {
         _isLoading = false;
-        // Hiển thị câu trả lời của AI
+
         _addMessage(response['ai_reply'], false);
 
-        // Hiển thị feedback ngữ pháp nếu có
+
         if (response['grammar_correction'] != null) {
           _addGrammarFeedback(response['grammar_correction']);
         }
@@ -257,7 +257,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
   }
 
   Future<void> _startListening() async {
-    // Nếu đang nghe rồi thì không làm gì cả
+
     if (_speech.isListening) return;
 
     print('STT: _startListening called');
@@ -267,8 +267,8 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
         setState(() {
           _isRecording = true;
           _textBeforeCurrentSegment =
-              _textController.text; // Giữ lại nội dung cũ
-          // Nếu ô chat đã có chữ thì thêm dấu cách để nối từ cho đẹp
+              _textController.text;
+
           if (_textBeforeCurrentSegment.isNotEmpty &&
               !_textBeforeCurrentSegment.endsWith(' ')) {
             _textBeforeCurrentSegment += ' ';
@@ -276,20 +276,9 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
           _currentVoiceText = '';
         });
 
-        /* 
-        // 2. Visual feedback (Đã xóa theo yêu cầu)
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('👂 Đang nghe... Hãy nói tiếng Nhật!'),
-              duration: Duration(seconds: 2),
-              backgroundColor: AppColors.toriiRed,
-            ),
-          );
-        }
-        */
 
-        // 3. Select locale
+
+
         var locales = await _speech.locales();
         String? targetLocaleId;
         for (var l in locales) {
@@ -305,7 +294,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
 
         print('STT: Final target locale: $targetLocaleId');
 
-        // 4. Start listening với cấu hình tối ưu nhất
+
         await _speech.listen(
           onResult: (result) {
             if (result.recognizedWords.isNotEmpty) {
@@ -320,11 +309,11 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             }
           },
           localeId: targetLocaleId,
-          // Sử dụng các tùy chọn nâng cao để tăng độ ổn định
+
           listenFor: const Duration(minutes: 20),
           pauseFor: const Duration(seconds: 60),
           onDevice:
-              false, // Tắt chế độ offline để tránh lỗi language_unavailable
+              false,
           cancelOnError: false,
           partialResults: true,
         );
@@ -484,7 +473,7 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
                 color: AppColors.toriiRed,
                 backgroundColor: Colors.transparent),
 
-          // Mode Indicator
+
           Container(
             width: double.infinity,
             padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
@@ -556,19 +545,8 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             ),
           ),
 
-          /*
-          // Debug Status (Đã xóa theo yêu cầu)
-          Container(
-            color: Colors.black,
-            width: double.infinity,
-            padding: const EdgeInsets.all(4),
-            child: Text(
-              'DEBUG: Mic: ${_isSpeechInitialized ? "OK" : "FAIL"} | Text: "$_currentVoiceText"',
-              style: const TextStyle(color: Colors.green, fontSize: 10, fontFamily: 'monospace'),
-            ),
-          ),
-          */
-          // Input Area
+
+
           Container(
             padding: EdgeInsets.fromLTRB(
                 16, 12, 16, MediaQuery.of(context).padding.bottom + 12),
@@ -584,14 +562,14 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
             ),
             child: Row(
               children: [
-                // Mic Button
+
                 RoleplayMicButton(
                   isRecording: _isRecording,
                   onTap:
                       (_isLoading || _isRateLimited) ? () {} : _toggleRecording,
                 ),
                 const SizedBox(width: 12),
-                // Text Field
+
                 Expanded(
                   child: Container(
                     decoration: BoxDecoration(
@@ -603,9 +581,9 @@ class _RoleplayChatScreenState extends State<RoleplayChatScreen> {
                       readOnly: _isLoading || _isRateLimited,
                       style: TextStyle(
                           fontSize: 15, color: AppColors.primaryText(context)),
-                      maxLines: null, // Cho phép tự co giãn theo nội dung
+                      maxLines: null,
                       keyboardType:
-                          TextInputType.multiline, // Hỗ trợ nhập nhiều dòng
+                          TextInputType.multiline,
                       decoration: InputDecoration(
                         hintText: 'Nhận xét bằng tiếng Nhật...',
                         hintStyle:

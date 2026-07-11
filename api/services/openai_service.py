@@ -9,12 +9,12 @@ client = AsyncOpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 class RoleplayAIService:
     @staticmethod
     async def generate_reply(scenario_title: str, scenario_desc: str, mode: str, chat_history: List[dict], user_message: str) -> ChatResponseResp:
-        # Định nghĩa Prompt
+
         system_instruction = f"""
 You are an AI Japanese conversation partner playing a role in a roleplay scenario.
 Scenario: {scenario_title}
 Context: {scenario_desc}
-Politeness Mode: {mode.upper()} 
+Politeness Mode: {mode.upper()}
 (If mode is KEIGO, you and the user MUST communicate in formal Keigo/Teineigo. If mode is PLAIN, you both MUST communicate in casual/plain form.)
 
 Your tasks:
@@ -33,13 +33,13 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
     }}
 }}
 """
-        
+
         messages = [{"role": "system", "content": system_instruction}]
-        
-        # Thêm lịch sử trò chuyện
+
+
         for msg in chat_history:
             messages.append({"role": msg["role"], "content": msg["content"]})
-            
+
         messages.append({"role": "user", "content": user_message})
 
         try:
@@ -52,12 +52,12 @@ You MUST completely adhere to the following JSON structure. Output only valid JS
 
             content = response.choices[0].message.content
             parsed = json.loads(content)
-            
-            # Khởi tạo schema an toàn
+
+
             grammar = None
             if parsed.get("grammar_correction"):
                 grammar = GrammarCorrectionSchema(**parsed["grammar_correction"])
-                
+
             return ChatResponseResp(
                 ai_reply=parsed.get("ai_reply", "すみません、もう一度お願いします。"),
                 suggestions=parsed.get("suggestions", []),

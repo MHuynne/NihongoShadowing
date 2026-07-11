@@ -29,7 +29,7 @@ class HeroIllustration extends StatelessWidget {
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Overlay gradient/blur for styling from HTML
+
             Container(
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
@@ -45,7 +45,7 @@ class HeroIllustration extends StatelessWidget {
                 ),
               ),
             ),
-            // The central icon container
+
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(

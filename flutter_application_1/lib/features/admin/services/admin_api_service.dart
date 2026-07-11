@@ -224,7 +224,7 @@ class AdminApiService {
     await _request('DELETE', '/roleplay/scenarios/$scenarioId');
   }
 
-  // ─── Shadowing Segments (độc lập) ────────────────────────────────────────
+
 
   Future<List<Map<String, dynamic>>> fetchAllSegments() async {
     final data = await _request('GET', '/shadowing/segments/all');
@@ -260,7 +260,7 @@ class AdminApiService {
     await _request('DELETE', '/shadowing/segments/$segmentId');
   }
 
-  // ─── Segment Topics ───────────────────────────────────────────────────────
+
 
   Future<List<Map<String, dynamic>>> fetchSegmentTopics() async {
     final data = await _request('GET', '/segment-topics/');
@@ -314,7 +314,7 @@ class AdminApiService {
   Future<List<Map<String, dynamic>>> createSegmentsBulk(
     List<Map<String, dynamic>> segments,
   ) async {
-    // Gửi JSON array — _request chỉ nhận Map nên gọi http.post trực tiếp
+
     final uri = _uri('/shadowing/segments/bulk');
     final response = await http.post(
       uri,
@@ -332,7 +332,7 @@ class AdminApiService {
     throw Exception(detail ?? 'HTTP ${response.statusCode}');
   }
 
-  // ─── Categories ──────────────────────────────────────────────────────────
+
 
   Future<List<Map<String, dynamic>>> fetchCategories() async {
     final data = await _request('GET', '/categories/');
