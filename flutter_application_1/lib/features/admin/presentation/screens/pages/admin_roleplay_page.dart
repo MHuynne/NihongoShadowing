@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
@@ -45,6 +44,30 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     }
   }
 
+  InputDecoration _inputDeco(String label, {bool isDense = false}) {
+    return InputDecoration(
+      labelText: label,
+      isDense: isDense,
+      labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+      floatingLabelStyle: const TextStyle(color: AdminPalette.sidebarSelectedForeground, fontSize: 13, fontWeight: FontWeight.w700),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: isDense ? 12 : 16),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.015),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.06), width: 1.0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AdminPalette.sidebarSelectedForeground, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AdminPalette.errorRed, width: 1.0),
+      ),
+    );
+  }
+
   Future<void> _openScenarioDialog([Map<String, dynamic>? scenario]) async {
     final titleController = TextEditingController(
       text: (scenario?['title'] ?? '').toString(),
@@ -59,36 +82,35 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: Text(scenario == null ? 'Thêm kịch bản' : 'Chỉnh sửa kịch bản'),
+        title: Text(
+          scenario == null ? 'Thêm kịch bản' : 'Chỉnh sửa kịch bản',
+          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+        ),
+        backgroundColor: AdminPalette.surfaceMuted,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
+        ),
         content: SizedBox(
-          width: 460,
+          width: 480,
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
                   controller: titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Tiêu đề',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDeco('Tiêu đề'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: descriptionController,
                   maxLines: 4,
-                  decoration: const InputDecoration(
-                    labelText: 'Mô tả bối cảnh',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDeco('Mô tả bối cảnh'),
                 ),
                 const SizedBox(height: 12),
                 TextField(
                   controller: iconController,
-                  decoration: const InputDecoration(
-                    labelText: 'Icon URL',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDeco('Icon URL (tuỳ chọn)'),
                 ),
               ],
             ),
@@ -192,13 +214,17 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AdminPalette.sidebarSelectedForeground),
+        ),
+      );
     }
 
     if (_error != null) {
       return Center(
-          child:
-              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
+        child: Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)),
+      );
     }
 
     if (_scenarios.isEmpty) {
@@ -209,17 +235,18 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
     }
 
     return ListView.separated(
+      physics: const BouncingScrollPhysics(),
       itemCount: _scenarios.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
         final scenario = _scenarios[index];
         return Container(
           decoration: BoxDecoration(
-            color: AdminPalette.surfaceMuted,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: AdminPalette.borderSoft),
+            color: Colors.white.withOpacity(0.015),
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
           ),
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -229,13 +256,15 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                 decoration: BoxDecoration(
                   color: AdminPalette.roleplaySurface,
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: AdminPalette.roleplayAccent.withOpacity(0.2), width: 0.8),
                 ),
                 child: const Icon(
                   Icons.forum_rounded,
                   color: AdminPalette.roleplayAccent,
+                  size: 22,
                 ),
               ),
-              const SizedBox(width: 14),
+              const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,41 +275,44 @@ class _AdminRoleplayPageState extends State<AdminRoleplayPage> {
                         fontSize: 16,
                         fontWeight: FontWeight.w800,
                         color: AdminPalette.textPrimary,
+                        letterSpacing: -0.3,
                       ),
                     ),
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
                     Text(
                       (scenario['description'] ?? 'Không có mô tả').toString(),
                       style: const TextStyle(
                         color: AdminPalette.textSecondary,
                         height: 1.5,
+                        fontSize: 13.5,
                       ),
                     ),
                     if ((scenario['icon_url'] ?? '').toString().isNotEmpty) ...[
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
                       Text(
                         (scenario['icon_url'] ?? '').toString(),
                         style: const TextStyle(
-                          color: AdminPalette.textSecondary,
-                          fontSize: 12,
+                          color: AdminPalette.textMuted,
+                          fontSize: 11,
                         ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
+              const SizedBox(width: 16),
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     tooltip: 'Sửa',
                     onPressed: () => _openScenarioDialog(scenario),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 20),
                   ),
                   IconButton(
                     tooltip: 'Xóa',
                     onPressed: () => _deleteScenario(scenario),
-                    icon: const Icon(Icons.delete_outline_rounded),
+                    icon: const Icon(Icons.delete_outline_rounded, color: AdminPalette.errorRed, size: 20),
                   ),
                 ],
               ),

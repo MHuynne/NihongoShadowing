@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/services/user_prefs_service.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/features/home/presentation/screens/main_screen.dart';
 
-
 class LevelSelectionScreen extends StatefulWidget {
-
   final bool isChanging;
 
   const LevelSelectionScreen({super.key, this.isChanging = false});
@@ -22,9 +21,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
   late final AnimationController _fadeCtrl;
   late final Animation<double> _fadeAnim;
 
-  static const _toriiRed = Color(0xFFBC2428);
-
-
   static const _levels = [
     _LevelInfo(
       code: 'N5',
@@ -33,7 +29,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
       keywords: ['Hiragana & Katakana', '800 từ vựng', '100 Kanji cơ bản'],
       emoji: '🌱',
       color: Color(0xFF4CAF50),
-      gradient: [Color(0xFFE8F5E9), Color(0xFFF1F8E9)],
     ),
     _LevelInfo(
       code: 'N4',
@@ -41,8 +36,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
       description: 'Có thể hiểu nội dung giao tiếp cơ bản trong các tình huống quen thuộc.',
       keywords: ['1.500 từ vựng', '300 Kanji', 'Ngữ pháp cơ bản'],
       emoji: '🌸',
-      color: Color(0xFF2196F3),
-      gradient: [Color(0xFFE3F2FD), Color(0xFFEDE7F6)],
+      color: Color(0xFFFF6B9D),
     ),
     _LevelInfo(
       code: 'N3',
@@ -51,7 +45,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
       keywords: ['3.750 từ vựng', '650 Kanji', 'Ngữ pháp nâng cao'],
       emoji: '🗾',
       color: Color(0xFFFF9800),
-      gradient: [Color(0xFFFFF8E1), Color(0xFFFFF3E0)],
     ),
     _LevelInfo(
       code: 'N2',
@@ -60,7 +53,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
       keywords: ['6.000 từ vựng', '1.000 Kanji', 'Giao tiếp lưu loát'],
       emoji: '🗻',
       color: Color(0xFF9C27B0),
-      gradient: [Color(0xFFF3E5F5), Color(0xFFF8BBD0)],
     ),
     _LevelInfo(
       code: 'N1',
@@ -68,8 +60,7 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
       description: 'Hiểu tiếng Nhật trong mọi hoàn cảnh, đọc hiểu các bài viết phức tạp về mặt logic.',
       keywords: ['10.000 từ vựng', '2.000 Kanji', 'Tiếng Nhật bản xứ'],
       emoji: '🐉',
-      color: Color(0xFFE91E63),
-      gradient: [Color(0xFFFCE4EC), Color(0xFFFFCDD2)],
+      color: Color(0xFFEF4444),
     ),
   ];
 
@@ -79,7 +70,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     _fadeCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 600));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
-
 
     if (widget.isChanging) _loadCurrentLevel();
   }
@@ -108,10 +98,8 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     if (!mounted) return;
 
     if (widget.isChanging) {
-
       Navigator.of(context).pop(_selectedLevel);
     } else {
-
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const MainScreen()),
         (route) => false,
@@ -122,52 +110,48 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFFFF7F9),
-      body: FadeTransition(
-        opacity: _fadeAnim,
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-                  child: Column(
-                    children: [
-                      ..._levels.map((lvl) => _LevelCard(
-                            info: lvl,
-                            isSelected: _selectedLevel == lvl.code,
-                            onTap: () => setState(() => _selectedLevel = lvl.code),
-                          )),
-                      const SizedBox(height: 8),
-                      _buildConfirmButton(),
-                    ],
+      backgroundColor: Colors.transparent,
+      body: SakuraNightBackground(
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SafeArea(
+            child: Column(
+              children: [
+                _buildHeader(),
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+                    child: Column(
+                      children: [
+                        ..._levels.map((lvl) => _LevelCard(
+                              info: lvl,
+                              isSelected: _selectedLevel == lvl.code,
+                              onTap: () => setState(() => _selectedLevel = lvl.code),
+                            )),
+                        const SizedBox(height: 12),
+                        _buildConfirmButton(),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-
-
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: SNJ.bgDeep.withOpacity(0.4),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(28)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
+        border: const Border(
+          bottom: BorderSide(color: SNJ.border, width: 0.8),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -178,10 +162,11 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
               child: Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEAEB),
+                  color: SNJ.sakuraSoft,
                   borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: SNJ.borderNeon, width: 0.8),
                 ),
-                child: const Icon(Icons.arrow_back_ios_new, color: _toriiRed, size: 18),
+                child: const Icon(Icons.arrow_back_ios_new, color: SNJ.sakura, size: 18),
               ),
             ),
           if (widget.isChanging) const SizedBox(height: 16),
@@ -191,8 +176,9 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: const Color(0xFFFFEAEB),
+                  color: SNJ.sakuraSoft,
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: SNJ.borderNeon, width: 0.8),
                 ),
                 child: const Center(child: Text('🎌', style: TextStyle(fontSize: 26))),
               ),
@@ -206,18 +192,18 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
                       style: const TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w900,
-                        color: Color(0xFF1E293B),
+                        color: SNJ.textPrimary,
                         letterSpacing: -0.4,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 4),
                     Text(
                       widget.isChanging
                           ? 'Chọn lại cấp độ JLPT phù hợp với bạn'
                           : 'Chọn trình độ để chúng tôi cá nhân hoá lộ trình học của bạn',
                       style: const TextStyle(
                         fontSize: 13,
-                        color: Color(0xFF64748B),
+                        color: SNJ.textSecondary,
                         height: 1.4,
                       ),
                     ),
@@ -231,8 +217,6 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
     );
   }
 
-
-
   Widget _buildConfirmButton() {
     final isEnabled = _selectedLevel != null && !_isSaving;
     return AnimatedOpacity(
@@ -241,45 +225,58 @@ class _LevelSelectionScreenState extends State<LevelSelectionScreen>
       child: SizedBox(
         width: double.infinity,
         height: 56,
-        child: ElevatedButton(
-          onPressed: isEnabled ? _confirm : null,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: _toriiRed,
-            foregroundColor: Colors.white,
-            disabledBackgroundColor: _toriiRed,
-            disabledForegroundColor: Colors.white,
-            elevation: 4,
-            shadowColor: _toriiRed.withValues(alpha: 0.35),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-          ),
-          child: _isSaving
-              ? const SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
-                )
-              : Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(
-                      _selectedLevel != null
-                          ? 'Xác nhận — Cấp độ $_selectedLevel'
-                          : 'Chọn cấp độ của bạn',
-                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+        child: Container(
+          decoration: BoxDecoration(
+            gradient: isEnabled ? SNJ.sakuraGradient : null,
+            color: isEnabled ? null : Colors.white.withOpacity(0.08),
+            borderRadius: BorderRadius.circular(18),
+            boxShadow: isEnabled
+                ? [
+                    BoxShadow(
+                      color: SNJ.sakura.withOpacity(0.35),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
                     ),
-                    if (_selectedLevel != null) ...[
-                      const SizedBox(width: 8),
-                      const Icon(Icons.arrow_forward_rounded, size: 20),
+                  ]
+                : [],
+          ),
+          child: ElevatedButton(
+            onPressed: isEnabled ? _confirm : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: Colors.transparent,
+              disabledForegroundColor: Colors.white.withOpacity(0.4),
+              shadowColor: Colors.transparent,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+            ),
+            child: _isSaving
+                ? const SizedBox(
+                    width: 22,
+                    height: 22,
+                    child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2.5),
+                  )
+                : Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _selectedLevel != null
+                            ? 'Xác nhận — Cấp độ $_selectedLevel'
+                            : 'Chọn cấp độ của bạn',
+                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800),
+                      ),
+                      if (_selectedLevel != null) ...[
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_rounded, size: 20),
+                      ],
                     ],
-                  ],
-                ),
+                  ),
+          ),
         ),
       ),
     );
   }
 }
-
-
 
 class _LevelCard extends StatelessWidget {
   final _LevelInfo info;
@@ -302,76 +299,64 @@ class _LevelCard extends StatelessWidget {
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeInOut,
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: isSelected
-                  ? [
-                      info.color.withValues(alpha: 0.15),
-                      info.color.withValues(alpha: 0.05),
-                    ]
-                  : info.gradient,
-            ),
+            color: isSelected
+                ? info.color.withOpacity(0.12)
+                : Colors.white.withOpacity(0.05),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: isSelected ? info.color : Colors.transparent,
-              width: 2.5,
+              color: isSelected ? info.color : SNJ.border,
+              width: isSelected ? 2.5 : 0.8,
             ),
-            boxShadow: [
-              BoxShadow(
-                color: isSelected
-                    ? info.color.withValues(alpha: 0.25)
-                    : Colors.black.withValues(alpha: 0.04),
-                blurRadius: isSelected ? 20 : 10,
-                offset: const Offset(0, 6),
-              ),
-            ],
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: info.color.withOpacity(0.25),
+                      blurRadius: 20,
+                      offset: const Offset(0, 6),
+                    ),
+                  ]
+                : [],
           ),
           padding: const EdgeInsets.all(20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               Container(
                 width: 56,
                 height: 56,
                 decoration: BoxDecoration(
-                  color: isSelected ? info.color.withValues(alpha: 0.18) : Colors.white,
+                  color: isSelected
+                      ? info.color.withOpacity(0.18)
+                      : Colors.white.withOpacity(0.05),
                   borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: info.color.withValues(alpha: 0.15),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  border: Border.all(
+                    color: isSelected ? info.color.withOpacity(0.3) : SNJ.border,
+                    width: 0.8,
+                  ),
                 ),
                 child: Center(
                   child: Text(info.emoji, style: const TextStyle(fontSize: 28)),
                 ),
               ),
               const SizedBox(width: 16),
-
-
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
-
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: isSelected ? info.color : info.color.withValues(alpha: 0.12),
+                            color: isSelected ? info.color : info.color.withOpacity(0.15),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             info.code,
-                            style: TextStyle(
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w900,
-                              color: isSelected ? Colors.white : info.color,
+                              color: Colors.white,
                               letterSpacing: 0.5,
                             ),
                           ),
@@ -383,11 +368,10 @@ class _LevelCard extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w800,
-                              color: isSelected ? info.color : const Color(0xFF1E293B),
+                              color: isSelected ? info.color : SNJ.textPrimary,
                             ),
                           ),
                         ),
-
                         AnimatedSwitcher(
                           duration: const Duration(milliseconds: 200),
                           child: isSelected
@@ -405,7 +389,7 @@ class _LevelCard extends StatelessWidget {
                                   width: 22,
                                   height: 22,
                                   decoration: BoxDecoration(
-                                    border: Border.all(color: const Color(0xFFCBD5E1), width: 2),
+                                    border: Border.all(color: SNJ.border, width: 2),
                                     shape: BoxShape.circle,
                                   ),
                                 ),
@@ -417,12 +401,11 @@ class _LevelCard extends StatelessWidget {
                       info.description,
                       style: const TextStyle(
                         fontSize: 12,
-                        color: Color(0xFF64748B),
+                        color: SNJ.textSecondary,
                         height: 1.4,
                       ),
                     ),
                     const SizedBox(height: 10),
-
                     Wrap(
                       spacing: 6,
                       runSpacing: 4,
@@ -432,13 +415,13 @@ class _LevelCard extends StatelessWidget {
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? info.color.withValues(alpha: 0.12)
-                                    : Colors.white.withValues(alpha: 0.8),
+                                    ? info.color.withOpacity(0.15)
+                                    : Colors.white.withOpacity(0.04),
                                 borderRadius: BorderRadius.circular(6),
                                 border: Border.all(
                                   color: isSelected
-                                      ? info.color.withValues(alpha: 0.3)
-                                      : const Color(0xFFE2E8F0),
+                                      ? info.color.withOpacity(0.3)
+                                      : SNJ.border,
                                 ),
                               ),
                               child: Text(
@@ -446,7 +429,7 @@ class _LevelCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 10,
                                   fontWeight: FontWeight.w700,
-                                  color: isSelected ? info.color : const Color(0xFF64748B),
+                                  color: isSelected ? Colors.white : SNJ.textSecondary,
                                 ),
                               ),
                             ),
@@ -464,8 +447,6 @@ class _LevelCard extends StatelessWidget {
   }
 }
 
-
-
 class _LevelInfo {
   final String code;
   final String label;
@@ -473,7 +454,6 @@ class _LevelInfo {
   final List<String> keywords;
   final String emoji;
   final Color color;
-  final List<Color> gradient;
 
   const _LevelInfo({
     required this.code,
@@ -482,6 +462,5 @@ class _LevelInfo {
     required this.keywords,
     required this.emoji,
     required this.color,
-    required this.gradient,
   });
 }

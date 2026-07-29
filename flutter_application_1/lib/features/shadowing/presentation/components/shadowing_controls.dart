@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class ShadowingControls extends StatelessWidget {
   final bool isRecording;
@@ -19,8 +19,6 @@ class ShadowingControls extends StatelessWidget {
     this.currentSpeed = 1.0,
   });
 
-  static void _noop() {}
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -28,49 +26,41 @@ class ShadowingControls extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-
           _SampleButton(
             isPlaying: isPlayingSample,
             onPressed: onPlaySample,
           ),
 
-
           GestureDetector(
             onTap: onRecordPressed,
             child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              width: 80,
-              height: 80,
+              duration: const Duration(milliseconds: 250),
+              width: 82,
+              height: 82,
               decoration: BoxDecoration(
-                color: AppColors.sunRed,
+                gradient: SNJ.sakuraGradient,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  if (isRecording)
-                    BoxShadow(
-                      color: AppColors.sunRed.withValues(alpha: 0.4),
-                      blurRadius: 20,
-                      spreadRadius: 10,
-                    ),
                   BoxShadow(
-                    color: AppColors.sunRed.withValues(alpha: 0.2),
-                    blurRadius: 10,
+                    color: SNJ.sakura.withOpacity(isRecording ? 0.6 : 0.3),
+                    blurRadius: isRecording ? 28 : 16,
+                    spreadRadius: isRecording ? 6 : 2,
                     offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Icon(
-                isRecording ? Icons.mic : Icons.mic_none,
+                isRecording ? Icons.mic_rounded : Icons.mic_none_rounded,
                 color: Colors.white,
-                size: 32,
+                size: 34,
               ),
             ),
           ),
 
-
           _buildSideButton(
             icon: Icons.speed_rounded,
             label: '×${currentSpeed == 1.0 ? "1.0" : currentSpeed.toString()}',
-            color: AppColors.sunRed,
+            color: SNJ.sakura,
             onPressed: onSpeedToggle,
           ),
         ],
@@ -90,20 +80,25 @@ class ShadowingControls extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            padding: const EdgeInsets.all(12),
+            padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
-              color: AppColors.lightPinkBackground,
+              color: Colors.white.withOpacity(0.05),
               shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.08),
+                width: 1.0,
+              ),
             ),
             child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(height: 8),
           Text(
             label,
-            style: TextStyle(
+            style: const TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: color,
+              fontWeight: FontWeight.w900,
+              color: Color(0xFFCCB8D8),
+              letterSpacing: 0.5,
             ),
           ),
         ],
@@ -111,7 +106,6 @@ class ShadowingControls extends StatelessWidget {
     );
   }
 }
-
 
 class _SampleButton extends StatelessWidget {
   final bool isPlaying;
@@ -127,39 +121,47 @@ class _SampleButton extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.all(12),
+            duration: const Duration(milliseconds: 250),
+            padding: const EdgeInsets.all(13),
             decoration: BoxDecoration(
               color: isPlaying
-                  ? AppColors.sunRed.withValues(alpha: 0.15)
-                  : AppColors.lightPinkBackground,
+                  ? SNJ.sakuraSoft
+                  : Colors.white.withOpacity(0.05),
               shape: BoxShape.circle,
-              border: isPlaying
-                  ? Border.all(color: AppColors.sunRed, width: 2)
-                  : null,
+              border: Border.all(
+                color: isPlaying
+                    ? SNJ.sakura
+                    : Colors.white.withOpacity(0.08),
+                width: isPlaying ? 1.5 : 1.0,
+              ),
             ),
             child: isPlaying
-                ? SizedBox(
+                ? const SizedBox(
                     width: 24,
                     height: 24,
                     child: CircularProgressIndicator(
                       strokeWidth: 2.5,
-                      color: AppColors.sunRed,
+                      color: SNJ.sakura,
                     ),
                   )
-                : Icon(Icons.play_arrow_rounded, color: AppColors.sunRed, size: 24),
+                : const Icon(
+                    Icons.volume_up_rounded,
+                    color: Colors.white,
+                    size: 24,
+                  ),
           ),
           const SizedBox(height: 8),
           Text(
-            isPlaying ? 'ĐANG PHÁT' : 'SAMPLE',
+            isPlaying ? 'ĐANG PHÁT' : 'AUDIO MẪU',
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.bold,
-              color: AppColors.sunRed,
+              fontWeight: FontWeight.w900,
+              color: isPlaying ? SNJ.sakura : const Color(0xFFCCB8D8),
+              letterSpacing: 0.5,
             ),
           ),
         ],
       ),
     );
   }
-}
+}

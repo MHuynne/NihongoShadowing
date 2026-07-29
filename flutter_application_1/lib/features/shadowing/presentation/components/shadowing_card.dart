@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/features/shadowing/models/shadowing_model.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/furigana_text.dart';
 
@@ -22,72 +22,76 @@ class ShadowingCard extends StatelessWidget {
   }
 
   Widget _buildReadingModeCard() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.sunRed.withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          const Text(
-            'CÂU TIẾNG NHẬT',
-            style: TextStyle(
-              color: AppColors.sunRed,
-              fontWeight: FontWeight.bold,
-              fontSize: 10,
-              letterSpacing: 1.2,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GlassCard(
+        neonBorder: true,
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            const Text(
+              'CÂU TIẾNG NHẬT',
+              style: TextStyle(
+                color: SNJ.sakura,
+                fontWeight: FontWeight.w900,
+                fontSize: 11,
+                letterSpacing: 1.5,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
+            const SizedBox(height: 18),
 
+            FuriganaText(
+              text: sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
+              furigana: sentence.furiganaHtml,
+              kanjiFontSize: 28,
+              furiganaFontSize: 13,
+              kanjiColor: Colors.white,
+              furiganaColor: SNJ.sakura,
+            ),
 
-          FuriganaText(
-            text: sentence.kanji.isNotEmpty ? sentence.kanji : sentence.romaji,
-            furigana: sentence.furiganaHtml,
-            kanjiFontSize: 28,
-            furiganaFontSize: 13,
-          ),
+            const SizedBox(height: 24),
+            Divider(color: Colors.white.withOpacity(0.08)),
+            const SizedBox(height: 16),
 
-          const SizedBox(height: 24),
-          const Divider(color: AppColors.slate100),
-          const SizedBox(height: 20),
+            if (sentence.romaji.isNotEmpty)
+              _buildTranslationRow(
+                'ROMAJI',
+                sentence.romaji,
+                SNJ.sakuraSoft,
+                SNJ.sakura,
+              ),
+            if (sentence.romaji.isNotEmpty) const SizedBox(height: 12),
 
+            if (sentence.hanViet.isNotEmpty)
+              _buildTranslationRow(
+                'HÁN-VIỆT',
+                sentence.hanViet,
+                Colors.white.withOpacity(0.06),
+                const Color(0xFFCCB8D8),
+              ),
+            if (sentence.hanViet.isNotEmpty) const SizedBox(height: 12),
 
-          if (sentence.romaji.isNotEmpty)
-            _buildTranslationRow('ROMAJI', sentence.romaji, AppColors.lightPinkBackground, AppColors.sunRed),
-          if (sentence.romaji.isNotEmpty) const SizedBox(height: 12),
-
-          if (sentence.hanViet.isNotEmpty)
-            _buildTranslationRow('HÁN-VIỆT', sentence.hanViet, AppColors.lightPinkBackground, AppColors.textDark),
-          if (sentence.hanViet.isNotEmpty) const SizedBox(height: 12),
-
-          if (sentence.meaning.isNotEmpty)
-            _buildTranslationRow('DỊCH NGHĨA', sentence.meaning, AppColors.lightTealGreen, AppColors.progressTeal),
-        ],
+            if (sentence.meaning.isNotEmpty)
+              _buildTranslationRow(
+                'DỊCH NGHĨA',
+                sentence.meaning,
+                const Color(0x2710B981),
+                const Color(0xFF34D399),
+              ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildTranslationRow(String label, String value, Color badgeColor, Color labelColor) {
+  Widget _buildTranslationRow(
+      String label, String value, Color badgeColor, Color labelColor) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
           decoration: BoxDecoration(
             color: badgeColor,
             borderRadius: BorderRadius.circular(8),
@@ -96,18 +100,20 @@ class ShadowingCard extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 10,
-              fontWeight: FontWeight.bold,
+              fontWeight: FontWeight.w900,
               color: labelColor,
+              letterSpacing: 0.5,
             ),
           ),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: 14),
         Expanded(
           child: Text(
             value,
             style: const TextStyle(
               fontSize: 15,
-              color: AppColors.textDark,
+              color: Colors.white,
+              fontWeight: FontWeight.w500,
               height: 1.5,
             ),
           ),
@@ -117,84 +123,96 @@ class ShadowingCard extends StatelessWidget {
   }
 
   Widget _buildBlindModeCard() {
-
     final hintText = sentence.kanji.isNotEmpty
         ? sentence.kanji.substring(0, sentence.kanji.length.clamp(0, 3))
         : '？';
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      height: 240,
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.85),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.sakuraPink.withOpacity(0.2),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: CustomPaint(
-        painter: DashedBorderPainter(color: AppColors.sakuraPink),
-        child: Stack(
-          children: [
-            Positioned(
-              top: 16,
-              right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.sunRed,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Text('BLIND MODE', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-            ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.visibility_off_rounded, size: 40, color: AppColors.sakuraPink.withValues(alpha: 0.8)),
-                  const SizedBox(height: 12),
-                  const Text(
-                    'Lắng nghe và lặp lại',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      fontStyle: FontStyle.italic,
-                      color: AppColors.sunRed,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GlassCard(
+        neonBorder: true,
+        padding: EdgeInsets.zero,
+        child: SizedBox(
+          height: 240,
+          child: CustomPaint(
+            painter: DashedBorderPainter(color: SNJ.sakura),
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      gradient: SNJ.sakuraGradient,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                          color: SNJ.sakura.withOpacity(0.2),
+                          blurRadius: 8,
+                        )
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  Text(
-                    hintText,
-                    style: TextStyle(
-                      fontSize: 52,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.slate300.withValues(alpha: 0.5),
-                    ),
-                  ),
-                  if (sentence.hanViet.isNotEmpty)
-                    Text(
-                      sentence.hanViet.split(' ').take(2).join(' '),
+                    child: const Text(
+                      'BLIND MODE',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: AppColors.slate300.withValues(alpha: 0.5),
+                        color: Colors.white,
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                ],
-              ),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.visibility_off_rounded,
+                        size: 44,
+                        color: SNJ.sakura.withOpacity(0.8),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Lắng nghe và lặp lại',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          color: SNJ.sakura,
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+                      Text(
+                        hintText,
+                        style: TextStyle(
+                          fontSize: 52,
+                          fontWeight: FontWeight.w900,
+                          color: Colors.white.withOpacity(0.08),
+                        ),
+                      ),
+                      if (sentence.hanViet.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Text(
+                          sentence.hanViet.split(' ').take(2).join(' '),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: Colors.white.withOpacity(0.12),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
-
 
 class DashedBorderPainter extends CustomPainter {
   final Color color;
@@ -203,7 +221,7 @@ class DashedBorderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = color.withValues(alpha: 0.6)
+      ..color = color.withOpacity(0.25)
       ..strokeWidth = 2
       ..style = PaintingStyle.stroke;
 
@@ -232,4 +250,4 @@ class DashedBorderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+}

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/components/lesson_node.dart';
 import 'package:flutter_application_1/features/roadmap/presentation/screens/flashcard_screen.dart';
@@ -77,11 +77,7 @@ class _ChapterSectionState extends State<ChapterSection>
   ChapterModel get chapter => widget.chapter;
 
   Widget _buildChapterBanner() {
-    final color =
-        chapter.isLocked ? const Color(0xFF94A3B8) : AppColors.toriiRed;
-    final bgColor = chapter.isLocked
-        ? const Color(0xFFF1F5F9)
-        : Colors.white;
+    final isLocked = chapter.isLocked;
 
     return GestureDetector(
       onTap: _toggleExpanded,
@@ -89,37 +85,50 @@ class _ChapterSectionState extends State<ChapterSection>
         margin: const EdgeInsets.only(top: 24, bottom: 8),
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(18),
+          color: isLocked
+              ? Colors.white.withOpacity(0.03)
+              : const Color(0xD4150A2E),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: chapter.isLocked
-                ? const Color(0xFFE2E8F0)
-                : AppColors.toriiRed.withValues(alpha: 0.2),
+            color: isLocked
+                ? Colors.white.withOpacity(0.08)
+                : SNJ.borderNeon,
+            width: isLocked ? 0.8 : 1.2,
           ),
+          boxShadow: isLocked
+              ? null
+              : [
+                  BoxShadow(
+                    color: SNJ.sakura.withOpacity(0.12),
+                    blurRadius: 18,
+                    spreadRadius: 1,
+                  )
+                ],
         ),
         child: Row(
           children: [
-
             Container(
               width: 44,
               height: 44,
               decoration: BoxDecoration(
-                color: chapter.isLocked
-                    ? const Color(0xFFE2E8F0)
-                    : AppColors.toriiRed,
-                borderRadius: BorderRadius.circular(12),
+                color: isLocked
+                    ? Colors.white.withOpacity(0.06)
+                    : SNJ.sakuraSoft,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: isLocked
+                      ? Colors.transparent
+                      : SNJ.borderNeon.withOpacity(0.5),
+                  width: 1.0,
+                ),
               ),
               child: Icon(
-                chapter.isLocked
-                    ? Icons.lock_rounded
-                    : Icons.landscape_rounded,
-                color: chapter.isLocked
-                    ? const Color(0xFF94A3B8)
-                    : Colors.white,
+                isLocked ? Icons.lock_rounded : Icons.landscape_rounded,
+                color: isLocked ? const Color(0xFF8877A0) : SNJ.sakura,
                 size: 22,
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -128,8 +137,9 @@ class _ChapterSectionState extends State<ChapterSection>
                     chapter.title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: FontWeight.w800,
-                      color: color,
+                      fontWeight: FontWeight.w900,
+                      color: isLocked ? const Color(0xFF8877A0) : Colors.white,
+                      letterSpacing: -0.3,
                     ),
                   ),
                   if (chapter.statusBadge != null) ...[
@@ -138,7 +148,9 @@ class _ChapterSectionState extends State<ChapterSection>
                       chapter.statusBadge!,
                       style: TextStyle(
                         fontSize: 12,
-                        color: color.withValues(alpha: 0.7),
+                        color: isLocked
+                            ? const Color(0xFF685780)
+                            : const Color(0xFFCCB8D8),
                         fontWeight: FontWeight.w600,
                       ),
                     ),
@@ -149,8 +161,11 @@ class _ChapterSectionState extends State<ChapterSection>
             AnimatedRotation(
               turns: _expanded ? 0 : 0.5,
               duration: const Duration(milliseconds: 300),
-              child: Icon(Icons.keyboard_arrow_up_rounded,
-                  color: color, size: 24),
+              child: Icon(
+                Icons.keyboard_arrow_up_rounded,
+                color: isLocked ? const Color(0xFF8877A0) : SNJ.sakura,
+                size: 24,
+              ),
             ),
           ],
         ),
@@ -162,7 +177,7 @@ class _ChapterSectionState extends State<ChapterSection>
     return CustomPaint(
       painter: _ZigzagPathPainter(
         lessonCount: chapter.lessons.length,
-        tealColor: AppColors.toriiRed,
+        tealColor: SNJ.sakura,
         dotted: true,
       ),
       child: Column(
@@ -179,19 +194,15 @@ class _ChapterSectionState extends State<ChapterSection>
     );
   }
 
-
   void _navigateToLesson(LessonModel lesson) {
     if (lesson.status == LessonStatus.locked || lesson.id == 'err_msg') return;
-
 
     if (lesson.status == LessonStatus.completed) {
       _showReplayDialog(lesson);
       return;
     }
 
-
     if (lesson.testPassed) {
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -203,7 +214,6 @@ class _ChapterSectionState extends State<ChapterSection>
         ),
       );
     } else if (lesson.flashcardDone) {
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -215,7 +225,6 @@ class _ChapterSectionState extends State<ChapterSection>
         ),
       );
     } else {
-
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -228,66 +237,121 @@ class _ChapterSectionState extends State<ChapterSection>
     }
   }
 
-
   void _showReplayDialog(LessonModel lesson) {
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        backgroundColor: const Color(0xFF1E0F38),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(28),
+          side: BorderSide(color: SNJ.borderNeon, width: 1.5),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            boxShadow: [
+              BoxShadow(
+                color: SNJ.sakura.withOpacity(0.12),
+                blurRadius: 28,
+              )
+            ],
+          ),
+          padding: const EdgeInsets.all(28),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Icon(Icons.check_circle_rounded, color: Color(0xFF16A34A), size: 48),
-              const SizedBox(height: 12),
-              Text(lesson.title,
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: const BoxDecoration(
+                  color: Color(0x1F16A34A),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.check_circle_rounded,
+                  color: Color(0xFF10B981),
+                  size: 48,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                lesson.title,
                 textAlign: TextAlign.center,
-                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w800, color: Color(0xFF1E293B))),
-              const SizedBox(height: 6),
-              const Text('Bài này bạn đã hoàn thành rồi! Ôn lại phần nào?',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w900,
+                  color: Colors.white,
+                  letterSpacing: -0.4,
+                ),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Bài học này đã hoàn thành. Hãy chọn nội dung bạn muốn ôn tập lại bên dưới:',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 13, color: Color(0xFF64748B))),
-              const SizedBox(height: 20),
+                style: TextStyle(
+                  fontSize: 13,
+                  color: Color(0xFFCCB8D8),
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 24),
               _replayBtn(
                 icon: Icons.style_rounded,
                 label: 'Từ vựng (Flashcard)',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => FlashcardScreen(
-                      topicId: lesson.topicId, lessonId: lesson.lessonId),
-                  ));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => FlashcardScreen(
+                          topicId: lesson.topicId, lessonId: lesson.lessonId),
+                    ),
+                  );
                 },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _replayBtn(
                 icon: Icons.quiz_rounded,
                 label: 'Kiểm tra từ vựng (Test)',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => VocabularyTestScreen(
-                      topicId: lesson.topicId, lessonId: lesson.lessonId, isReview: false),
-                  ));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => VocabularyTestScreen(
+                          topicId: lesson.topicId,
+                          lessonId: lesson.lessonId,
+                          isReview: false),
+                    ),
+                  );
                 },
               ),
-              const SizedBox(height: 10),
+              const SizedBox(height: 12),
               _replayBtn(
                 icon: Icons.mic_rounded,
                 label: 'Luyện phát âm (Shadowing)',
                 onTap: () {
                   Navigator.pop(context);
-                  Navigator.push(context, MaterialPageRoute(
-                    builder: (_) => ShadowingScreen(
-                      topicId: lesson.topicId, lessonId: lesson.lessonId, testErrors: 0),
-                  ));
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => ShadowingScreen(
+                          topicId: lesson.topicId,
+                          lessonId: lesson.lessonId,
+                          testErrors: 0),
+                    ),
+                  );
                 },
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 14),
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Hủy', style: TextStyle(color: Color(0xFF94A3B8))),
+                child: const Text(
+                  'Hủy bỏ',
+                  style: TextStyle(
+                    color: Color(0xFF8877A0),
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
@@ -296,23 +360,33 @@ class _ChapterSectionState extends State<ChapterSection>
     );
   }
 
-  Widget _replayBtn({required IconData icon, required String label, required VoidCallback onTap}) {
+  Widget _replayBtn(
+      {required IconData icon,
+      required String label,
+      required VoidCallback onTap}) {
     return SizedBox(
       width: double.infinity,
       child: OutlinedButton.icon(
         onPressed: onTap,
-        icon: Icon(icon, size: 18),
-        label: Text(label, style: const TextStyle(fontWeight: FontWeight.w700)),
+        icon: Icon(icon, size: 18, color: SNJ.sakura),
+        label: Text(
+          label,
+          style: const TextStyle(
+            fontWeight: FontWeight.w800,
+            fontSize: 13,
+          ),
+        ),
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.toriiRed,
-          side: BorderSide(color: AppColors.toriiRed.withValues(alpha: 0.5), width: 1.5),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          foregroundColor: Colors.white,
+          side: BorderSide(color: SNJ.borderNeon, width: 1.2),
+          backgroundColor: Colors.white.withOpacity(0.04),
+          padding: const EdgeInsets.symmetric(vertical: 15),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         ),
       ),
     );
   }
-
 
   Widget _buildEmptyChapter() {
     return Column(
@@ -325,17 +399,18 @@ class _ChapterSectionState extends State<ChapterSection>
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: AppColors.slate200,
+              color: Colors.white.withOpacity(0.08),
             ),
           ),
-          child: Center(
+          child: const Center(
             child: Text(
-              'Â·Â·Â·',
+              '···',
               style: TextStyle(
-                  color: AppColors.slate400,
-                  fontSize: 28,
-                  fontWeight: FontWeight.bold,
-                  letterSpacing: 4),
+                color: Color(0xFF8877A0),
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                letterSpacing: 4,
+              ),
             ),
           ),
         ),
@@ -343,7 +418,6 @@ class _ChapterSectionState extends State<ChapterSection>
     );
   }
 }
-
 
 class _ZigzagPathPainter extends CustomPainter {
   final int lessonCount;
@@ -361,13 +435,12 @@ class _ZigzagPathPainter extends CustomPainter {
     if (lessonCount < 2) return;
 
     final paint = Paint()
-      ..color = tealColor.withValues(alpha: 0.35)
+      ..color = tealColor.withOpacity(0.3)
       ..strokeWidth = 2.5
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round;
 
     final double nodeHeight = 140.0;
-
 
     final positions = List.generate(lessonCount, (i) {
       final mod = i % 4;
@@ -390,7 +463,6 @@ class _ZigzagPathPainter extends CustomPainter {
         path.cubicTo(prevX, midY, x, midY, x, y);
       }
     }
-
 
     _drawDashedPath(canvas, path, paint);
   }
@@ -415,4 +487,4 @@ class _ZigzagPathPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
+}

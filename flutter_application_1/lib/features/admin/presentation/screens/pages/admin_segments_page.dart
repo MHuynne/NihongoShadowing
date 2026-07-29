@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/admin/presentation/widgets/admin_ui.dart';
 import 'package:flutter_application_1/features/admin/services/admin_api_service.dart';
 
-
 class AdminSegmentsPage extends StatefulWidget {
   const AdminSegmentsPage({super.key, required this.api});
 
@@ -36,23 +35,25 @@ class _AdminSegmentsPageState extends State<AdminSegmentsPage>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AdminSectionHeader(
+          const AdminSectionHeader(
             title: 'Phân đoạn & Danh mục',
             subtitle: 'Câu Shadowing độc lập (không thuộc chủ đề) và danh mục phân loại.',
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 12),
           TabBar(
             controller: _tabController,
             labelColor: AdminPalette.sidebarSelectedForeground,
             unselectedLabelColor: AdminPalette.textMuted,
             indicatorColor: AdminPalette.sidebarSelectedForeground,
+            indicatorSize: TabBarIndicatorSize.tab,
+            dividerColor: Colors.transparent,
             tabs: const [
               Tab(text: 'Câu Shadowing', icon: Icon(Icons.view_list_rounded, size: 18)),
               Tab(text: 'Chủ đề Shadowing', icon: Icon(Icons.folder_copy_rounded, size: 18)),
               Tab(text: 'Danh mục', icon: Icon(Icons.label_rounded, size: 18)),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 18),
           Expanded(
             child: TabBarView(
               controller: _tabController,
@@ -69,9 +70,32 @@ class _AdminSegmentsPageState extends State<AdminSegmentsPage>
   }
 }
 
-
-
-
+// Reusable styling helper
+InputDecoration _inputDeco(String label, {bool isDense = false, Widget? prefixIcon}) {
+  return InputDecoration(
+    labelText: label,
+    isDense: isDense,
+    prefixIcon: prefixIcon,
+    prefixIconColor: Colors.white.withOpacity(0.5),
+    labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+    floatingLabelStyle: const TextStyle(color: AdminPalette.sidebarSelectedForeground, fontSize: 13, fontWeight: FontWeight.w700),
+    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: isDense ? 12 : 16),
+    filled: true,
+    fillColor: Colors.white.withOpacity(0.015),
+    enabledBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: BorderSide(color: Colors.white.withOpacity(0.06), width: 1.0),
+    ),
+    focusedBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AdminPalette.sidebarSelectedForeground, width: 1.5),
+    ),
+    errorBorder: OutlineInputBorder(
+      borderRadius: BorderRadius.circular(12),
+      borderSide: const BorderSide(color: AdminPalette.errorRed, width: 1.0),
+    ),
+  );
+}
 
 class _SegmentsTab extends StatefulWidget {
   const _SegmentsTab({required this.api});
@@ -129,7 +153,12 @@ class _SegmentsTabState extends State<_SegmentsTab> {
           return AlertDialog(
             title: Text(
               isEditing ? 'Chỉnh sửa câu Shadowing' : 'Thêm câu Shadowing mới',
-              style: const TextStyle(fontWeight: FontWeight.w800),
+              style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+            ),
+            backgroundColor: AdminPalette.surfaceMuted,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
             ),
             content: SizedBox(
               width: 680,
@@ -138,26 +167,15 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     TextFormField(
                       controller: titleCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Tiêu đề câu',
-                        hintText: 'VD: Chào hỏi cơ bản',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.title_rounded),
-                      ),
+                      decoration: _inputDeco('Tiêu đề câu', prefixIcon: const Icon(Icons.title_rounded)),
                     ),
-                    const SizedBox(height: 16),
-
-
+                    const SizedBox(height: 12),
                     DropdownButtonFormField<int>(
                       value: selectedTopicId,
-                      decoration: const InputDecoration(
-                        labelText: 'Gắn vào chủ đề Shadowing (Tùy chọn)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.topic_outlined),
-                      ),
+                      decoration: _inputDeco('Gắn vào chủ đề Shadowing (Tùy chọn)', prefixIcon: const Icon(Icons.topic_outlined)),
+                      dropdownColor: AdminPalette.surfaceMuted,
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
@@ -173,39 +191,25 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                       onChanged: (v) => setDS(() => selectedTopicId = v),
                     ),
                     const SizedBox(height: 20),
-
-
                     const Text(
                       'Nội dung câu Shadowing',
-                      style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.white70),
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     TextFormField(
                       controller: kanjiCtrl,
-                      decoration: const InputDecoration(
-                        labelText: '漢字 — Câu gốc (có Kanji)',
-                        hintText: 'VD: 日本語を勉強しています',
-                        border: OutlineInputBorder(),
-                      ),
-                      style: const TextStyle(fontSize: 16),
+                      decoration: _inputDeco('漢字 — Câu gốc (có Kanji)'),
+                      style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: furiganaCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Furigana — Phiên âm Hiragana',
-                        hintText: 'VD: にほんごをべんきょうしています',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: _inputDeco('Furigana — Phiên âm Hiragana'),
                     ),
                     const SizedBox(height: 10),
                     TextFormField(
                       controller: transCtrl,
-                      decoration: const InputDecoration(
-                        labelText: 'Dịch nghĩa tiếng Việt',
-                        hintText: 'VD: Tôi đang học tiếng Nhật.',
-                        border: OutlineInputBorder(),
-                      ),
+                      decoration: _inputDeco('Dịch nghĩa tiếng Việt'),
                     ),
                   ],
                 ),
@@ -243,11 +247,10 @@ class _SegmentsTabState extends State<_SegmentsTab> {
     };
 
     try {
-      Map<String, dynamic> savedSeg;
       if (isEditing) {
-        savedSeg = await widget.api.updateSegment(seg['id'] as int, payload);
+        await widget.api.updateSegment(seg['id'] as int, payload);
       } else {
-        savedSeg = await widget.api.createSegment(payload);
+        await widget.api.createSegment(payload);
       }
       await _loadData();
       if (!mounted) return;
@@ -260,17 +263,11 @@ class _SegmentsTabState extends State<_SegmentsTab> {
     }
   }
 
-
-
-
-
   Future<void> _openBulkDialog() async {
-
     final rows = <Map<String, TextEditingController>>[
       _newBulkRow(),
     ];
     int? bulkSelectedTopicId;
-
 
     final saved = await showDialog<bool>(
       context: context,
@@ -280,7 +277,12 @@ class _SegmentsTabState extends State<_SegmentsTab> {
           return AlertDialog(
             title: const Text(
               'Thêm nhiều câu Shadowing cùng lúc',
-              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18),
+              style: TextStyle(fontWeight: FontWeight.w800, fontSize: 18, letterSpacing: -0.3),
+            ),
+            backgroundColor: AdminPalette.surfaceMuted,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
             ),
             content: SizedBox(
               width: 900,
@@ -288,17 +290,12 @@ class _SegmentsTabState extends State<_SegmentsTab> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-
                   SizedBox(
-                    width: 300,
+                    width: 340,
                     child: DropdownButtonFormField<int>(
                       value: bulkSelectedTopicId,
-                      decoration: const InputDecoration(
-                        labelText: 'Gắn tất cả vào chủ đề Shadowing (Tùy chọn)',
-                        border: OutlineInputBorder(),
-                        prefixIcon: Icon(Icons.topic_outlined),
-                        isDense: true,
-                      ),
+                      decoration: _inputDeco('Gắn tất cả vào chủ đề (Tùy chọn)', prefixIcon: const Icon(Icons.topic_outlined), isDense: true),
+                      dropdownColor: AdminPalette.surfaceMuted,
                       items: [
                         const DropdownMenuItem<int>(
                           value: null,
@@ -314,34 +311,33 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                       onChanged: (v) => setDS(() => bulkSelectedTopicId = v),
                     ),
                   ),
-                  const SizedBox(height: 12),
-
-
+                  const SizedBox(height: 16),
                   Container(
                     decoration: BoxDecoration(
-                      color: AdminPalette.sidebarSelectedBackground.withValues(alpha: 0.3),
+                      color: Colors.white.withOpacity(0.02),
                       borderRadius: BorderRadius.circular(10),
+                      border: Border.all(color: Colors.white.withOpacity(0.05)),
                     ),
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                     child: Row(
                       children: const [
                         SizedBox(width: 32),
                         SizedBox(width: 8),
-                        Expanded(flex: 3, child: Text('漢字 (Câu gốc)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 3, child: Text('漢字 (Câu gốc)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white70))),
                         SizedBox(width: 8),
-                        Expanded(flex: 3, child: Text('Furigana', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 3, child: Text('Furigana', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white70))),
                         SizedBox(width: 8),
-                        Expanded(flex: 4, child: Text('Dịch nghĩa (Việt)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 4, child: Text('Dịch nghĩa (Việt)', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white70))),
                         SizedBox(width: 8),
-                        Expanded(flex: 2, child: Text('Tiêu đề', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12))),
+                        Expanded(flex: 2, child: Text('Tiêu đề', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Colors.white70))),
                         SizedBox(width: 40),
                       ],
                     ),
                   ),
-                  const SizedBox(height: 6),
-
+                  const SizedBox(height: 8),
                   Expanded(
                     child: ListView.separated(
+                      physics: const BouncingScrollPhysics(),
                       itemCount: rows.length,
                       separatorBuilder: (_, __) => const SizedBox(height: 6),
                       itemBuilder: (_, i) {
@@ -349,26 +345,25 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                         return Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
-
                             Container(
                               width: 32,
                               height: 32,
                               alignment: Alignment.center,
                               decoration: BoxDecoration(
-                                color: AdminPalette.surfaceMuted,
+                                color: Colors.white.withOpacity(0.02),
                                 borderRadius: BorderRadius.circular(8),
+                                border: Border.all(color: Colors.white.withOpacity(0.05)),
                               ),
                               child: Text(
                                 '${i + 1}',
                                 style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
-                                  color: AdminPalette.textMuted,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.white54,
                                   fontSize: 12,
                                 ),
                               ),
                             ),
                             const SizedBox(width: 8),
-
                             Expanded(
                               flex: 3,
                               child: _compactField(
@@ -377,7 +372,6 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-
                             Expanded(
                               flex: 3,
                               child: _compactField(
@@ -386,7 +380,6 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-
                             Expanded(
                               flex: 4,
                               child: _compactField(
@@ -395,7 +388,6 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ),
                             const SizedBox(width: 8),
-
                             Expanded(
                               flex: 2,
                               child: _compactField(
@@ -403,7 +395,6 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                                 hint: 'Tiêu đề',
                               ),
                             ),
-
                             IconButton(
                               tooltip: 'Xóa dòng này',
                               onPressed: rows.length > 1
@@ -415,8 +406,8 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                                 Icons.remove_circle_outline,
                                 size: 18,
                                 color: rows.length > 1
-                                    ? Colors.redAccent
-                                    : Colors.grey,
+                                    ? AdminPalette.errorRed
+                                    : Colors.white30,
                               ),
                             ),
                           ],
@@ -425,13 +416,12 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                     ),
                   ),
                   const SizedBox(height: 10),
-
                   TextButton.icon(
                     onPressed: () => setDS(() {
                       rows.add(_newBulkRow());
                     }),
-                    icon: const Icon(Icons.add_circle_outline, size: 18),
-                    label: const Text('Thêm dòng mới'),
+                    icon: const Icon(Icons.add_circle_outline, size: 18, color: AdminPalette.sidebarSelectedForeground),
+                    label: const Text('Thêm dòng mới', style: TextStyle(color: AdminPalette.sidebarSelectedForeground, fontWeight: FontWeight.bold)),
                   ),
                 ],
               ),
@@ -453,7 +443,6 @@ class _SegmentsTabState extends State<_SegmentsTab> {
     );
 
     if (saved != true || !mounted) return;
-
 
     final payloads = rows
         .map((r) => {
@@ -494,7 +483,6 @@ class _SegmentsTabState extends State<_SegmentsTab> {
           .showSnackBar(SnackBar(content: Text('Lỗi: $e')));
     }
 
-
     for (final r in rows) {
       for (final c in r.values) {
         c.dispose();
@@ -512,13 +500,22 @@ class _SegmentsTabState extends State<_SegmentsTab> {
   Widget _compactField(TextEditingController ctrl, {String hint = ''}) =>
       TextField(
         controller: ctrl,
-        style: const TextStyle(fontSize: 13),
+        style: const TextStyle(fontSize: 13, color: Colors.white),
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(fontSize: 12, color: Colors.grey),
+          hintStyle: TextStyle(fontSize: 12, color: Colors.white.withOpacity(0.3)),
           isDense: true,
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.015),
           contentPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: BorderSide(color: Colors.white.withOpacity(0.06)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(8),
+            borderSide: const BorderSide(color: AdminPalette.sidebarSelectedForeground, width: 1.0),
+          ),
         ),
       );
 
@@ -553,7 +550,13 @@ class _SegmentsTabState extends State<_SegmentsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AdminPalette.sidebarSelectedForeground),
+        ),
+      );
+    }
     if (_error != null) {
       return Center(
           child: Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
@@ -565,9 +568,8 @@ class _SegmentsTabState extends State<_SegmentsTab> {
         Row(
           children: [
             Text('${_segments.length} câu Shadowing',
-                style: const TextStyle(color: AdminPalette.textMuted)),
+                style: const TextStyle(color: AdminPalette.textMuted, fontSize: 13)),
             const Spacer(),
-
             OutlinedButton.icon(
               onPressed: _openBulkDialog,
               icon: const Icon(Icons.playlist_add_rounded, size: 18),
@@ -575,7 +577,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
               style: OutlinedButton.styleFrom(
                 foregroundColor: AdminPalette.sidebarSelectedForeground,
                 side: BorderSide(
-                  color: AdminPalette.sidebarSelectedForeground.withValues(alpha: 0.6),
+                  color: AdminPalette.sidebarSelectedForeground.withOpacity(0.6),
                 ),
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 shape: RoundedRectangleBorder(
@@ -590,7 +592,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (_segments.isEmpty)
           const Expanded(
             child: AdminEmptyState(
@@ -601,11 +603,11 @@ class _SegmentsTabState extends State<_SegmentsTab> {
         else
           Expanded(
             child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
               itemCount: _segments.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final seg = _segments[i];
-
                 final imgUrl = (seg['image_url'] ?? '').toString();
                 final fullImgUrl = imgUrl.isNotEmpty
                     ? (imgUrl.startsWith('http')
@@ -615,15 +617,14 @@ class _SegmentsTabState extends State<_SegmentsTab> {
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: AdminPalette.surfaceMuted,
+                    color: Colors.white.withOpacity(0.015),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AdminPalette.borderSoft),
+                    border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
                   ),
                   padding: const EdgeInsets.all(16),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       ClipRRect(
                         borderRadius: BorderRadius.circular(12),
                         child: fullImgUrl.isNotEmpty
@@ -637,41 +638,40 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                             : _noImageBox(),
                       ),
                       const SizedBox(width: 16),
-
-
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             if (seg['segment_topic_id'] != null) ...[
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 margin: const EdgeInsets.only(bottom: 6),
                                 decoration: BoxDecoration(
-                                  color: AdminPalette.sidebarSelectedBackground,
-                                  borderRadius: BorderRadius.circular(4),
+                                  color: AdminPalette.sidebarSelectedBackground.withOpacity(0.15),
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: AdminPalette.sidebarSelectedForeground.withOpacity(0.2)),
                                 ),
                                 child: Text(
                                   'Topic: ${_segmentTopics.firstWhere((t) => t['id'] == seg['segment_topic_id'], orElse: () => {'title': 'N/A'})['title']}',
                                   style: const TextStyle(
                                     fontSize: 10,
                                     color: AdminPalette.sidebarSelectedForeground,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w700,
                                   ),
                                 ),
                               ),
                             ],
-
                             Text(
                               (seg['kanji_content'] ?? '—').toString(),
                               style: const TextStyle(
                                 fontSize: 16,
-                                fontWeight: FontWeight.w700,
+                                fontWeight: FontWeight.w800,
                                 color: AdminPalette.textPrimary,
+                                letterSpacing: -0.3,
                               ),
                             ),
                             if ((seg['furigana'] ?? '').toString().isNotEmpty) ...[
-                              const SizedBox(height: 2),
+                              const SizedBox(height: 4),
                               Text(
                                 seg['furigana'].toString(),
                                 style: const TextStyle(
@@ -679,7 +679,7 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                               ),
                             ],
                             if ((seg['translation_vi'] ?? '').toString().isNotEmpty) ...[
-                              const SizedBox(height: 4),
+                              const SizedBox(height: 6),
                               Text(
                                 seg['translation_vi'].toString(),
                                 style: const TextStyle(
@@ -689,20 +689,20 @@ class _SegmentsTabState extends State<_SegmentsTab> {
                           ],
                         ),
                       ),
-
-
-                      Column(
+                      const SizedBox(width: 12),
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
                             tooltip: 'Chỉnh sửa',
                             onPressed: () => _openSegmentDialog(seg),
-                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 19),
                           ),
                           IconButton(
                             tooltip: 'Xóa',
                             onPressed: () => _deleteSegment(seg),
                             icon: const Icon(Icons.delete_outline_rounded,
-                                size: 18, color: Colors.redAccent),
+                                size: 19, color: AdminPalette.errorRed),
                           ),
                         ],
                       ),
@@ -720,17 +720,13 @@ class _SegmentsTabState extends State<_SegmentsTab> {
         width: 80,
         height: 80,
         decoration: BoxDecoration(
-          color: AdminPalette.surface,
+          color: Colors.white.withOpacity(0.015),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AdminPalette.borderSoft),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
-        child: const Icon(Icons.image_outlined, color: Colors.grey),
+        child: const Icon(Icons.image_outlined, color: Colors.white38),
       );
 }
-
-
-
-
 
 class _CategoriesTab extends StatefulWidget {
   const _CategoriesTab({required this.api});
@@ -774,7 +770,15 @@ class _CategoriesTabState extends State<_CategoriesTab> {
     final saved = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text(isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới'),
+        title: Text(
+          isEditing ? 'Chỉnh sửa danh mục' : 'Thêm danh mục mới',
+          style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+        ),
+        backgroundColor: AdminPalette.surfaceMuted,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
+        ),
         content: SizedBox(
           width: 420,
           child: Column(
@@ -782,17 +786,13 @@ class _CategoriesTabState extends State<_CategoriesTab> {
             children: [
               TextField(
                 controller: nameCtrl,
-                decoration: const InputDecoration(
-                    labelText: 'Tên danh mục (vd: Giao tiếp)',
-                    border: OutlineInputBorder()),
+                decoration: _inputDeco('Tên danh mục (vd: Giao tiếp)'),
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: descCtrl,
                 maxLines: 2,
-                decoration: const InputDecoration(
-                    labelText: 'Mô tả (tùy chọn)',
-                    border: OutlineInputBorder()),
+                decoration: _inputDeco('Mô tả (tùy chọn)'),
               ),
             ],
           ),
@@ -862,7 +862,13 @@ class _CategoriesTabState extends State<_CategoriesTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AdminPalette.sidebarSelectedForeground),
+        ),
+      );
+    }
     if (_error != null) {
       return Center(
           child: Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
@@ -874,7 +880,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
         Row(
           children: [
             Text('${_categories.length} danh mục',
-                style: const TextStyle(color: AdminPalette.textMuted)),
+                style: const TextStyle(color: AdminPalette.textMuted, fontSize: 13)),
             const Spacer(),
             AdminPrimaryButton(
               label: 'Thêm danh mục',
@@ -882,7 +888,7 @@ class _CategoriesTabState extends State<_CategoriesTab> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (_categories.isEmpty)
           const Expanded(
             child: AdminEmptyState(
@@ -893,16 +899,17 @@ class _CategoriesTabState extends State<_CategoriesTab> {
         else
           Expanded(
             child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
               itemCount: _categories.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 10),
+              separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
                 final cat = _categories[i];
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
                   decoration: BoxDecoration(
-                    color: AdminPalette.surfaceMuted,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: AdminPalette.borderSoft),
+                    color: Colors.white.withOpacity(0.015),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
                   ),
                   child: Row(
                     children: [
@@ -910,11 +917,12 @@ class _CategoriesTabState extends State<_CategoriesTab> {
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: AdminPalette.sidebarSelectedBackground,
+                          color: AdminPalette.sidebarSelectedBackground.withOpacity(0.15),
                           borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: AdminPalette.sidebarSelectedForeground.withOpacity(0.2)),
                         ),
                         child: const Icon(Icons.label_rounded,
-                            color: AdminPalette.sidebarSelectedForeground),
+                            color: AdminPalette.sidebarSelectedForeground, size: 20),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -924,35 +932,38 @@ class _CategoriesTabState extends State<_CategoriesTab> {
                             Text(
                               (cat['name'] ?? 'Không tên').toString(),
                               style: const TextStyle(
-                                  fontWeight: FontWeight.w700,
+                                  fontWeight: FontWeight.w800,
                                   color: AdminPalette.textPrimary,
-                                  fontSize: 15),
+                                  fontSize: 15,
+                                  letterSpacing: -0.3),
                             ),
-                            if ((cat['description'] ?? '').toString().isNotEmpty)
+                            if ((cat['description'] ?? '').toString().isNotEmpty) ...[
+                              const SizedBox(height: 4),
                               Text(
                                 cat['description'].toString(),
                                 style: const TextStyle(
                                     color: AdminPalette.textMuted, fontSize: 12),
                               ),
+                            ]
                           ],
                         ),
                       ),
                       Text(
                         'ID: ${cat['id']}',
                         style: const TextStyle(
-                            color: AdminPalette.textSecondary, fontSize: 12),
+                            color: AdminPalette.textSecondary, fontSize: 12, fontWeight: FontWeight.bold),
                       ),
-                      const SizedBox(width: 12),
+                      const SizedBox(width: 16),
                       IconButton(
                         tooltip: 'Chỉnh sửa',
                         onPressed: () => _openCategoryDialog(cat),
-                        icon: const Icon(Icons.edit_outlined, size: 18),
+                        icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 19),
                       ),
                       IconButton(
                         tooltip: 'Xóa',
                         onPressed: () => _deleteCategory(cat),
                         icon: const Icon(Icons.delete_outline_rounded,
-                            size: 18, color: Colors.redAccent),
+                            size: 19, color: AdminPalette.errorRed),
                       ),
                     ],
                   ),
@@ -964,11 +975,6 @@ class _CategoriesTabState extends State<_CategoriesTab> {
     );
   }
 }
-
-
-
-
-
 
 class _SegmentTopicsTab extends StatefulWidget {
   const _SegmentTopicsTab({required this.api});
@@ -1037,7 +1043,12 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
         builder: (ctx, setDS) => AlertDialog(
           title: Text(
             isEditing ? 'Sửa chủ đề Shadowing' : 'Tạo chủ đề Shadowing mới',
-            style: const TextStyle(fontWeight: FontWeight.w800),
+            style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+          ),
+          backgroundColor: AdminPalette.surfaceMuted,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
           ),
           content: SizedBox(
             width: 580,
@@ -1048,28 +1059,20 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                 children: [
                   TextFormField(
                     controller: titleCtrl,
-                    decoration: const InputDecoration(
-                      labelText: 'Tiêu đề chủ đề *',
-                      hintText: 'VD: Giao tiếp hàng ngày',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.folder_copy_rounded),
-                    ),
+                    decoration: _inputDeco('Tiêu đề chủ đề *', prefixIcon: const Icon(Icons.folder_copy_rounded)),
                   ),
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: descCtrl,
                     maxLines: 2,
-                    decoration: const InputDecoration(
-                      labelText: 'Mô tả (tùy chọn)',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.description_outlined),
-                    ),
+                    decoration: _inputDeco('Mô tả (tùy chọn)', prefixIcon: const Icon(Icons.description_outlined)),
                   ),
+                  const SizedBox(height: 16),
                   const Text(
                     'Ảnh minh hoạ',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.white70),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   GestureDetector(
                     onTap: () async {
                       final result = await FilePicker.pickFiles(
@@ -1103,11 +1106,10 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                          color: AdminPalette.sidebarSelectedForeground.withValues(alpha: 0.5),
-                          width: 2,
-                          strokeAlign: BorderSide.strokeAlignInside,
+                          color: AdminPalette.sidebarSelectedForeground.withOpacity(0.3),
+                          width: 1.5,
                         ),
-                        color: AdminPalette.surfaceMuted,
+                        color: Colors.white.withOpacity(0.015),
                       ),
                       clipBehavior: Clip.hardEdge,
                       child: () {
@@ -1120,7 +1122,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  CircularProgressIndicator(),
+                                  CircularProgressIndicator(valueColor: AlwaysStoppedAnimation(AdminPalette.sidebarSelectedForeground)),
                                   SizedBox(height: 12),
                                   Text('Đang tải lên...', style: TextStyle(color: Colors.grey)),
                                 ],
@@ -1153,24 +1155,18 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                       }()
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   TextField(
                     controller: imageCtrl,
                     onChanged: (_) => setDS(() => imgState['bytes'] = null),
-                    decoration: const InputDecoration(
-                      labelText: 'Hoặc nhập URL ảnh trực tiếp',
-                      hintText: '/static/uploads/...',
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.link_rounded),
-                      isDense: true,
-                    ),
+                    decoration: _inputDeco('Hoặc nhập URL ảnh trực tiếp', prefixIcon: const Icon(Icons.link_rounded), isDense: true),
                   ),
                   const SizedBox(height: 20),
                   const Text(
                     'Phân loại (Danh mục)',
-                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: Colors.white70),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   if (_categories.isEmpty)
                     const Text(
                       'Chưa có danh mục. Hãy tạo trong tab Danh mục.',
@@ -1192,10 +1188,17 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                           }),
                           selectedColor: AdminPalette.sidebarSelectedBackground,
                           checkmarkColor: AdminPalette.sidebarSelectedForeground,
+                          backgroundColor: Colors.white.withOpacity(0.015),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            side: BorderSide(color: Colors.white.withOpacity(0.05)),
+                          ),
                           labelStyle: TextStyle(
                             color: selected
                                 ? AdminPalette.sidebarSelectedForeground
                                 : AdminPalette.textPrimary,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 12,
                           ),
                         );
                       }).toList(),
@@ -1293,16 +1296,21 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
           return AlertDialog(
             title: Row(
               children: [
-                const Icon(Icons.manage_search_rounded, size: 22),
+                const Icon(Icons.manage_search_rounded, size: 22, color: AdminPalette.sidebarSelectedForeground),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'Các câu của: ${topic['title']}',
-                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16),
+                    style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 16, letterSpacing: -0.3),
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
+            ),
+            backgroundColor: AdminPalette.surfaceMuted,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
             ),
             content: SizedBox(
               width: 680,
@@ -1325,8 +1333,9 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                             ),
                           )
                         : ListView.separated(
+                            physics: const BouncingScrollPhysics(),
                             itemCount: available.length,
-                            separatorBuilder: (_, __) => const SizedBox(height: 6),
+                            separatorBuilder: (_, __) => const SizedBox(height: 8),
                             itemBuilder: (_, i) {
                               final seg = available[i];
                               final segId = seg['id'] as int;
@@ -1337,14 +1346,14 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                 decoration: BoxDecoration(
                                   color: isAssigned
                                       ? AdminPalette.sidebarSelectedBackground
-                                          .withValues(alpha: 0.2)
-                                      : AdminPalette.surfaceMuted,
+                                          .withOpacity(0.12)
+                                      : Colors.white.withOpacity(0.01),
                                   borderRadius: BorderRadius.circular(12),
                                   border: Border.all(
                                     color: isAssigned
                                         ? AdminPalette.sidebarSelectedForeground
-                                            .withValues(alpha: 0.4)
-                                        : AdminPalette.borderSoft,
+                                            .withOpacity(0.3)
+                                        : Colors.white.withOpacity(0.05),
                                   ),
                                 ),
                                 child: Row(
@@ -1416,7 +1425,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                       style: FilledButton.styleFrom(
                                         backgroundColor: isAssigned
                                             ? AdminPalette.errorRed
-                                                .withValues(alpha: 0.15)
+                                                .withOpacity(0.15)
                                             : AdminPalette
                                                 .sidebarSelectedBackground,
                                         foregroundColor: isAssigned
@@ -1426,7 +1435,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 14, vertical: 8),
                                         textStyle:
-                                            const TextStyle(fontSize: 12),
+                                            const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
                                       ),
                                       child: Text(
                                           isAssigned ? 'Gỡ ra' : 'Gán vào'),
@@ -1457,7 +1466,13 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isLoading) return const Center(child: CircularProgressIndicator());
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AdminPalette.sidebarSelectedForeground),
+        ),
+      );
+    }
     if (_error != null) {
       return Center(
           child: Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
@@ -1468,8 +1483,8 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
       children: [
         Row(
           children: [
-            Text('\${_topics.length} segment topics',
-                style: const TextStyle(color: AdminPalette.textMuted)),
+            Text('${_topics.length} segment topics',
+                style: const TextStyle(color: AdminPalette.textMuted, fontSize: 13)),
             const Spacer(),
             AdminPrimaryButton(
               label: 'Tạo Topic mới',
@@ -1477,7 +1492,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         if (_topics.isEmpty)
           const Expanded(
             child: AdminEmptyState(
@@ -1488,6 +1503,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
         else
           Expanded(
             child: ListView.separated(
+              physics: const BouncingScrollPhysics(),
               itemCount: _topics.length,
               separatorBuilder: (_, __) => const SizedBox(height: 12),
               itemBuilder: (context, i) {
@@ -1498,14 +1514,14 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                 final fullImg = imgUrl.isNotEmpty
                     ? (imgUrl.startsWith('http')
                         ? imgUrl
-                        : '\${widget.api.baseUrl}$imgUrl')
+                        : '${widget.api.baseUrl}$imgUrl')
                     : '';
 
                 return Container(
                   decoration: BoxDecoration(
-                    color: AdminPalette.surfaceMuted,
+                    color: Colors.white.withOpacity(0.015),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: AdminPalette.borderSoft),
+                    border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
                   ),
                   padding: const EdgeInsets.all(16),
                   child: Column(
@@ -1535,9 +1551,11 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                   style: const TextStyle(
                                       fontSize: 15,
                                       fontWeight: FontWeight.w800,
-                                      color: AdminPalette.textPrimary),
+                                      color: AdminPalette.textPrimary,
+                                      letterSpacing: -0.3),
                                 ),
-                                if ((topic['description'] ?? '').toString().isNotEmpty)
+                                if ((topic['description'] ?? '').toString().isNotEmpty) ...[
+                                  const SizedBox(height: 2),
                                   Text(
                                     topic['description'].toString(),
                                     style: const TextStyle(
@@ -1546,12 +1564,14 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                     maxLines: 1,
                                     overflow: TextOverflow.ellipsis,
                                   ),
+                                ],
                                 const SizedBox(height: 4),
                                 Text(
                                   'ID: ${topic['id']}  •  ${segs.length} câu',
                                   style: const TextStyle(
                                       color: AdminPalette.textSecondary,
-                                      fontSize: 11),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
@@ -1561,19 +1581,19 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                             onPressed: () => _openManageSegmentsDialog(topic),
                             icon: const Icon(
                                 Icons.playlist_add_check_rounded,
-                                size: 20,
+                                size: 22,
                                 color: AdminPalette.sidebarSelectedForeground),
                           ),
                           IconButton(
                             tooltip: 'Chỉnh sửa',
                             onPressed: () => _openTopicDialog(topic),
-                            icon: const Icon(Icons.edit_outlined, size: 18),
+                            icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 19),
                           ),
                           IconButton(
                             tooltip: 'Xóa',
                             onPressed: () => _deleteTopic(topic),
                             icon: const Icon(Icons.delete_outline_rounded,
-                                size: 18, color: Colors.redAccent),
+                                size: 19, color: AdminPalette.errorRed),
                           ),
                         ],
                       ),
@@ -1589,11 +1609,11 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                       style: const TextStyle(fontSize: 11),
                                     ),
                                     backgroundColor:
-                                        AdminPalette.sidebarSelectedBackground,
+                                        AdminPalette.sidebarSelectedBackground.withOpacity(0.15),
+                                    side: BorderSide(color: AdminPalette.sidebarSelectedForeground.withOpacity(0.2)),
                                     labelStyle: const TextStyle(
-                                        color: AdminPalette
-                                            .sidebarSelectedForeground,
-                                        fontWeight: FontWeight.w600),
+                                        color: AdminPalette.sidebarSelectedForeground,
+                                        fontWeight: FontWeight.bold),
                                     materialTapTargetSize:
                                         MaterialTapTargetSize.shrinkWrap,
                                     visualDensity: VisualDensity.compact,
@@ -1603,29 +1623,30 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                         ),
                       ],
                       if (segs.isNotEmpty) ...[
-                        const SizedBox(height: 10),
+                        const SizedBox(height: 12),
                         Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: AdminPalette.surface,
+                            color: Colors.white.withOpacity(0.008),
                             borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.white.withOpacity(0.03)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Text('Các câu:',
+                              const Text('Các câu tiêu biểu:',
                                   style: TextStyle(
                                       fontSize: 11,
                                       fontWeight: FontWeight.w700,
-                                      color: AdminPalette.textSecondary)),
+                                      color: Colors.white38)),
                               const SizedBox(height: 4),
                               ...segs.take(3).map((s) => Padding(
                                     padding: const EdgeInsets.only(top: 3),
                                     child: Row(children: [
                                       const Icon(Icons.chevron_right,
                                           size: 14,
-                                          color: AdminPalette.textMuted),
+                                          color: Colors.white24),
                                       const SizedBox(width: 4),
                                       Expanded(
                                         child: Text(
@@ -1635,7 +1656,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                               .toString(),
                                           style: const TextStyle(
                                               fontSize: 12,
-                                              color: AdminPalette.textPrimary),
+                                              color: Colors.white70),
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                       ),
@@ -1648,7 +1669,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
                                       '... và ${segs.length - 3} câu khác',
                                       style: const TextStyle(
                                           fontSize: 11,
-                                          color: AdminPalette.textMuted)),
+                                          color: Colors.white38)),
                                 ),
                             ],
                           ),
@@ -1668,11 +1689,11 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
         width: 56,
         height: 56,
         decoration: BoxDecoration(
-          color: AdminPalette.surface,
+          color: Colors.white.withOpacity(0.015),
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AdminPalette.borderSoft),
+          border: Border.all(color: Colors.white.withOpacity(0.05)),
         ),
-        child: const Icon(Icons.folder_copy_outlined, color: Colors.grey),
+        child: const Icon(Icons.folder_copy_outlined, color: Colors.white38, size: 20),
       );
 
   Widget _dropZonePlaceholder() => Column(
@@ -1681,7 +1702,7 @@ class _SegmentTopicsTabState extends State<_SegmentTopicsTab> {
           Icon(
             Icons.add_photo_alternate_outlined,
             size: 48,
-            color: AdminPalette.sidebarSelectedForeground.withValues(alpha: 0.6),
+            color: AdminPalette.sidebarSelectedForeground.withOpacity(0.6),
           ),
           const SizedBox(height: 10),
           const Text(

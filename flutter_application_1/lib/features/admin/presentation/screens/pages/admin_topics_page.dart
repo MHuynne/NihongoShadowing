@@ -62,23 +62,28 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     }
   }
 
-  List<Map<String, String>> _normalizeRows(
-    dynamic source,
-    List<String> keys,
-  ) {
-    final items = source is List ? source : <dynamic>[];
-    if (items.isEmpty) {
-      return [
-        for (final _ in [0]) {for (final key in keys) key: ''}
-      ];
-    }
-
-    return items.map<Map<String, String>>((item) {
-      final map = Map<String, dynamic>.from(item as Map);
-      return {
-        for (final key in keys) key: (map[key] ?? '').toString(),
-      };
-    }).toList();
+  InputDecoration _inputDeco(String label, {bool isDense = false}) {
+    return InputDecoration(
+      labelText: label,
+      isDense: isDense,
+      labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+      floatingLabelStyle: const TextStyle(color: AdminPalette.sidebarSelectedForeground, fontSize: 13, fontWeight: FontWeight.w700),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: isDense ? 12 : 16),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.015),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.06), width: 1.0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AdminPalette.sidebarSelectedForeground, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AdminPalette.errorRed, width: 1.0),
+      ),
+    );
   }
 
   Future<void> _openTopicDialog([Map<String, dynamic>? topic]) async {
@@ -87,7 +92,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     );
     String? level = topic?['level']?.toString();
     String? lessonId = topic?['lesson_id']?.toString();
-
 
     final rawSegments = topic?['segments'];
     final segments = <Map<String, String>>[];
@@ -127,51 +131,46 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
             return AlertDialog(
               title: Text(
                 topic == null ? 'Thêm Shadowing Topic' : 'Chỉnh sửa Shadowing Topic',
-                style: const TextStyle(fontWeight: FontWeight.w800),
+                style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3),
+              ),
+              backgroundColor: AdminPalette.surfaceMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
               ),
               content: SizedBox(
                 width: 760,
                 child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-
                       _twoColumn(
                         TextField(
                           controller: titleController,
-                          decoration: const InputDecoration(
-                            labelText: 'Tên chủ đề',
-                            hintText: 'VD: Chào hỏi cơ bản',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: _inputDeco('Tên chủ đề'),
                         ),
                         DropdownButtonFormField<String>(
                           value: level,
-                          decoration: const InputDecoration(
-                            labelText: 'Cấp độ JLPT',
-                            border: OutlineInputBorder(),
-                          ),
+                          decoration: _inputDeco('Cấp độ JLPT'),
+                          dropdownColor: AdminPalette.surfaceMuted,
                           items: const ['N5', 'N4', 'N3', 'N2', 'N1']
                               .map((v) => DropdownMenuItem(value: v, child: Text(v)))
                               .toList(),
                           onChanged: (v) => setDialogState(() => level = v),
                         ),
                       ),
-                      const SizedBox(height: 12),
-
-
+                      const SizedBox(height: 16),
                       DropdownButtonFormField<String?>(
                         isExpanded: true,
                         value: _lessons.any((l) => l['id'].toString() == lessonId) ? lessonId : null,
-                        decoration: const InputDecoration(
-                          labelText: 'Gán vào Lesson (tuỳ chọn)',
-                          border: OutlineInputBorder(),
-                        ),
+                        decoration: _inputDeco('Gán vào Lesson (tuỳ chọn)'),
+                        dropdownColor: AdminPalette.surfaceMuted,
                         items: [
                           const DropdownMenuItem<String?>(
                             value: null,
-                            child: Text('Không chọn lesson'),
+                            child: Text('Không chọn bài học'),
                           ),
                           ..._lessons.map(
                             (lesson) => DropdownMenuItem<String?>(
@@ -185,15 +184,13 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                         ],
                         onChanged: (v) => setDialogState(() => lessonId = v),
                       ),
-                      const SizedBox(height: 20),
-
-
+                      const SizedBox(height: 24),
                       Row(
                         children: [
                           const Text(
                             'Các câu Shadowing',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AdminPalette.textPrimary,
                             ),
@@ -212,22 +209,21 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                                 'end_time': '',
                               });
                             }),
-                            icon: const Icon(Icons.add_rounded),
-                            label: const Text('Thêm câu'),
+                            icon: const Icon(Icons.add_rounded, size: 16, color: AdminPalette.topicAccent),
+                            label: const Text('Thêm câu', style: TextStyle(color: AdminPalette.topicAccent, fontWeight: FontWeight.bold)),
                           ),
                         ],
                       ),
                       const SizedBox(height: 10),
-
                       ...List.generate(segments.length, (index) {
                         final seg = segments[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AdminPalette.surfaceMuted,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AdminPalette.borderSoft),
+                            color: Colors.white.withOpacity(0.015),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withOpacity(0.06)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -237,49 +233,38 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                                   Text(
                                     'Câu ${index + 1}',
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AdminPalette.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white70,
+                                      fontSize: 13,
                                     ),
                                   ),
                                   const Spacer(),
                                   if (segments.length > 1)
                                     IconButton(
                                       onPressed: () => setDialogState(() => segments.removeAt(index)),
-                                      icon: const Icon(Icons.delete_outline_rounded),
+                                      icon: const Icon(Icons.delete_outline_rounded, color: AdminPalette.errorRed, size: 18),
                                       tooltip: 'Xóa câu này',
                                     ),
                                 ],
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               TextFormField(
                                 initialValue: seg['kanji_content'],
                                 onChanged: (v) => seg['kanji_content'] = v,
-                                decoration: const InputDecoration(
-                                  labelText: '漢字 — Câu gốc (có Kanji)',
-                                  hintText: 'VD: 日本語を勉強しています',
-                                  border: OutlineInputBorder(),
-                                ),
-                                style: const TextStyle(fontSize: 16),
+                                decoration: _inputDeco('漢字 — Câu gốc (có Kanji)'),
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               TextFormField(
                                 initialValue: seg['furigana'],
                                 onChanged: (v) => seg['furigana'] = v,
-                                decoration: const InputDecoration(
-                                  labelText: 'Furigana — Phiên âm Hiragana',
-                                  hintText: 'VD: にほんごをべんきょうしています',
-                                  border: OutlineInputBorder(),
-                                ),
+                                decoration: _inputDeco('Furigana — Phiên âm Hiragana'),
                               ),
-                              const SizedBox(height: 8),
+                              const SizedBox(height: 10),
                               TextFormField(
                                 initialValue: seg['translation_vi'],
                                 onChanged: (v) => seg['translation_vi'] = v,
-                                decoration: const InputDecoration(
-                                  labelText: 'Dịch nghĩa tiếng Việt',
-                                  hintText: 'VD: Tôi đang học tiếng Nhật.',
-                                  border: OutlineInputBorder(),
-                                ),
+                                decoration: _inputDeco('Dịch nghĩa tiếng Việt'),
                               ),
                             ],
                           ),
@@ -349,8 +334,6 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     }
   }
 
-
-
   Future<void> _deleteTopic(Map<String, dynamic> topic) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -391,60 +374,12 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     return trimmed.isEmpty ? null : trimmed;
   }
 
-  Widget _smallField(
-    Map<String, String> values,
-    String key,
-    String label,
-  ) {
-    return TextFormField(
-      initialValue: values[key] ?? '',
-      onChanged: (value) => values[key] = value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
-    );
-  }
-
-  Widget _sectionTitle(String title, {required VoidCallback onAdd}) {
-    return Row(
-      children: [
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-            color: AdminPalette.textPrimary,
-          ),
-        ),
-        const Spacer(),
-        TextButton.icon(
-          onPressed: onAdd,
-          icon: const Icon(Icons.add_rounded),
-          label: const Text('Them'),
-        ),
-      ],
-    );
-  }
-
   Widget _twoColumn(Widget left, Widget right) {
     return Row(
       children: [
         Expanded(child: left),
         const SizedBox(width: 12),
         Expanded(child: right),
-      ],
-    );
-  }
-
-  Widget _threeColumn(Widget first, Widget second, Widget third) {
-    return Row(
-      children: [
-        Expanded(child: first),
-        const SizedBox(width: 10),
-        Expanded(child: second),
-        const SizedBox(width: 10),
-        Expanded(child: third),
       ],
     );
   }
@@ -457,29 +392,28 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
         children: [
           Row(
             children: [
-              Expanded(
+              const Expanded(
                 child: AdminSectionHeader(
                   title: 'Shadowing Topics',
                   subtitle: 'Quản lý topic, segment và vocabulary cho bài Shadowing.',
                 ),
               ),
+              const SizedBox(width: 12),
               SizedBox(
-                width: 280,
+                width: 260,
                 child: DropdownButtonFormField<int?>(
                   isExpanded: true,
                   value: (_selectedLessonId == null || _selectedLessonId == -1 || _lessons.any((l) => l['id'] == _selectedLessonId)) ? _selectedLessonId : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Lọc theo lesson',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDeco('Lọc theo bài học', isDense: true),
+                  dropdownColor: AdminPalette.surfaceMuted,
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('Tất cả topic'),
+                      child: Text('Tất cả bài học'),
                     ),
                     const DropdownMenuItem<int?>(
                       value: -1,
-                      child: Text('Topic độc lập (Không thuộc lesson)'),
+                      child: Text('Topic độc lập'),
                     ),
                     ..._lessons.map(
                       (lesson) => DropdownMenuItem<int?>(
@@ -515,13 +449,17 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AdminPalette.sidebarSelectedForeground),
+        ),
+      );
     }
 
     if (_error != null) {
       return Center(
-          child:
-              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
+        child: Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)),
+      );
     }
 
     if (_topics.isEmpty) {
@@ -532,19 +470,20 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
     }
 
     return ListView.separated(
+      physics: const BouncingScrollPhysics(),
       itemCount: _topics.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      separatorBuilder: (_, __) => const SizedBox(height: 14),
       itemBuilder: (context, index) {
         final topic = _topics[index];
         final segments = (topic['segments'] as List?) ?? const [];
 
         return Container(
           decoration: BoxDecoration(
-            color: AdminPalette.surfaceMuted,
+            color: Colors.white.withOpacity(0.015),
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: AdminPalette.borderSoft),
+            border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
           ),
-          padding: const EdgeInsets.all(18),
+          padding: const EdgeInsets.all(20),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -554,10 +493,12 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                 decoration: BoxDecoration(
                   color: AdminPalette.topicSurface,
                   borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AdminPalette.topicAccent.withOpacity(0.2), width: 0.8),
                 ),
                 child: const Icon(
                   Icons.graphic_eq_rounded,
                   color: AdminPalette.topicAccent,
+                  size: 24,
                 ),
               ),
               const SizedBox(width: 16),
@@ -574,52 +515,53 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
                               fontSize: 17,
                               fontWeight: FontWeight.w800,
                               color: AdminPalette.textPrimary,
+                              letterSpacing: -0.3,
                             ),
                           ),
                         ),
                         _badge('JLPT ${topic['level'] ?? 'N/A'}'),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 10),
                     Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
+                      spacing: 8,
+                      runSpacing: 8,
                       children: [
-                        _metaChip(Icons.layers_rounded,
-                            'Lesson ${topic['lesson_id'] ?? '-'}'),
-                        _metaChip(Icons.list_alt_rounded,
-                            '${segments.length} segments'),
-                        _metaChip(Icons.schedule_rounded,
-                            '${topic['total_duration'] ?? '-'}'),
+                        _metaChip(Icons.layers_rounded, 'Mã Lesson: ${topic['lesson_id'] ?? 'Không'}'),
+                        _metaChip(Icons.list_alt_rounded, '${segments.length} câu'),
+                        if (topic['total_duration'] != null)
+                          _metaChip(Icons.schedule_rounded, '${topic['total_duration']}s'),
                       ],
                     ),
-                    if ((topic['full_script_ja'] ?? '')
-                        .toString()
-                        .isNotEmpty) ...[
+                    if ((topic['full_script_ja'] ?? '').toString().isNotEmpty) ...[
                       const SizedBox(height: 12),
                       Text(
                         (topic['full_script_ja'] ?? '').toString(),
                         maxLines: 3,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
-                            color: AdminPalette.textSecondary, height: 1.5),
+                          color: AdminPalette.textSecondary,
+                          height: 1.5,
+                          fontSize: 13,
+                        ),
                       ),
                     ],
                   ],
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
+              const SizedBox(width: 16),
+              Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   IconButton(
                     tooltip: 'Sửa',
                     onPressed: () => _openTopicDialog(topic),
-                    icon: const Icon(Icons.edit_outlined),
+                    icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 20),
                   ),
                   IconButton(
                     tooltip: 'Xóa',
                     onPressed: () => _deleteTopic(topic),
-                    icon: const Icon(Icons.delete_outline_rounded),
+                    icon: const Icon(Icons.delete_outline_rounded, color: AdminPalette.errorRed, size: 20),
                   ),
                 ],
               ),
@@ -632,17 +574,18 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
 
   Widget _badge(String text) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: AdminPalette.topicSurface,
-        borderRadius: BorderRadius.circular(999),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AdminPalette.topicAccent.withOpacity(0.2), width: 0.8),
       ),
       child: Text(
         text,
         style: const TextStyle(
           color: AdminPalette.topicAccent,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
+          fontSize: 11,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -650,11 +593,11 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
 
   Widget _metaChip(IconData icon, String label) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: AdminPalette.surface,
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: AdminPalette.borderSoft),
+        color: Colors.white.withOpacity(0.015),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -666,56 +609,9 @@ class _AdminTopicsPageState extends State<AdminTopicsPage> {
             style: const TextStyle(
               color: AdminPalette.textSecondary,
               fontSize: 12,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w600,
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ItemEditorCard extends StatelessWidget {
-  const _ItemEditorCard({
-    required this.title,
-    required this.child,
-    this.onRemove,
-  });
-
-  final String title;
-  final Widget child;
-  final VoidCallback? onRemove;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AdminPalette.surfaceMuted,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AdminPalette.borderSoft),
-      ),
-      child: Column(
-        children: [
-          Row(
-            children: [
-              Text(
-                title,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: AdminPalette.textPrimary,
-                ),
-              ),
-              const Spacer(),
-              if (onRemove != null)
-                IconButton(
-                  onPressed: onRemove,
-                  icon: const Icon(Icons.delete_outline_rounded),
-                ),
-            ],
-          ),
-          child,
         ],
       ),
     );

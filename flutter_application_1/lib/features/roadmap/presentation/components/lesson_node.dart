@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/features/roadmap/models/roadmap_model.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
-
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class LessonNode extends StatefulWidget {
   final LessonModel lesson;
@@ -47,31 +46,25 @@ class _LessonNodeState extends State<LessonNode>
 
   @override
   Widget build(BuildContext context) {
-
     final alignment = _getAlignment();
 
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Align(
         alignment: alignment,
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-
             if (widget.lesson.status == LessonStatus.inProgress)
               _InProgressBadge(progress: widget.lesson.progress),
             if (widget.lesson.status == LessonStatus.completed)
               const _CompletedBadge(),
-
-
+            const SizedBox(height: 4),
             GestureDetector(
               onTap: widget.onTap,
               child: _buildNode(),
             ),
-
-            const SizedBox(height: 6),
-
-
+            const SizedBox(height: 8),
             _NodeLabel(lesson: widget.lesson),
           ],
         ),
@@ -132,35 +125,34 @@ class _NodeCircle extends StatelessWidget {
       case LessonStatus.completed:
         return BoxDecoration(
           shape: BoxShape.circle,
-          color: AppColors.toriiRed,
+          gradient: SNJ.sakuraGradient,
           boxShadow: [
             BoxShadow(
-              color: AppColors.toriiRed.withValues(alpha: 0.35),
-              blurRadius: 16,
+              color: SNJ.sakura.withOpacity(0.45),
+              blurRadius: 18,
               spreadRadius: 2,
+              offset: const Offset(0, 4),
             ),
           ],
         );
       case LessonStatus.inProgress:
         return BoxDecoration(
           shape: BoxShape.circle,
-          gradient: const RadialGradient(
-            colors: [Color(0xFFFFFFFF), Color(0xFFFFEBEE)],
-          ),
-          border: Border.all(color: AppColors.toriiRed, width: 3),
+          color: const Color(0xFF160A30),
+          border: Border.all(color: SNJ.sakura, width: 3.5),
           boxShadow: [
             BoxShadow(
-              color: AppColors.toriiRed.withValues(alpha: 0.4),
-              blurRadius: 20,
-              spreadRadius: 4,
+              color: SNJ.sakura.withOpacity(0.5),
+              blurRadius: 22,
+              spreadRadius: 3,
             ),
           ],
         );
       case LessonStatus.locked:
         return BoxDecoration(
           shape: BoxShape.circle,
-          color: const Color(0xFFE8EDF5),
-          border: Border.all(color: const Color(0xFFCBD5E1), width: 2),
+          color: Colors.white.withOpacity(0.04),
+          border: Border.all(color: Colors.white.withOpacity(0.08), width: 1.5),
         );
     }
   }
@@ -168,12 +160,12 @@ class _NodeCircle extends StatelessWidget {
   Widget _innerContent() {
     switch (status) {
       case LessonStatus.completed:
-        return const Icon(Icons.check_rounded, color: Colors.white, size: 32);
+        return const Icon(Icons.check_rounded, color: Colors.white, size: 34);
       case LessonStatus.inProgress:
-        return Icon(icon, color: AppColors.toriiRed, size: 30);
+        return Icon(icon, color: Colors.white, size: 30);
       case LessonStatus.locked:
         return const Icon(Icons.lock_rounded,
-            color: Color(0xFFADB5BD), size: 26);
+            color: Color(0xFF5E4E75), size: 24);
     }
   }
 }
@@ -189,18 +181,14 @@ class _NodeLabel extends StatelessWidget {
     final isCompleted  = lesson.status == LessonStatus.completed;
 
     final subtitleColor = isLocked
-        ? const Color(0xFFADB5BD)
+        ? const Color(0xFF5E4E75)
         : isInProgress
-            ? AppColors.toriiRed
+            ? SNJ.sakura
             : isCompleted
-                ? const Color(0xFF16A34A)
-                : const Color(0xFF94A3B8);
+                ? const Color(0xFF10B981)
+                : const Color(0xFF8877A0);
 
-    final titleColor = isLocked
-        ? const Color(0xFFADB5BD)
-        : isCompleted
-            ? const Color(0xFF1E293B)
-            : const Color(0xFF1E293B);
+    final titleColor = isLocked ? const Color(0xFF5E4E75) : Colors.white;
 
     return Column(
       children: [
@@ -208,14 +196,14 @@ class _NodeLabel extends StatelessWidget {
           lesson.subtitle.isNotEmpty ? lesson.subtitle.toUpperCase() : '',
           style: TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w700,
+            fontWeight: FontWeight.w900,
             color: subtitleColor,
-            letterSpacing: 0.8,
+            letterSpacing: 1.0,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(height: 3),
         SizedBox(
-          width: 110,
+          width: 120,
           child: Text(
             lesson.title,
             textAlign: TextAlign.center,
@@ -223,8 +211,9 @@ class _NodeLabel extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w700,
+              fontWeight: FontWeight.w800,
               color: titleColor,
+              height: 1.3,
             ),
           ),
         ),
@@ -235,43 +224,37 @@ class _NodeLabel extends StatelessWidget {
 
 class _InProgressBadge extends StatelessWidget {
   final double? progress;
-  const _InProgressBadge({super.key, this.progress});
+  const _InProgressBadge({this.progress});
 
   @override
   Widget build(BuildContext context) {
     final int percent = progress != null ? (progress! * 100).round() : 0;
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.toriiRed,
+        gradient: SNJ.sakuraGradient,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: AppColors.toriiRed.withValues(alpha: 0.3),
+            color: SNJ.sakura.withOpacity(0.35),
             blurRadius: 10,
-            offset: const Offset(0, 4),
+            offset: const Offset(0, 3),
           )
         ],
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(
-            percent > 0 ? 'ĐANG HỌC ($percent%)' : 'ĐANG HỌC',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-            ),
-          ),
-        ],
+      child: Text(
+        percent > 0 ? 'ĐANG HỌC ($percent%)' : 'ĐANG HỌC',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w900,
+          letterSpacing: 0.5,
+        ),
       ),
     );
   }
 }
-
 
 class _CompletedBadge extends StatelessWidget {
   const _CompletedBadge();
@@ -279,30 +262,24 @@ class _CompletedBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
-        color: const Color(0xFF16A34A),
+        color: const Color(0x2710B981),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF16A34A).withValues(alpha: 0.25),
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        border: Border.all(color: const Color(0xFF10B981), width: 1.0),
       ),
       child: const Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.check_circle_rounded, color: Colors.white, size: 11),
+          Icon(Icons.check_circle_rounded, color: Color(0xFF10B981), size: 11),
           SizedBox(width: 4),
           Text(
             'HOÀN THÀNH',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
+              color: Color(0xFF34D399),
+              fontSize: 9,
+              fontWeight: FontWeight.w900,
               letterSpacing: 0.8,
             ),
           ),
@@ -310,4 +287,4 @@ class _CompletedBadge extends StatelessWidget {
       ),
     );
   }
-}
+}

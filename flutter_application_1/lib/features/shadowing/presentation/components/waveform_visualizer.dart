@@ -1,6 +1,6 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'dart:math' as math;
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class WaveformVisualizer extends StatefulWidget {
   final bool isUser;
@@ -54,7 +54,7 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with SingleTick
 
   @override
   Widget build(BuildContext context) {
-    final color = widget.isUser ? AppColors.sunRed : AppColors.sakuraPink;
+    final color = widget.isUser ? SNJ.sakura : const Color(0xFFCCB8D8);
 
     return Center(
       child: Column(
@@ -65,7 +65,7 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with SingleTick
               'AI VOICE ANALYZING...',
               style: TextStyle(
                 fontSize: 10,
-                fontWeight: FontWeight.bold,
+                fontWeight: FontWeight.w900,
                 letterSpacing: 2,
                 color: color,
               ),
@@ -88,7 +88,7 @@ class _WaveformVisualizerState extends State<WaveformVisualizer> with SingleTick
                       width: widget.isUser ? 8 : 6,
                       height: height,
                       decoration: BoxDecoration(
-                        color: widget.isUser && widget.isRecording ? color : color.withValues(alpha: 0.5),
+                        color: widget.isRecording ? color : color.withOpacity(0.4),
                         borderRadius: BorderRadius.circular(10),
                       ),
                     );

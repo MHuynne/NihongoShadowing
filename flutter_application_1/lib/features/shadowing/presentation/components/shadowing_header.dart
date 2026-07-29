@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class ShadowingHeader extends StatelessWidget {
   final int currentIndex;
@@ -27,18 +27,25 @@ class ShadowingHeader extends StatelessWidget {
         children: [
           Row(
             children: [
-               GestureDetector(
+              GestureDetector(
                 onTap: () {
-
                   Navigator.popUntil(context, (route) => route.isFirst);
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(8),
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: AppColors.lightPinkBackground,
+                    color: Colors.white.withOpacity(0.05),
                     shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.08),
+                      width: 1.0,
+                    ),
                   ),
-                  child: const Icon(Icons.arrow_back, color: AppColors.sunRed, size: 20),
+                  child: const Icon(
+                    Icons.arrow_back_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -48,113 +55,42 @@ class ShadowingHeader extends StatelessWidget {
                 children: [
                   if (isBlindMode)
                     const Text(
-                      'STAGE 2: BLIND\nSHADOWING',
+                      'STAGE 2: BLIND SHADOWING 🎙️',
                       style: TextStyle(
-                        color: AppColors.sunRed,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 12,
-                        height: 1.2,
+                        color: SNJ.sakura,
+                        fontWeight: FontWeight.w900,
+                        fontSize: 10,
+                        letterSpacing: 0.5,
                       ),
                     ),
                   Text(
                     'Câu $currentIndex/$totalCount',
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textDark,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
+                      letterSpacing: -0.5,
                     ),
                   ),
-                  if (segmentTitle != null && segmentTitle!.isNotEmpty)
+                  if (segmentTitle != null && segmentTitle!.isNotEmpty) ...[
+                    const SizedBox(height: 2),
                     Text(
                       segmentTitle!,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.sunRed.withValues(alpha: 0.75),
+                        color: Color(0xFFCCB8D8),
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
+                  ],
                 ],
               ),
             ],
           ),
-
         ],
       ),
     );
   }
-
-  Widget _buildNormalToggle() {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        GestureDetector(
-          onTap: () => onModeChanged(false),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-               color: !isBlindMode ? Colors.white.withOpacity(0.9) : Colors.transparent,
-               borderRadius: BorderRadius.circular(20),
-               boxShadow: !isBlindMode ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
-            ),
-            child: Text(
-              'Có chữ',
-              style: TextStyle(
-                color: !isBlindMode ? AppColors.sunRed : AppColors.slate500,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ),
-        GestureDetector(
-          onTap: () => onModeChanged(true),
-          child: Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            decoration: BoxDecoration(
-               color: isBlindMode ? Colors.white.withOpacity(0.9) : Colors.transparent,
-               borderRadius: BorderRadius.circular(20),
-               boxShadow: isBlindMode ? [BoxShadow(color: Colors.black12, blurRadius: 4)] : [],
-            ),
-            child: Text(
-              'Ẩn chữ',
-              style: TextStyle(
-                color: isBlindMode ? AppColors.textDark : AppColors.slate500,
-                fontWeight: FontWeight.bold,
-                fontSize: 12,
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBlindSwitch() {
-     return Padding(
-       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-       child: Row(
-         mainAxisSize: MainAxisSize.min,
-         children: [
-           const Text(
-             'Ẩn\nchữ',
-             style: TextStyle(color: AppColors.slate600, fontSize: 10, fontWeight: FontWeight.bold, height: 1.1),
-           ),
-           const SizedBox(width: 8),
-           SizedBox(
-             width: 36,
-             height: 20,
-             child: Switch(
-               value: isBlindMode,
-               onChanged: onModeChanged,
-               activeColor: Colors.white,
-               activeTrackColor: AppColors.slate300,
-               materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-             ),
-           ),
-         ],
-       ),
-     );
-  }
-}
+}

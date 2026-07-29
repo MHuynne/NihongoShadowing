@@ -1,6 +1,9 @@
 {
-    "python.defaultInterpreterPath": "C:\\Program Files\\Python313\\python.exe",
+    "python.defaultInterpreterPath": "d:\\MinhHuyen\\Learning\\HK2-2025-2026\\pj\\nihongoShadowing\\NihongoShadowing\\api\\venv\\Scripts\\python.exe",
     "python.analysis.extraPaths": [
-        "./api"
+        "d:\\MinhHuyen\\Learning\\HK2-2025-2026\\pj\\nihongoShadowing\\NihongoShadowing\\api",
+        "d:\\MinhHuyen\\Learning\\HK2-2025-2026\\pj\\nihongoShadowing\\NihongoShadowing\\api\\.venv\\Lib\\site-packages",
+        "d:\\MinhHuyen\\Learning\\HK2-2025-2026\\pj\\nihongoShadowing\\NihongoShadowing\\api\\venv\\Lib\\site-packages"
     ]
 }
+

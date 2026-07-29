@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class ChatBubble extends StatelessWidget {
   final String text;
@@ -20,35 +20,30 @@ class ChatBubble extends StatelessWidget {
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: AppColors.shadow(context),
+              color: (isUser ? SNJ.sakura : Colors.black).withOpacity(0.15),
               blurRadius: 10,
               offset: const Offset(0, 4),
             ),
           ],
-          gradient: isUser
-              ? const LinearGradient(
-                  colors: [AppColors.toriiRed, AppColors.toriiRedLight],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                )
-              : null,
-          color: isUser ? null : AppColors.surface(context),
+          gradient: isUser ? SNJ.sakuraGradient : null,
+          color: isUser ? null : Colors.white.withOpacity(0.06),
           borderRadius: BorderRadius.only(
             topLeft: const Radius.circular(20),
             topRight: const Radius.circular(20),
             bottomLeft: Radius.circular(isUser ? 20 : 4),
             bottomRight: Radius.circular(isUser ? 4 : 20),
           ),
-          border: isUser
-              ? null
-              : Border.all(color: AppColors.border(context), width: 1),
+          border: Border.all(
+            color: isUser ? Colors.transparent : SNJ.border,
+            width: isUser ? 0 : 0.8,
+          ),
         ),
         child: Text(
           text,
           style: TextStyle(
-            color: isUser ? Colors.white : AppColors.primaryText(context),
+            color: isUser ? Colors.white : SNJ.textPrimary,
             fontSize: 15,
-            fontWeight: isUser ? FontWeight.w500 : FontWeight.normal,
+            fontWeight: isUser ? FontWeight.bold : FontWeight.normal,
             height: 1.4,
           ),
         ),

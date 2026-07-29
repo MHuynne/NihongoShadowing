@@ -1,5 +1,5 @@
-﻿import 'package:flutter/material.dart';
-import '../../../core/theme/app_colors.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class GrammarFeedbackBox extends StatelessWidget {
   final String error;
@@ -18,13 +18,12 @@ class GrammarFeedbackBox extends StatelessWidget {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface(context),
+        color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.toriiRed.withValues(alpha: 0.22)),
+        border: Border.all(color: SNJ.sakura.withOpacity(0.3)),
         boxShadow: [
           BoxShadow(
-            color: AppColors.toriiRed
-                .withValues(alpha: AppColors.isDark(context) ? 0.12 : 0.05),
+            color: SNJ.sakura.withOpacity(0.08),
             blurRadius: 15,
             offset: const Offset(0, 5),
           ),
@@ -37,7 +36,7 @@ class GrammarFeedbackBox extends StatelessWidget {
             children: [
               Container(
                 width: 6,
-                color: AppColors.toriiRed,
+                color: SNJ.sakura,
               ),
               Expanded(
                 child: Padding(
@@ -45,16 +44,15 @@ class GrammarFeedbackBox extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      const Row(
                         children: [
-                          const Icon(Icons.auto_awesome,
-                              color: AppColors.toriiRed, size: 20),
-                          const SizedBox(width: 8),
-                          const Text(
+                          Icon(Icons.auto_awesome, color: SNJ.sakura, size: 20),
+                          SizedBox(width: 8),
+                          Text(
                             'AI Sensei Feedback',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: AppColors.toriiRed,
+                              color: SNJ.sakura,
                               fontSize: 14,
                               letterSpacing: 0.5,
                             ),
@@ -64,38 +62,35 @@ class GrammarFeedbackBox extends StatelessWidget {
                       const SizedBox(height: 12),
                       RichText(
                         text: TextSpan(
-                          style: TextStyle(
-                              color: AppColors.secondaryText(context),
-                              fontSize: 14),
+                          style: const TextStyle(
+                            color: SNJ.textSecondary,
+                            fontSize: 14,
+                          ),
                           children: [
                             const TextSpan(text: 'Sai: '),
                             TextSpan(
                               text: error,
-                              style: TextStyle(
+                              style: const TextStyle(
                                 decoration: TextDecoration.lineThrough,
-                                color: AppColors.tertiaryText(context),
+                                color: SNJ.textMuted,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 6),
                       RichText(
                         text: TextSpan(
-                          style: TextStyle(
-                            color: AppColors.primaryText(context),
+                          style: const TextStyle(
+                            color: Colors.white,
                             fontSize: 15,
                             fontWeight: FontWeight.bold,
                           ),
                           children: [
                             const TextSpan(text: 'Sửa lại: '),
-                            const TextSpan(
-                              text: '',
-                            ),
                             TextSpan(
                               text: correction,
-                              style: const TextStyle(
-                                  color: AppColors.successGreen),
+                              style: const TextStyle(color: Color(0xFF10B981)),
                             ),
                           ],
                         ),
@@ -103,15 +98,16 @@ class GrammarFeedbackBox extends StatelessWidget {
                       const SizedBox(height: 12),
                       Container(
                         padding: const EdgeInsets.all(10),
+                        width: double.infinity,
                         decoration: BoxDecoration(
-                          color: AppColors.inputFill(context),
+                          color: Colors.white.withOpacity(0.04),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
                           explanation,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 13,
-                            color: AppColors.secondaryText(context),
+                            color: SNJ.textSecondary,
                             height: 1.4,
                             fontStyle: FontStyle.italic,
                           ),

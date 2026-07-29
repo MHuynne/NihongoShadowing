@@ -3,6 +3,9 @@ import json
 import os
 from typing import List
 
+from dotenv import load_dotenv
+load_dotenv()  # Load .env before reading any env vars
+
 from google import genai
 from google.genai import types
 

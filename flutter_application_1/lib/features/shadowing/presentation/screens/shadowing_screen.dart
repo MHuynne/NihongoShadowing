@@ -6,7 +6,7 @@ import 'package:record/record.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/core/utils/sample_audio_player.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/features/shadowing/models/shadowing_model.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/shadowing_card.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/components/shadowing_controls.dart';
@@ -214,12 +214,12 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
             if (_failedSentences.contains(index)) {
               color = Colors.orange;
             } else {
-              color = const Color(0xFF16A34A);
+              color = const Color(0xFF10B981);
             }
           } else if (index == _currentIndex) {
-            color = AppColors.sunRed;
+            color = SNJ.sakura;
           } else {
-            color = const Color(0xFFE2E8F0);
+            color = Colors.white.withOpacity(0.08);
           }
 
           return Expanded(
@@ -297,7 +297,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Không thể phát audio mẫu: $e'),
-            backgroundColor: AppColors.sunRed,
+            backgroundColor: SNJ.sakura,
           ),
         );
       }
@@ -629,174 +629,241 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-       return Scaffold(
-         backgroundColor: Colors.white,
-         body: Center(child: CircularProgressIndicator(color: AppColors.toriiRed)),
-       );
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SakuraNightBackground(
+          child: Center(
+            child: CircularProgressIndicator(color: SNJ.sakura),
+          ),
+        ),
+      );
     }
 
     if (_errorMessage != null) {
-       return Scaffold(
-         body: Center(
-           child: Padding(
-             padding: const EdgeInsets.all(20.0),
-             child: Text(_errorMessage!, textAlign: TextAlign.center, style: const TextStyle(color: Colors.red, fontSize: 16)),
-           ),
-         ),
-       );
+      return Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SakuraNightBackground(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: GlassCard(
+                neonBorder: true,
+                child: Text(
+                  _errorMessage!,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(color: SNJ.sakura, fontSize: 16, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
     }
 
     final currentSentence = _sentences[_currentIndex];
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-
-          Positioned.fill(
-            child: Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.white,
-                    Color(0xFFF5E8E9),
-                    Color(0xFFEEDFE1),
-                    Colors.white,
-                  ],
-                  stops: [0.0, 0.3, 0.7, 1.0],
-                ),
+      backgroundColor: Colors.transparent,
+      body: SakuraNightBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              ShadowingHeader(
+                currentIndex: _currentIndex + 1,
+                totalCount: _sentences.length,
+                isBlindMode: _isBlindMode,
+                onModeChanged: _toggleMode,
+                segmentTitle: _sentences.isNotEmpty
+                    ? _sentences[_currentIndex].title
+                    : null,
               ),
-            ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                ShadowingHeader(
-                  currentIndex: _currentIndex + 1,
-                  totalCount: _sentences.length,
-                  isBlindMode: _isBlindMode,
-                  onModeChanged: _toggleMode,
-                  segmentTitle: _sentences.isNotEmpty
-                      ? _sentences[_currentIndex].title
-                      : null,
-                ),
-                _buildSegmentProgressBar(),
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: Column(
-                      children: [
-                    const SizedBox(height: 24),
+              _buildSegmentProgressBar(),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 24),
 
-                    if (!_isBlindMode && !_showFeedback)
-                      const WaveformVisualizer(
-                        isUser: false,
-                        isRecording: true,
+                      if (!_isBlindMode && !_showFeedback)
+                        const WaveformVisualizer(
+                          isUser: false,
+                          isRecording: true,
+                        ),
+
+                      if (!_isBlindMode) const SizedBox(height: 32),
+
+                      ShadowingCard(
+                        sentence: currentSentence,
+                        isBlindMode: _isBlindMode,
                       ),
 
-                    if (!_isBlindMode) const SizedBox(height: 32),
-
-                    ShadowingCard(
-                      sentence: currentSentence,
-                      isBlindMode: _isBlindMode,
-                    ),
-
-                    const SizedBox(height: 32),
-
-                    if (_isEvaluating) ...[
-                      const Center(child: CircularProgressIndicator(color: AppColors.sunRed)),
-                      const SizedBox(height: 12),
-                      const Text('AI đang chấm điểm phát âm...', style: TextStyle(color: AppColors.slate500)),
                       const SizedBox(height: 32),
-                    ] else if (_showFeedback) ...[
-                      _buildFeedbackCard(currentSentence),
-                      const SizedBox(height: 24),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            setState(() {
-                              if ((_dynamicFeedback?.accuracy ?? 0) < 50) {
 
-                                _showFeedback = false;
-                              } else if (!_isBlindMode) {
-                                _isBlindMode = true;
-                                _showFeedback = false;
-                              } else {
-                                _nextSentence();
-                              }
-                            });
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: ((_dynamicFeedback?.accuracy ?? 0) < 50) ? Colors.orange : AppColors.sunRed,
-                            foregroundColor: Colors.white,
-                            minimumSize: const Size(double.infinity, 56),
-                            elevation: 4,
-                            shadowColor: (((_dynamicFeedback?.accuracy ?? 0) < 50) ? Colors.orange : AppColors.sunRed).withValues(alpha: 0.4),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                      if (_isEvaluating) ...[
+                        const Center(child: CircularProgressIndicator(color: SNJ.sakura)),
+                        const SizedBox(height: 12),
+                        const Text(
+                          'AI đang chấm điểm phát âm...',
+                          style: TextStyle(color: Color(0xFFCCB8D8), fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(height: 32),
+                      ] else if (_showFeedback) ...[
+                        _buildFeedbackCard(currentSentence),
+                        const SizedBox(height: 24),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              gradient: ((_dynamicFeedback?.accuracy ?? 0) < 50)
+                                  ? const LinearGradient(colors: [Colors.orange, Colors.orangeAccent])
+                                  : SNJ.sakuraGradient,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: (((_dynamicFeedback?.accuracy ?? 0) < 50)
+                                          ? Colors.orange
+                                          : SNJ.sakura)
+                                      .withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 4),
+                                )
+                              ],
+                            ),
+                            child: ElevatedButton(
+                              onPressed: () {
+                                setState(() {
+                                  if ((_dynamicFeedback?.accuracy ?? 0) < 50) {
+                                    _showFeedback = false;
+                                  } else if (!_isBlindMode) {
+                                    _isBlindMode = true;
+                                    _showFeedback = false;
+                                  } else {
+                                    _nextSentence();
+                                  }
+                                });
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.transparent,
+                                shadowColor: Colors.transparent,
+                                foregroundColor: Colors.white,
+                                minimumSize: const Size(double.infinity, 56),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                              ),
+                              child: Text(
+                                ((_dynamicFeedback?.accuracy ?? 0) < 50)
+                                    ? 'Chưa Pass: Cần đọc lại thử thách'
+                                    : (!_isBlindMode
+                                        ? 'Bước tiếp theo: Đọc ẩn chữ'
+                                        : (_currentIndex < _sentences.length - 1
+                                            ? 'Câu tiếp theo'
+                                            : 'Hoàn thành bài học')),
+                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w900),
+                              ),
                             ),
                           ),
-                          child: Text(
-                            ((_dynamicFeedback?.accuracy ?? 0) < 50) ? 'Chưa Pass: Cần đọc lại thử thách' :
-                            (!_isBlindMode ? 'Bước tiếp theo: Đọc ẩn chữ' :
-                               (_currentIndex < _sentences.length - 1 ? 'Câu tiếp theo' : 'Hoàn thành bài học')),
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        ),
+                      ] else if (_isBlindMode || _isRecording) ...[
+                        const Text(
+                          'USER VOICE',
+                          style: TextStyle(
+                            color: SNJ.sakura,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 10,
+                            letterSpacing: 1.5,
                           ),
                         ),
-                      ),
-                    ] else if (_isBlindMode || _isRecording) ...[
-                      const Text('USER VOICE',style: TextStyle(color: AppColors.sunRed, fontWeight: FontWeight.bold, fontSize: 10, letterSpacing: 1.5)),
-                      const SizedBox(height: 8),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Text(_isRecording ? 'Đang ghi âm...' : 'Sẵn sàng đọc...', style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: AppColors.textDark)),
-                            if (_isRecording)
-                              Row(children: [
-                                Container(width: 8, height: 8, decoration: const BoxDecoration(color: AppColors.sunRed, shape: BoxShape.circle)),
-                                const SizedBox(width: 4),
-                                const Text('LIVE', style: TextStyle(color: AppColors.sunRed, fontWeight: FontWeight.bold, fontSize: 10)),
-                              ])
-                          ],
+                        const SizedBox(height: 8),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                _isRecording ? 'Đang ghi âm...' : 'Sẵn sàng đọc...',
+                                style: const TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.w900,
+                                  color: Colors.white,
+                                ),
+                              ),
+                              if (_isRecording)
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 8,
+                                      height: 8,
+                                      decoration: const BoxDecoration(
+                                        color: SNJ.sakura,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    const Text(
+                                      'LIVE',
+                                      style: TextStyle(
+                                        color: SNJ.sakura,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                  ],
+                                )
+                            ],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 24),
-                      WaveformVisualizer(isUser: true, isRecording: _isRecording),
-                      const SizedBox(height: 16),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 40),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: const [
-                            Text('0.0S', style: TextStyle(color: AppColors.slate500, fontWeight: FontWeight.bold, fontSize: 10)),
-                            Text('1.5S', style: TextStyle(color: AppColors.slate500, fontWeight: FontWeight.bold, fontSize: 10)),
-                            Text('3.0S', style: TextStyle(color: AppColors.slate500, fontWeight: FontWeight.bold, fontSize: 10)),
-                          ],
+                        const SizedBox(height: 24),
+                        WaveformVisualizer(isUser: true, isRecording: _isRecording),
+                        const SizedBox(height: 16),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 40),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: const [
+                              Text(
+                                '0.0S',
+                                style: TextStyle(
+                                  color: Color(0xFF8877A0),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              Text(
+                                '1.5S',
+                                style: TextStyle(
+                                  color: Color(0xFF8877A0),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10,
+                                ),
+                              ),
+                              Text(
+                                '3.0S',
+                                style: TextStyle(
+                                  color: Color(0xFF8877A0),
+                                  fontWeight: FontWeight.w900,
+                                  fontSize: 10,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
-                      ),
-                    ]
-                  ],
+                      ]
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            ShadowingControls(
-              isRecording: _isRecording,
-              isPlayingSample: _isPlayingSample,
-              onRecordPressed: _toggleRecording,
-              onPlaySample: _playSample,
-              onSpeedToggle: _toggleSpeed,
-              currentSpeed: _currentSpeed,
-            ),
-            const SizedBox(height: 16),
-              ],
-            ),
+              ShadowingControls(
+                isRecording: _isRecording,
+                isPlayingSample: _isPlayingSample,
+                onRecordPressed: _toggleRecording,
+                onPlaySample: _playSample,
+                onSpeedToggle: _toggleSpeed,
+                currentSpeed: _currentSpeed,
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -807,119 +874,116 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     final bool isFailed = feedback.accuracy < 50;
     final bool allCorrect = feedback.accuracy >= 80 && _errorWord.isEmpty && !isFailed;
 
-    Color boxColor = allCorrect ? AppColors.successGreenLight : (isFailed ? Colors.orange.shade50 : Colors.red.shade50);
-    Color statusColor = allCorrect ? AppColors.successGreen : (isFailed ? Colors.orange : AppColors.sunRed);
-    IconData statusIcon = allCorrect ? Icons.check_circle_rounded : (isFailed ? Icons.warning_rounded : Icons.cancel_rounded);
-    String statusText = allCorrect ? 'Phát âm chính xác!' : (isFailed ? 'Chưa Pass (Cải thiện thêm nhé)' : 'Có từ chưa chuẩn');
+    Color boxColor = allCorrect
+        ? const Color(0x1F10B981)
+        : (isFailed ? const Color(0x1FFF9800) : const Color(0x1FEF4444));
+    Color statusColor = allCorrect
+        ? const Color(0xFF10B981)
+        : (isFailed ? Colors.orange : const Color(0xFFEF4444));
+    IconData statusIcon = allCorrect
+        ? Icons.check_circle_rounded
+        : (isFailed ? Icons.warning_rounded : Icons.cancel_rounded);
+    String statusText = allCorrect
+        ? 'Phát âm chính xác!'
+        : (isFailed ? 'Chưa Pass (Cải thiện thêm nhé)' : 'Có từ chưa chuẩn');
 
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20),
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.9),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: AppColors.sunRed.withOpacity(0.3),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: AppColors.sunRed,
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.psychology_outlined, color: Colors.white, size: 16),
-              ),
-              const SizedBox(width: 8),
-              const Text(
-                'Trí tuệ nhân tạo (Azure Speech)',
-                style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.textDark),
-              ),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _buildScorePill('Phát âm',  feedback.accuracy),
-              _buildScorePill('Ngắt nghỉ', feedback.fluency),
-              _buildScorePill('Ngữ điệu', feedback.prosody),
-            ],
-          ),
-
-          const SizedBox(height: 16),
-
-
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: boxColor,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Column(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: GlassCard(
+        neonBorder: true,
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(statusIcon, size: 18, color: statusColor),
-                    const SizedBox(width: 6),
-                    Text(
-                      statusText,
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w800,
-                        color: statusColor,
-                      ),
-                    ),
-                  ],
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: SNJ.sakuraSoft,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.psychology_outlined, color: SNJ.sakura, size: 16),
                 ),
-                const SizedBox(height: 8),
-                RichText(
-                  textAlign: TextAlign.center,
-                  text: TextSpan(
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, height: 1.6),
-                    children: _buildWordsAnalysisText(feedback.wordsAnalysis, sent.kanji.isNotEmpty ? sent.kanji : sent.romaji),
+                const SizedBox(width: 8),
+                const Text(
+                  'Trí tuệ nhân tạo (Azure Speech)',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
+                    color: Colors.white,
                   ),
                 ),
               ],
             ),
-          ),
-
-
-          if (feedback.tip.isNotEmpty) ...[
-            const SizedBox(height: 14),
-            _buildAiTipBox(feedback.tip, allCorrect),
+            const SizedBox(height: 16),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _buildScorePill('Phát âm', feedback.accuracy),
+                _buildScorePill('Ngắt nghỉ', feedback.fluency),
+                _buildScorePill('Ngữ điệu', feedback.prosody),
+              ],
+            ),
+            const SizedBox(height: 16),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: boxColor,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: statusColor.withOpacity(0.15),
+                  width: 1.0,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(statusIcon, size: 18, color: statusColor),
+                      const SizedBox(width: 6),
+                      Text(
+                        statusText,
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
+                          color: statusColor,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  RichText(
+                    textAlign: TextAlign.center,
+                    text: TextSpan(
+                      style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, height: 1.6),
+                      children: _buildWordsAnalysisText(
+                        feedback.wordsAnalysis,
+                        sent.kanji.isNotEmpty ? sent.kanji : sent.romaji,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            if (feedback.tip.isNotEmpty) ...[
+              const SizedBox(height: 14),
+              _buildAiTipBox(feedback.tip, allCorrect),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
 
-
   Widget _buildAiTipBox(String tip, bool isGood) {
-    final bgColor   = isGood ? const Color(0xFFECFDF5) : const Color(0xFFF5F3FF);
-    final iconColor = isGood ? AppColors.successGreen   : const Color(0xFF7C3AED);
-    final textColor = isGood ? const Color(0xFF065F46)  : const Color(0xFF4C1D95);
-    final icon      = isGood ? Icons.auto_awesome_rounded : Icons.tips_and_updates_rounded;
-    final label     = isGood ? 'Nhận xét của AI ✨' : 'Gợi ý cải thiện từ AI ✨';
+    final bgColor = isGood ? const Color(0x1F10B981) : const Color(0x1F8B5CF6);
+    final iconColor = isGood ? const Color(0xFF10B981) : const Color(0xFFA78BFA);
+    final textColor = isGood ? const Color(0xFF34D399) : const Color(0xFFC084FC);
+    final icon = isGood ? Icons.auto_awesome_rounded : Icons.tips_and_updates_rounded;
+    final label = isGood ? 'Nhận xét của AI ✨' : 'Gợi ý cải thiện từ AI ✨';
 
     return Container(
       width: double.infinity,
@@ -927,7 +991,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
       decoration: BoxDecoration(
         color: bgColor,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: iconColor.withValues(alpha: 0.25)),
+        border: Border.all(color: iconColor.withOpacity(0.2)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -940,7 +1004,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
                 label,
                 style: TextStyle(
                   fontSize: 12,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w900,
                   color: iconColor,
                   letterSpacing: 0.3,
                 ),
@@ -961,9 +1025,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     );
   }
 
-
   Widget _buildRhythmHint(String text) {
-
     final pauseChars = ['、', '。', '！', '？', '!', '?'];
     final hasPause = pauseChars.any((c) => text.contains(c));
 
@@ -971,20 +1033,20 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.orange.shade50,
+        color: const Color(0x1FF59E0B),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.orange.shade200),
+        border: Border.all(color: const Color(0x27F59E0B)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: const [
-              Icon(Icons.music_note_rounded, size: 16, color: Colors.orange),
+              Icon(Icons.music_note_rounded, size: 16, color: Color(0xFFFBBF24)),
               SizedBox(width: 6),
               Text(
                 'Nhịp ngắt chưa khớp mẫu',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.orange),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFFFBBF24)),
               ),
             ],
           ),
@@ -992,26 +1054,24 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
           if (hasPause) ...[
             const Text(
               'Hãy ngắt hơi đúng tại các ký hiệu «▼» bên dưới:',
-              style: TextStyle(fontSize: 12, color: Color(0xFF78350F)),
+              style: TextStyle(fontSize: 12, color: Color(0xFFFDE047)),
             ),
             const SizedBox(height: 6),
-
             RichText(
               text: TextSpan(
-                style: const TextStyle(fontSize: 15, height: 1.8, color: Color(0xFF1E293B)),
+                style: const TextStyle(fontSize: 15, height: 1.8, color: Colors.white),
                 children: _buildPauseMarkedText(text),
               ),
             ),
           ] else
             const Text(
               'Câu này không có dấu ngắt rõ ràng. Hãy luyện nói đều hơi liền mạch từ đầu đến cuối.',
-              style: TextStyle(fontSize: 12, color: Color(0xFF78350F), height: 1.4),
+              style: TextStyle(fontSize: 12, color: Color(0xFFFDE047), height: 1.4),
             ),
         ],
       ),
     );
   }
-
 
   List<TextSpan> _buildPauseMarkedText(String text) {
     final markers = RegExp(r'[、。！？!?]');
@@ -1041,32 +1101,31 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
     return spans;
   }
 
-
   Widget _buildProsodyRecommend() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: Colors.purple.shade50,
+        color: const Color(0x1F8B5CF6),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.purple.shade100),
+        border: Border.all(color: const Color(0x278B5CF6)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: const [
-              Icon(Icons.record_voice_over_rounded, size: 16, color: Colors.purple),
+              Icon(Icons.record_voice_over_rounded, size: 16, color: Color(0xFFA78BFA)),
               SizedBox(width: 6),
               Text(
                 'Gợi ý cải thiện Ngữ điệu',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w800, color: Colors.purple),
+                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w900, color: Color(0xFFA78BFA)),
               ),
             ],
           ),
           const SizedBox(height: 10),
           _prosodyTip('🎵', 'Tiếng Nhật dùng Pitch-accent (âm cao-thấp), không phải nhấn âm mạnh/yếu như tiếng Việt.'),
-          _prosodyTip('🔄', 'Thường: trợ từ は・が・を có xu hướng xuống giọng sau đỉnh cao.'),
+          _prosodyTip('🔄', 'Thường: trợ từ は・が・uốc có xu hướng xuống giọng sau đỉnh cao.'),
           _prosodyTip('🎧', 'Nghe lại mẫu chậm 0.75× nhiều lần, chú ý chỗ giọng lên và xuống.'),
           _prosodyTip('🗣️', 'Nhái nguyên âm điệu của người đọc mẫu, không chỉ nhái từ ngữ.'),
         ],
@@ -1085,7 +1144,7 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
           Expanded(
             child: Text(
               text,
-              style: const TextStyle(fontSize: 12, color: Color(0xFF4C1D95), height: 1.4),
+              style: const TextStyle(fontSize: 12, color: Color(0xFFC084FC), height: 1.4),
             ),
           ),
         ],
@@ -1095,40 +1154,49 @@ class _ShadowingScreenState extends State<ShadowingScreen> {
 
   List<TextSpan> _buildWordsAnalysisText(List<WordAnalysisModel> words, String originalText) {
     if (words.isEmpty) {
-      return [TextSpan(text: originalText, style: const TextStyle(color: AppColors.successGreen))];
+      return [TextSpan(text: originalText, style: const TextStyle(color: Color(0xFF10B981)))];
     }
 
     return words.map((wordObj) {
       if (wordObj.isCorrect) {
         return TextSpan(
           text: wordObj.text,
-          style: const TextStyle(color: AppColors.successGreen)
+          style: const TextStyle(color: Color(0xFF10B981)),
         );
       } else {
         return TextSpan(
           text: wordObj.text,
           style: const TextStyle(
-            color: AppColors.sunRed,
+            color: SNJ.sakura,
             decoration: TextDecoration.underline,
-            decorationColor: AppColors.sunRed,
+            decorationColor: SNJ.sakura,
           ),
         );
       }
     }).toList();
   }
 
-
   Widget _buildScorePill(String label, int score) {
-    Color color = score >= 80 ? AppColors.successGreen : (score >= 60 ? Colors.orange : AppColors.sunRed);
-    Color bgColor = score >= 80 ? AppColors.successGreenLight : (score >= 60 ? Colors.orange.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1));
+    Color color = score >= 80 ? const Color(0xFF10B981) : (score >= 60 ? Colors.orange : const Color(0xFFEF4444));
+    Color bgColor = score >= 80 ? const Color(0x1F10B981) : (score >= 60 ? Colors.orange.withOpacity(0.12) : const Color(0x1FEF4444));
     return Column(
       children: [
-        Text(label, style: const TextStyle(fontSize: 12, color: AppColors.slate500, fontWeight: FontWeight.w600)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: Color(0xFFCCB8D8), fontWeight: FontWeight.w900),
+        ),
         const SizedBox(height: 6),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(20), border: Border.all(color: color.withValues(alpha: 0.2))),
-          child: Text('$score', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color)),
+          decoration: BoxDecoration(
+            color: bgColor,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: color.withOpacity(0.2)),
+          ),
+          child: Text(
+            '$score',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: color),
+          ),
         ),
       ],
     );

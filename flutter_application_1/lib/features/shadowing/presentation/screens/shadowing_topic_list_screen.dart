@@ -1,19 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_application_1/features/shadowing/presentation/screens/shadowing_screen.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'dart:convert';
 import 'package:flutter_application_1/core/network/app_http_client.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/core/services/user_prefs_service.dart';
 
-const _kBg      = Color(0xFFF8F9FE);
-const _kSurface = Colors.white;
-const _kOnSurface = Color(0xFF2D3142);
-const _kSubtext   = Color(0xFF9098A9);
-const _kPrimary   = Color(0xFFFF4D6D);
-
+const _kPrimary = SNJ.sakura;
 
 class ShadowingTopicListScreen extends StatefulWidget {
   const ShadowingTopicListScreen({super.key});
@@ -26,16 +21,9 @@ class ShadowingTopicListScreen extends StatefulWidget {
 class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   bool _isLoading = true;
   String? _error;
-
-
   String _userLevel = 'N5';
-
-
   List<Map<String, dynamic>> _topics = [];
-
-
   List<String> _categoryNames = ['Tất cả'];
-
   String _selectedCategory = 'Tất cả';
 
   @override
@@ -64,7 +52,6 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     });
 
     try {
-
       final results = await Future.wait([
         http.get(Uri.parse('$_base/segment-topics/')),
         http.get(Uri.parse('$_base/categories/')),
@@ -86,7 +73,6 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
       final topics = rawTopics
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList();
-
 
       final catNames = rawCats
           .map((c) => (c as Map)['name']?.toString() ?? '')
@@ -110,15 +96,11 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     }
   }
 
-
   List<Map<String, dynamic>> get _filteredTopics {
-
     final byLevel = _topics.where((topic) {
       final topicLevel = (topic['level'] ?? '').toString();
-
       return topicLevel.isEmpty || topicLevel == _userLevel;
     }).toList();
-
 
     if (_selectedCategory == 'Tất cả') return byLevel;
     return byLevel.where((topic) {
@@ -131,55 +113,58 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _kBg,
-      body: Stack(
-        children: [
-          SafeArea(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildTopBar(),
-                Expanded(
-                  child: _isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                              color: _kPrimary))
-                      : _error != null
-                          ? _buildError()
-                          : _buildScrollBody(),
-                ),
-              ],
-            ),
+      backgroundColor: Colors.transparent,
+      body: SakuraNightBackground(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              _buildTopBar(),
+              Expanded(
+                child: _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                            color: _kPrimary))
+                    : _error != null
+                        ? _buildError()
+                        : _buildScrollBody(),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
 
-
-
   Widget _buildTopBar() {
-
     Color levelColor;
     switch (_userLevel) {
-      case 'N4': levelColor = const Color(0xFF2196F3); break;
-      case 'N3': levelColor = const Color(0xFFFF9800); break;
-      case 'N2': levelColor = const Color(0xFF9C27B0); break;
-      case 'N1': levelColor = const Color(0xFFE91E63); break;
-      default:   levelColor = const Color(0xFF4CAF50);
+      case 'N4':
+        levelColor = const Color(0xFF60A5FA);
+        break;
+      case 'N3':
+        levelColor = const Color(0xFFF59E0B);
+        break;
+      case 'N2':
+        levelColor = const Color(0xFFC084FC);
+        break;
+      case 'N1':
+        levelColor = SNJ.sakura;
+        break;
+      default:
+        levelColor = const Color(0xFF34D399);
     }
 
     return Container(
       decoration: BoxDecoration(
-        color: _kSurface,
+        color: Colors.white.withOpacity(0.04),
         borderRadius: const BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+        border: Border(
+          bottom: BorderSide(
+            color: Colors.white.withOpacity(0.08),
+            width: 1.0,
           ),
-        ],
+        ),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Row(
@@ -192,11 +177,13 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  border: Border.all(color: _kPrimary, width: 2),
-                  color: Colors.white,
+                  gradient: SNJ.sakuraGradient,
                 ),
-                child: const Icon(Icons.record_voice_over_rounded,
-                    color: _kPrimary, size: 22),
+                child: const Icon(
+                  Icons.record_voice_over_rounded,
+                  color: Colors.white,
+                  size: 20,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -206,25 +193,24 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                     'Shadowing',
                     style: TextStyle(
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: _kPrimary,
+                      fontWeight: FontWeight.w900,
+                      color: Colors.white,
                       letterSpacing: -0.4,
                     ),
                   ),
                   const SizedBox(height: 2),
-
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
-                      color: levelColor.withValues(alpha: 0.12),
+                      color: levelColor.withOpacity(0.12),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: levelColor.withValues(alpha: 0.3)),
+                      border: Border.all(color: levelColor.withOpacity(0.3)),
                     ),
                     child: Text(
                       'Cấp độ: $_userLevel',
                       style: TextStyle(
                         fontSize: 10,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w900,
                         color: levelColor,
                       ),
                     ),
@@ -236,14 +222,15 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           Container(
             width: 36,
             height: 36,
-            decoration: const BoxDecoration(
+            decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              color: Colors.white.withOpacity(0.05),
+              border: Border.all(color: Colors.white.withOpacity(0.08)),
             ),
             child: IconButton(
               padding: EdgeInsets.zero,
               icon: const Icon(Icons.tune_rounded,
-                  color: _kPrimary, size: 20),
+                  color: Colors.white, size: 20),
               onPressed: _loadLevelAndData,
               tooltip: 'Tải lại',
             ),
@@ -253,22 +240,19 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-
-
   Widget _buildScrollBody() {
     final filtered = _filteredTopics;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       children: [
-        const SizedBox(height: 20),
-
+        const SizedBox(height: 24),
         const Text(
-          'Shadowing',
+          'Luyện tập phát âm',
           style: TextStyle(
             fontSize: 26,
-            fontWeight: FontWeight.w800,
-            color: _kOnSurface,
+            fontWeight: FontWeight.w900,
+            color: Colors.white,
             letterSpacing: -0.5,
             height: 1.2,
           ),
@@ -278,13 +262,11 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           'Chủ đề luyện tập cấp độ $_userLevel — chọn bài bạn muốn luyện hôm nay.',
           style: const TextStyle(
             fontSize: 14,
-            color: _kSubtext,
-            fontWeight: FontWeight.w500,
+            color: Color(0xFFCCB8D8),
+            fontWeight: FontWeight.w600,
           ),
         ),
-        const SizedBox(height: 20),
-
-
+        const SizedBox(height: 24),
         SizedBox(
           height: 42,
           child: ListView.separated(
@@ -302,19 +284,19 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: selected ? _kPrimary : _kSurface,
+                    gradient: selected ? SNJ.sakuraGradient : null,
+                    color: selected ? null : Colors.white.withOpacity(0.05),
                     borderRadius: BorderRadius.circular(21),
                     border: Border.all(
                       color: selected
-                          ? _kPrimary
-                          : const Color(0xFFE2E8F0),
+                          ? Colors.transparent
+                          : Colors.white.withOpacity(0.08),
                       width: 1.5,
                     ),
                     boxShadow: selected
                         ? [
                             BoxShadow(
-                              color:
-                                  _kPrimary.withValues(alpha: 0.25),
+                              color: _kPrimary.withOpacity(0.25),
                               blurRadius: 10,
                               offset: const Offset(0, 4),
                             )
@@ -324,9 +306,9 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                   child: Text(
                     cat,
                     style: TextStyle(
-                      color: selected ? Colors.white : _kSubtext,
+                      color: selected ? Colors.white : const Color(0xFFCCB8D8),
                       fontWeight:
-                          selected ? FontWeight.w700 : FontWeight.w500,
+                          selected ? FontWeight.w900 : FontWeight.w600,
                       fontSize: 13,
                     ),
                   ),
@@ -335,15 +317,15 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
             },
           ),
         ),
-        const SizedBox(height: 20),
-
-
+        const SizedBox(height: 24),
         if (filtered.isEmpty)
           const Padding(
             padding: EdgeInsets.only(top: 60),
             child: Center(
-              child: Text('Không có nội dung nào',
-                  style: TextStyle(color: _kSubtext)),
+              child: Text(
+                'Không có nội dung nào',
+                style: TextStyle(color: Color(0xFFCCB8D8), fontWeight: FontWeight.bold),
+              ),
             ),
           )
         else
@@ -352,8 +334,6 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-
-
   Widget _buildError() {
     return Center(
       child: Padding(
@@ -361,24 +341,31 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.wifi_off_rounded, size: 56, color: _kSubtext),
+            const Icon(Icons.wifi_off_rounded, size: 56, color: Color(0xFFCCB8D8)),
             const SizedBox(height: 16),
             Text(
               _error ?? 'Lỗi không xác định',
               textAlign: TextAlign.center,
-              style: const TextStyle(color: _kSubtext, fontSize: 14),
+              style: const TextStyle(color: Color(0xFFCCB8D8), fontSize: 14),
             ),
             const SizedBox(height: 20),
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: _kPrimary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
+            Container(
+              decoration: BoxDecoration(
+                gradient: SNJ.sakuraGradient,
+                borderRadius: BorderRadius.circular(12),
               ),
-              onPressed: _fetchData,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Thử lại'),
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
+                ),
+                onPressed: _fetchData,
+                icon: const Icon(Icons.refresh_rounded),
+                label: const Text('Thử lại'),
+              ),
             ),
           ],
         ),
@@ -386,13 +373,10 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
     );
   }
 
-
-
   Widget _buildTopicCard(Map<String, dynamic> topic) {
     final title = (topic['title'] ?? '').toString().trim();
     final description = (topic['description'] ?? '').toString();
     final segmentsCount = (topic['segments'] as List?)?.length ?? 0;
-
 
     final cats = (topic['categories'] as List?) ?? [];
     final catNames =
@@ -409,25 +393,14 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
             ),
           ),
         ),
-        child: Container(
-          decoration: BoxDecoration(
-            color: _kSurface,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          clipBehavior: Clip.antiAlias,
+        child: GlassCard(
+          neonBorder: true,
+          padding: EdgeInsets.zero,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               SizedBox(
-                height: 100,
+                height: 110,
                 width: double.infinity,
                 child: Stack(
                   fit: StackFit.expand,
@@ -435,89 +408,80 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                     if (topic['image_url'] != null && topic['image_url'].toString().isNotEmpty)
                       Image.network(
                         topic['image_url'].toString().startsWith('http')
-                          ? topic['image_url'].toString()
-                          : '${ApiConfig.baseUrl}${topic['image_url']}',
+                            ? topic['image_url'].toString()
+                            : '${ApiConfig.baseUrl}${topic['image_url']}',
                         fit: BoxFit.cover,
                         errorBuilder: (_, __, ___) => _buildGradientFallback(title, ''),
                       )
                     else
                       _buildGradientFallback(title, ''),
-
-
                     Positioned(
                       top: 12,
                       left: 14,
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: _kBg.withValues(alpha: 0.85),
+                          color: Colors.black.withOpacity(0.65),
                           borderRadius: BorderRadius.circular(8),
-                          boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                          border: Border.all(color: Colors.white.withOpacity(0.12)),
                         ),
                         child: Text(
                           '$segmentsCount segments',
                           style: const TextStyle(
                             fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: _kSubtext,
+                            fontWeight: FontWeight.w900,
+                            color: Colors.white,
                           ),
                         ),
                       ),
                     ),
-
                     Positioned(
                       right: 14,
                       bottom: 12,
                       child: Container(
+                        padding: const EdgeInsets.all(4),
                         decoration: const BoxDecoration(
                           shape: BoxShape.circle,
-                          color: Colors.white,
-                          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 6)],
+                          gradient: SNJ.sakuraGradient,
+                          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6)],
                         ),
-                        child: const Icon(Icons.play_circle_filled_rounded,
-                            color: _kPrimary, size: 32),
+                        child: const Icon(Icons.play_arrow_rounded,
+                            color: Colors.white, size: 28),
                       ),
                     ),
                   ],
                 ),
               ),
-
-
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
                     Text(
                       title.isNotEmpty ? title : 'Chưa có tiêu đề',
                       style: const TextStyle(
                         fontSize: 17,
-                        fontWeight: FontWeight.w800,
-                        color: _kOnSurface,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
                         height: 1.3,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     if (description.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         description,
                         style: const TextStyle(
                           fontSize: 13,
-                          color: _kSubtext,
-                          fontWeight: FontWeight.w500,
+                          color: Color(0xFFCCB8D8),
+                          fontWeight: FontWeight.w600,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
                     ],
-
                     const SizedBox(height: 10),
-
-
                     if (catNames.isNotEmpty)
                       Wrap(
                         spacing: 6,
@@ -526,14 +490,15 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: _kPrimary.withValues(alpha: 0.1),
+                              color: _kPrimary.withOpacity(0.12),
                               borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: _kPrimary.withOpacity(0.2)),
                             ),
                             child: Text(
                               name,
                               style: const TextStyle(
                                 fontSize: 11,
-                                fontWeight: FontWeight.w600,
+                                fontWeight: FontWeight.w900,
                                 color: _kPrimary,
                               ),
                             ),
@@ -557,8 +522,8 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            _kPrimary.withValues(alpha: 0.12),
-            _kPrimary.withValues(alpha: 0.05),
+            _kPrimary.withOpacity(0.12),
+            _kPrimary.withOpacity(0.02),
           ],
         ),
       ),
@@ -571,12 +536,12 @@ class _ShadowingTopicListScreenState extends State<ShadowingTopicListScreen> {
                   : '日本語'),
           style: TextStyle(
             fontSize: title.isNotEmpty ? 18 : 24,
-            fontWeight: FontWeight.w800,
-            color: _kPrimary.withValues(alpha: 0.35),
+            fontWeight: FontWeight.w900,
+            color: _kPrimary.withOpacity(0.35),
             letterSpacing: title.isNotEmpty ? 0 : 1,
           ),
         ),
       ),
     );
   }
-}
+}

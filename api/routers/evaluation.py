@@ -538,11 +538,13 @@ _GEMINI_MODELS = [
 
 
 _MODEL_TIMEOUT = {
-    "gemini-2.0-flash-lite": 20,
-    "gemini-2.0-flash": 35,
-    "gemini-2.5-flash": 55,
+    "gemini-2.0-flash-lite": 5,
+    "gemini-2.0-flash": 7,
+    "gemini-2.5-flash": 10,
 }
 
+
+_BAD_GEMINI_KEYS = set()
 
 async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
     """
@@ -559,6 +561,8 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
         tried_keys: set = set()
         for _ in range(max(len(_GEMINI_KEY_POOL), 1)):
             api_key = _next_gemini_key()
+            if api_key in _BAD_GEMINI_KEYS:
+                continue
             if api_key in tried_keys:
                 continue
             tried_keys.add(api_key)
@@ -574,6 +578,11 @@ async def _gemini_post(prompt: str, timeout: int = 20) -> dict:
 
                 if resp.status_code == 429:
                     print(f"[Gemini] {model} key=...{api_key[-6:]} quota exceeded, trying next...")
+                    continue
+
+                if resp.status_code in (401, 403):
+                    print(f"[Gemini] {model} Permanent auth/permission error {resp.status_code} for key ...{api_key[-6:]}. Disabling key.")
+                    _BAD_GEMINI_KEYS.add(api_key)
                     continue
 
                 if resp.status_code == 200:
@@ -733,32 +742,47 @@ async def _google_stt(audio_bytes: bytes, audio_filename: str) -> tuple[str, int
     """
     Gửi audio bytes lên Google Speech-to-Text REST API.
     Trả về (transcript, measured_pauses).
+
+    Notes:
+    - Dùng 'latest_short' cho câu shadowing ngắn (< ~30s)
+    - Flutter ghi âm WEBM OPUS STEREO (2 channels) — phải khai báo audioChannelCount=2
+      để tránh lỗi 400 "audio_channel_count 1 must match WEBM OPUS header 2"
+    - Nếu ffmpeg có mặt, _trim_silence() đã convert sang WAV mono → dùng LINEAR16 + ch=1
     """
     audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
 
+    # 'latest_short' tối ưu cho clip ngắn < 60s, latency thấp hơn 'latest_long'
     config = {
         "languageCode": "ja-JP",
-        "alternativeLanguageCodes": [],
         "enableAutomaticPunctuation": True,
         "enableWordTimeOffsets": True,
-        "model": "latest_long",
+        "model": "latest_short",
     }
 
     filename = (audio_filename or "").lower()
     if audio_bytes.startswith(b"RIFF") and audio_bytes[8:12] == b"WAVE":
+        # WAV PCM — ffmpeg đã convert sang mono 16kHz
         config["encoding"] = "LINEAR16"
         config["sampleRateHertz"] = 16000
         config["audioChannelCount"] = 1
-    elif audio_bytes.startswith(b"\x1a\x45\xdf\xa3") or filename.endswith(".webm"):
+    elif (
+        audio_bytes.startswith(b"\x1a\x45\xdf\xa3")
+        or filename.endswith(".webm")
+    ):
+        # WebM OPUS từ Flutter — STEREO (2 channels) theo mặc định của Flutter record
+        # Phải khai báo đúng số channel, nếu không Google STT trả 400 INVALID_ARGUMENT
         config["encoding"] = "WEBM_OPUS"
-
-
-
         config["audioChannelCount"] = 2
-    elif audio_bytes.startswith(b"OggS") or filename.endswith(".ogg") or filename.endswith(".opus"):
+    elif (
+        audio_bytes.startswith(b"OggS")
+        or filename.endswith(".ogg")
+        or filename.endswith(".opus")
+    ):
         config["encoding"] = "OGG_OPUS"
     else:
-        config["encoding"] = "ENCODING_UNSPECIFIED"
+        # Fallback: thử detect WEBM bằng filename extension hoặc để unspecified
+        config["encoding"] = "WEBM_OPUS"
+        config["audioChannelCount"] = 2
 
 
     print(f"[Google STT] config={config}")
@@ -884,8 +908,18 @@ async def evaluate_voice(
 
 
         elif audio and GOOGLE_API_KEY and raw_audio_bytes:
-            audio_bytes = raw_audio_bytes
-            recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
+            # Convert sang WAV mono 16kHz trước để tránh lỗi channel count mismatch với WEBM_OPUS
+            audio_bytes = _trim_silence(raw_audio_bytes)
+            recognized_text, measured_pauses = await _google_stt(audio_bytes, "converted.wav")
+            if not recognized_text:
+                # STT không nhận diện được — trả lỗi thay vì cho điểm 0 giả
+                return {
+                    "success": False,
+                    "accuracy": 0, "fluency": 0, "prosody": 0,
+                    "recognized_text": "",
+                    "error_word": "",
+                    "tip": "Không nhận diện được giọng nói. Hãy nói to rõ ràng hơn và thử lại.",
+                }
             accuracy_score, fluency_score, prosody_score = _compute_scores(expected_text, recognized_text)
             error_word = _find_error_word(expected_text, recognized_text)
 
@@ -1036,13 +1070,30 @@ async def evaluate_shadowing(
 
 
         elif audio and GOOGLE_API_KEY and raw_audio_bytes:
-            audio_bytes = raw_audio_bytes
-            recognized_text, measured_pauses = await _google_stt(audio_bytes, audio.filename or "record.webm")
+            # Convert sang WAV mono 16kHz trước để tránh lỗi channel count mismatch với WEBM_OPUS
+            audio_bytes = _trim_silence(raw_audio_bytes)
+            recognized_text, measured_pauses = await _google_stt(audio_bytes, "converted.wav")
+            if not recognized_text:
+                # STT không nhận diện được — trả lỗi thay vì cho điểm 0 giả
+                return {
+                    "success": False,
+                    "mode": "shadowing",
+                    "accuracy": 0, "fluency": 0, "prosody": 0, "rhythm": 0,
+                    "recognized_text": "",
+                    "error_word": "",
+                    "mispronounced_words": [], "error_types": {},
+                    "words_analysis": [],
+                    "tip": "Không nhận diện được giọng nói. Hãy nói to rõ ràng hơn và thử lại.",
+                    "action_plan": ActionPlan(
+                        message="Micro không thu được âm thanh rõ ràng. Thử lại!",
+                        action=ActionType.RETRY, severity=3,
+                    ).to_dict(),
+                }
             accuracy_score, fluency_score, prosody_score, rhythm_score = _compute_shadowing_scores(
                 expected_text, recognized_text
             )
 
-
+            # Sử dụng measured_pauses từ STT word timestamps để tính rhythm chính xác hơn
             exp_pauses = _count_pauses(expected_text)
             if exp_pauses > 0:
                 pause_ratio = 1.0 - abs(exp_pauses - measured_pauses) / max(exp_pauses, 1)
@@ -1072,13 +1123,10 @@ async def evaluate_shadowing(
         mispronounced_words  = []
         error_types          = {"pronunciation": [], "prosody": [], "pitch_accent": [], "rhythm": []}
 
+        gemini_failed = False
         if recognized_text and recognized_text != "(Không nhận được audio)":
             ai_eval = await _ai_full_evaluation(expected_text, recognized_text)
             if ai_eval:
-
-
-
-
                 if not used_azure:
                     accuracy_score = ai_eval.get("accuracy", accuracy_score)
                     fluency_score  = ai_eval.get("fluency", fluency_score)
@@ -1087,6 +1135,10 @@ async def evaluate_shadowing(
                 words_analysis      = ai_eval.get("words_analysis", [])
                 mispronounced_words = ai_eval.get("mispronounced_words", [])
                 error_types         = ai_eval.get("error_types", error_types)
+            else:
+                gemini_failed = True
+        else:
+            gemini_failed = True
 
         if not words_analysis:
             words_analysis = _fallback_word_analysis(expected_text, recognized_text)
@@ -1102,16 +1154,19 @@ async def evaluate_shadowing(
             accuracy_score, fluency_score, prosody_score, error_word,
             rhythm_score=rhythm_score, mode="shadowing"
         )
-        tip = await _ai_generate_tip(
-            accuracy=accuracy_score,
-            fluency=fluency_score,
-            prosody=prosody_score,
-            error_word=error_word,
-            expected_text=expected_text,
-            recognized_text=recognized_text,
-            fallback_tip=fallback_tip,
-            mispronounced_words=mispronounced_words,
-        )
+        if gemini_failed:
+            tip = fallback_tip
+        else:
+            tip = await _ai_generate_tip(
+                accuracy=accuracy_score,
+                fluency=fluency_score,
+                prosody=prosody_score,
+                error_word=error_word,
+                expected_text=expected_text,
+                recognized_text=recognized_text,
+                fallback_tip=fallback_tip,
+                mispronounced_words=mispronounced_words,
+            )
 
 
 

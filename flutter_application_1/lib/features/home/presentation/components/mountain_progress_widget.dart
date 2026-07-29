@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class MountainProgressWidget extends StatelessWidget {
   final int completedLessons;
@@ -53,22 +54,24 @@ class MountainProgressWidget extends StatelessWidget {
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              Color(0xFF0F172A),
-              Color(0xFF1E1B4B),
-              Color(0xFF311042),
+              Color(0xFF0F0720),
+              Color(0xFF1A0D35),
+              Color(0xFF2A1050),
             ],
             stops: [0.0, 0.5, 1.0],
           ),
+          border: Border.all(color: SNJ.borderNeon, width: 1.0),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF0F172A).withOpacity(0.3),
-              blurRadius: 20,
-              offset: const Offset(0, 10),
+              color: const Color(0xFF0F0720).withOpacity(0.5),
+              blurRadius: 24,
+              offset: const Offset(0, 12),
             ),
             BoxShadow(
-              color: const Color(0xFFFF4D6D).withOpacity(0.1),
-              blurRadius: 30,
-              offset: const Offset(0, -5),
+              color: SNJ.sakura.withOpacity(0.18),
+              blurRadius: 36,
+              offset: const Offset(0, -4),
+              spreadRadius: 2,
             ),
           ],
         ),
@@ -142,7 +145,7 @@ class MountainProgressWidget extends StatelessWidget {
                                   children: [
                                     const Icon(
                                       Icons.terrain_rounded,
-                                      color: Color(0xFFFF4D6D),
+                                      color: SNJ.sakura,
                                       size: 14,
                                     ),
                                     const SizedBox(width: 4),
@@ -200,14 +203,13 @@ class MountainProgressWidget extends StatelessWidget {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 12, vertical: 6),
                             decoration: BoxDecoration(
-                              color: const Color(0xFFFF4D6D),
+                              color: SNJ.sakura,
                               borderRadius: BorderRadius.circular(12),
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      const Color(0xFFFF4D6D).withOpacity(0.3),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 3),
+                                  color: SNJ.sakura.withOpacity(0.4),
+                                  blurRadius: 10,
+                                  offset: const Offset(0, 4),
                                 ),
                               ],
                             ),
@@ -240,8 +242,7 @@ class MountainProgressWidget extends StatelessWidget {
                               shape: BoxShape.circle,
                               boxShadow: [
                                 BoxShadow(
-                                  color:
-                                      const Color(0xFFFF4D6D).withOpacity(0.15),
+                                  color: SNJ.sakura.withOpacity(0.18),
                                   blurRadius: 16,
                                   spreadRadius: 2,
                                 ),
@@ -271,7 +272,7 @@ class MountainProgressWidget extends StatelessWidget {
                               strokeWidth: 7,
                               backgroundColor: Colors.transparent,
                               valueColor: const AlwaysStoppedAnimation<Color>(
-                                Color(0xFFFF4D6D),
+                                SNJ.sakura,
                               ),
                               strokeCap: StrokeCap.round,
                             ),

@@ -84,7 +84,12 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              title: Text(isEditing ? 'Chỉnh sửa từ vựng' : 'Thêm từ vựng'),
+              title: Text(isEditing ? 'Chỉnh sửa từ vựng' : 'Thêm từ vựng', style: const TextStyle(fontWeight: FontWeight.w800, letterSpacing: -0.3)),
+              backgroundColor: AdminPalette.surfaceMuted,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Colors.white.withOpacity(0.08), width: 0.8),
+              ),
               content: SizedBox(
                 width: 600,
                 child: SingleChildScrollView(
@@ -98,10 +103,8 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                             child: DropdownButtonFormField<String?>(
                               isExpanded: true,
                               value: _lessons.any((l) => l['id'].toString() == lessonIdValue) ? lessonIdValue : null,
-                              decoration: const InputDecoration(
-                                labelText: 'Gán vào Lesson',
-                                border: OutlineInputBorder(),
-                              ),
+                              decoration: _inputDeco('Gán vào Lesson'),
+                              dropdownColor: AdminPalette.surfaceMuted,
                               items: [
                                 const DropdownMenuItem<String?>(
                                   value: null,
@@ -126,10 +129,8 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                             child: DropdownButtonFormField<String?>(
                               isExpanded: true,
                               value: _topics.any((t) => t['id'].toString() == topicIdValue) ? topicIdValue : null,
-                              decoration: const InputDecoration(
-                                labelText: 'Gán vào Shadowing Topic',
-                                border: OutlineInputBorder(),
-                              ),
+                              decoration: _inputDeco('Gán vào Shadowing Topic'),
+                              dropdownColor: AdminPalette.surfaceMuted,
                               items: [
                                 const DropdownMenuItem<String?>(
                                   value: null,
@@ -157,7 +158,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                           const Text(
                             'Danh sách từ vựng',
                             style: TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.w800,
                               color: AdminPalette.textPrimary,
                             ),
@@ -175,8 +176,8 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                                   });
                                 });
                               },
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Thêm từ nữa'),
+                              icon: const Icon(Icons.add_rounded, size: 16, color: AdminPalette.vocabularyAccent),
+                              label: const Text('Thêm từ nữa', style: TextStyle(color: AdminPalette.vocabularyAccent, fontWeight: FontWeight.bold, fontSize: 13)),
                             ),
                         ],
                       ),
@@ -185,11 +186,11 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                         final voc = vocabularies[index];
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
-                          padding: const EdgeInsets.all(14),
+                          padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
-                            color: AdminPalette.surfaceMuted,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: AdminPalette.borderSoft),
+                            color: Colors.white.withOpacity(0.015),
+                            borderRadius: BorderRadius.circular(14),
+                            border: Border.all(color: Colors.white.withOpacity(0.06)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -199,8 +200,9 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                                   Text(
                                     'Từ vựng ${index + 1}',
                                     style: const TextStyle(
-                                      fontWeight: FontWeight.w700,
-                                      color: AdminPalette.textPrimary,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.white70,
+                                      fontSize: 13,
                                     ),
                                   ),
                                   const Spacer(),
@@ -211,7 +213,7 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
                                           vocabularies.removeAt(index);
                                         });
                                       },
-                                      icon: const Icon(Icons.delete_outline_rounded),
+                                      icon: const Icon(Icons.delete_outline_rounded, color: AdminPalette.errorRed, size: 18),
                                     ),
                                 ],
                               ),
@@ -311,14 +313,35 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
     }
   }
 
+  InputDecoration _inputDeco(String label, {bool isDense = false}) {
+    return InputDecoration(
+      labelText: label,
+      isDense: isDense,
+      labelStyle: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13),
+      floatingLabelStyle: const TextStyle(color: AdminPalette.sidebarSelectedForeground, fontSize: 13, fontWeight: FontWeight.w700),
+      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: isDense ? 12 : 16),
+      filled: true,
+      fillColor: Colors.white.withOpacity(0.015),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide(color: Colors.white.withOpacity(0.06), width: 1.0),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AdminPalette.sidebarSelectedForeground, width: 1.5),
+      ),
+      errorBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AdminPalette.errorRed, width: 1.0),
+      ),
+    );
+  }
+
   Widget _smallField(Map<String, String> values, String key, String label) {
     return TextFormField(
       initialValue: values[key] ?? '',
       onChanged: (value) => values[key] = value,
-      decoration: InputDecoration(
-        labelText: label,
-        border: const OutlineInputBorder(),
-      ),
+      decoration: _inputDeco(label, isDense: true),
     );
   }
 
@@ -365,26 +388,25 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
         children: [
           Row(
             children: [
-              Expanded(
-                child: const AdminSectionHeader(
+              const Expanded(
+                child: AdminSectionHeader(
                   title: 'Từ vựng',
                   subtitle:
                       'Quản lý kho từ vựng dùng cho lesson và shadowing topic.',
                 ),
               ),
+              const SizedBox(width: 12),
               SizedBox(
-                width: 280,
+                width: 260,
                 child: DropdownButtonFormField<int?>(
                   isExpanded: true,
                   value: _lessons.any((l) => l['id'] == _selectedLessonId) ? _selectedLessonId : null,
-                  decoration: const InputDecoration(
-                    labelText: 'Lọc theo lesson',
-                    border: OutlineInputBorder(),
-                  ),
+                  decoration: _inputDeco('Lọc theo bài học', isDense: true),
+                  dropdownColor: AdminPalette.surfaceMuted,
                   items: [
                     const DropdownMenuItem<int?>(
                       value: null,
-                      child: Text('Tất cả lesson'),
+                      child: Text('Tất cả bài học'),
                     ),
                     ..._lessons.map(
                       (lesson) => DropdownMenuItem<int?>(
@@ -418,73 +440,99 @@ class _AdminVocabulariesPageState extends State<AdminVocabulariesPage> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(AdminPalette.sidebarSelectedForeground),
+        ),
+      );
     }
 
     if (_error != null) {
       return Center(
-          child:
-              Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)));
+        child: Text(_error!, style: const TextStyle(color: AdminPalette.errorRed)),
+      );
     }
 
     if (_vocabularies.isEmpty) {
       return const AdminEmptyState(
         title: 'Chưa có từ vựng nào',
-        subtitle: 'Bạn có thể thêm từ vựng trực tiếp cho lesson hoặc topic.',
+        subtitle: 'Bạn có thể thêm từ vựng trực tiếp cho bài học hoặc chủ đề.',
       );
     }
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: DataTable(
-          columnSpacing: 22,
-          columns: const [
-            DataColumn(label: Text('ID')),
-            DataColumn(label: Text('Word')),
-            DataColumn(label: Text('Reading')),
-            DataColumn(label: Text('Nghĩa')),
-            DataColumn(label: Text('Lesson')),
-            DataColumn(label: Text('Topic')),
-            DataColumn(label: Text('Hành động')),
-          ],
-          rows: _vocabularies
-              .map(
-                (vocabulary) => DataRow(
-                  cells: [
-                    DataCell(Text('${vocabulary['id']}')),
-                    DataCell(Text((vocabulary['word'] ?? '').toString())),
-                    DataCell(Text((vocabulary['reading'] ?? '-').toString())),
-                    DataCell(
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 220),
-                        child: Text(
-                          (vocabulary['meaning'] ?? '').toString(),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ),
-                    DataCell(Text('${vocabulary['lesson_id'] ?? '-'}')),
-                    DataCell(Text('${vocabulary['topic_id'] ?? '-'}')),
-                    DataCell(
-                      Row(
-                        children: [
-                          IconButton(
-                            onPressed: () => _openVocabularyDialog(vocabulary),
-                            icon: const Icon(Icons.edit_outlined),
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.01),
+          border: Border.all(color: Colors.white.withOpacity(0.05), width: 0.8),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Theme(
+              data: Theme.of(context).copyWith(
+                dividerColor: Colors.white.withOpacity(0.05),
+                dataTableTheme: DataTableThemeData(
+                  headingRowColor: WidgetStateProperty.all(Colors.white.withOpacity(0.02)),
+                  headingTextStyle: const TextStyle(fontWeight: FontWeight.w800, color: Colors.white, fontSize: 13),
+                  dataTextStyle: const TextStyle(color: Colors.white70, fontSize: 13.5),
+                ),
+              ),
+              child: DataTable(
+                columnSpacing: 28,
+                columns: const [
+                  DataColumn(label: Text('ID')),
+                  DataColumn(label: Text('Từ vựng')),
+                  DataColumn(label: Text('Reading')),
+                  DataColumn(label: Text('Nghĩa')),
+                  DataColumn(label: Text('Mã Lesson')),
+                  DataColumn(label: Text('Mã Topic')),
+                  DataColumn(label: Text('Hành động')),
+                ],
+                rows: _vocabularies
+                    .map(
+                      (vocabulary) => DataRow(
+                        cells: [
+                          DataCell(Text('${vocabulary['id']}', style: const TextStyle(color: AdminPalette.textMuted))),
+                          DataCell(Text((vocabulary['word'] ?? '').toString(), style: const TextStyle(fontWeight: FontWeight.w700, color: Colors.white))),
+                          DataCell(Text((vocabulary['reading'] ?? '-').toString(), style: const TextStyle(color: Colors.white60))),
+                          DataCell(
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(maxWidth: 220),
+                              child: Text(
+                                (vocabulary['meaning'] ?? '').toString(),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
                           ),
-                          IconButton(
-                            onPressed: () => _deleteVocabulary(vocabulary),
-                            icon: const Icon(Icons.delete_outline_rounded),
+                          DataCell(Text('${vocabulary['lesson_id'] ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w600))),
+                          DataCell(Text('${vocabulary['topic_id'] ?? '-'}', style: const TextStyle(fontWeight: FontWeight.w600))),
+                          DataCell(
+                            Row(
+                              children: [
+                                IconButton(
+                                  tooltip: 'Sửa',
+                                  onPressed: () => _openVocabularyDialog(vocabulary),
+                                  icon: const Icon(Icons.edit_outlined, color: Colors.white70, size: 19),
+                                ),
+                                IconButton(
+                                  tooltip: 'Xóa',
+                                  onPressed: () => _deleteVocabulary(vocabulary),
+                                  icon: const Icon(Icons.delete_outline_rounded, color: AdminPalette.errorRed, size: 19),
+                                ),
+                              ],
+                            ),
                           ),
                         ],
                       ),
-                    ),
-                  ],
-                ),
-              )
-              .toList(),
+                    )
+                    .toList(),
+              ),
+            ),
+          ),
         ),
       ),
     );

@@ -1,57 +1,64 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/features/home/models/user_model.dart';
 
 class HomeHeader extends StatelessWidget {
   final UserModel user;
-
   const HomeHeader({super.key, required this.user});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      color: Colors.transparent,
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-
-          const Text(
-            'NihongoJP',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-              color: Color(0xFFFF4D6D),
-              letterSpacing: -0.5,
+          // Logo với shimmer gradient
+          ShaderMask(
+            shaderCallback: (bounds) => const LinearGradient(
+              colors: [Color(0xFFFF6B9D), Color(0xFFFFB3CC), Color(0xFFFF6B9D)],
+              stops: [0.0, 0.5, 1.0],
+            ).createShader(bounds),
+            child: const Text(
+              'NihongoJP',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.w900,
+                color: Colors.white, // masked by shader
+                letterSpacing: -0.8,
+              ),
             ),
           ),
 
+          // Avatar với neon ring
           Container(
-            width: 44,
-            height: 44,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: Colors.white,
+              gradient: const LinearGradient(
+                colors: [Color(0xFFFF6B9D), Color(0xFF8B5CF6)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
+                  color: SNJ.sakuraGlow,
+                  blurRadius: 12,
+                  spreadRadius: 1,
                 ),
               ],
             ),
             child: Padding(
-              padding: const EdgeInsets.all(2.0),
+              padding: const EdgeInsets.all(2.5),
               child: ClipOval(
                 child: user.avatarUrl.isNotEmpty
                     ? Image.network(
                         user.avatarUrl,
                         fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildFallbackAvatar(user.name);
-                        },
+                        errorBuilder: (_, __, ___) => _fallback(user.name),
                       )
-                    : _buildFallbackAvatar(user.name),
+                    : _fallback(user.name),
               ),
             ),
           ),
@@ -60,11 +67,16 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  Widget _buildFallbackAvatar(String name) {
-    final cleanName = name.trim();
-    final String initial = cleanName.isNotEmpty ? cleanName[0].toUpperCase() : 'U';
+  Widget _fallback(String name) {
+    final initial = name.trim().isNotEmpty ? name.trim()[0].toUpperCase() : 'U';
     return Container(
-      color: const Color(0xFFFF4D6D),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFFFF6B9D), Color(0xFF8B5CF6)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
       alignment: Alignment.center,
       child: Text(
         initial,

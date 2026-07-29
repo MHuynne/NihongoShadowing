@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:file_picker/file_picker.dart';
@@ -6,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_application_1/core/config/api_config.dart';
 import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 import 'package:flutter_application_1/features/auth/presentation/screens/auth_gate.dart';
 import 'package:flutter_application_1/features/auth/services/auth_service.dart';
 import 'package:flutter_application_1/features/roadmap/services/progress_service.dart';
@@ -53,49 +55,69 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final user = _auth.currentUser;
 
     return Scaffold(
-      backgroundColor: AppColors.scaffoldBackground(context),
-      body: SafeArea(
-        child: FutureBuilder<_ProfileData>(
-          future: _profileFuture,
-          builder: (context, snapshot) {
-            final data = snapshot.data ?? _ProfileData.empty();
-            final isLoading =
-                snapshot.connectionState == ConnectionState.waiting;
+      backgroundColor: Colors.transparent,
+      body: SakuraNightBackground(
+        child: SafeArea(
+          child: FutureBuilder<_ProfileData>(
+            future: _profileFuture,
+            builder: (context, snapshot) {
+              final data = snapshot.data ?? _ProfileData.empty();
+              final isLoading =
+                  snapshot.connectionState == ConnectionState.waiting;
 
-            return RefreshIndicator(
-              color: AppColors.toriiRed,
-              onRefresh: _refresh,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
-                child: Column(
-                  children: [
-                    _ProfileHeader(
-                      user: user,
-                      targetLevel: data.targetLevel,
-                      streakDays: data.stats.streakDays,
-                      isLoading: isLoading,
-                    ),
-                    const SizedBox(height: 22),
-                    _ExperienceCard(stats: data.stats),
-                    const SizedBox(height: 14),
-                    _StatsGrid(stats: data.stats),
-                    const SizedBox(height: 18),
-                    _ActivityHistoryCard(stats: data.stats),
-                    const SizedBox(height: 18),
-                    _AccountActions(
-                      user: user,
-                      onEditProfile: () => _showEditProfileSheet(
-                        user: user,
+              return RefreshIndicator(
+                color: SNJ.sakura,
+                backgroundColor: SNJ.bgMid,
+                onRefresh: _refresh,
+                child: SingleChildScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(20, 18, 20, 120),
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 20),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text(
+                              'HỒ SƠ CÁ NHÂN',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 1.5,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      onDeleteAccount: _confirmDeleteAccount,
-                      onSignOut: () => _confirmSignOut(context),
-                    ),
-                  ],
+                      _ProfileHeader(
+                        user: user,
+                        targetLevel: data.targetLevel,
+                        streakDays: data.stats.streakDays,
+                        isLoading: isLoading,
+                      ),
+                      const SizedBox(height: 20),
+                      _ExperienceCard(stats: data.stats),
+                      const SizedBox(height: 16),
+                      _StatsGrid(stats: data.stats),
+                      const SizedBox(height: 20),
+                      _ActivityHistoryCard(stats: data.stats),
+                      const SizedBox(height: 20),
+                      _AccountActions(
+                        user: user,
+                        onEditProfile: () => _showEditProfileSheet(
+                          user: user,
+                        ),
+                        onDeleteAccount: _confirmDeleteAccount,
+                        onSignOut: () => _confirmSignOut(context),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            );
-          },
+              );
+            },
+          ),
         ),
       ),
     );
@@ -118,7 +140,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final saved = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.surface(context),
+      backgroundColor: SNJ.bgMid,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
@@ -138,10 +160,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 children: [
                   _SheetHandle(),
                   const SizedBox(height: 18),
-                  Text(
-                    'Edit profile',
+                  const Text(
+                    'Chỉnh sửa hồ sơ',
                     style: TextStyle(
-                      color: AppColors.primaryText(context),
+                      color: Colors.white,
                       fontSize: 22,
                       fontWeight: FontWeight.w900,
                     ),
@@ -149,19 +171,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 18),
                   _ProfileTextField(
                     controller: nameController,
-                    label: 'Display name',
+                    label: 'Tên hiển thị',
                     icon: Icons.badge_outlined,
                   ),
                   const SizedBox(height: 16),
                   _ReadOnlyProfileInfoTile(
                     label: 'Email',
-                    value: email?.isNotEmpty == true ? email! : 'No email',
+                    value: email?.isNotEmpty == true ? email! : 'Chưa có email',
                     icon: Icons.email_outlined,
                   ),
                   if (phoneNumber?.isNotEmpty == true) ...[
                     const SizedBox(height: 12),
                     _ReadOnlyProfileInfoTile(
-                      label: 'Phone number',
+                      label: 'Số điện thoại',
                       value: phoneNumber!,
                       icon: Icons.phone_outlined,
                     ),
@@ -186,7 +208,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         });
                       } catch (e) {
                         if (mounted) {
-                          _showSnack('Could not upload avatar: $e');
+                          _showSnack('Không thể tải ảnh lên: $e');
                         }
                       } finally {
                         if (context.mounted) {
@@ -204,17 +226,32 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                   ),
                   const SizedBox(height: 22),
-                  SizedBox(
+                  Container(
                     width: double.infinity,
-                    child: FilledButton.icon(
-                      style: FilledButton.styleFrom(
-                        backgroundColor: AppColors.toriiRed,
+                    decoration: BoxDecoration(
+                      gradient: SNJ.sakuraGradient,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: SNJ.sakura.withOpacity(0.3),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
                         foregroundColor: Colors.white,
+                        shadowColor: Colors.transparent,
                         padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
                       onPressed: () async {
                         if (nameController.text.trim().isEmpty) {
-                          _showSnack('Display name is required.');
+                          _showSnack('Tên hiển thị không được bỏ trống.');
                           return;
                         }
 
@@ -229,11 +266,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         } on FirebaseAuthException catch (e) {
                           _showSnack(AuthService.getVietnameseError(e));
                         } catch (e) {
-                          _showSnack('Could not update profile: $e');
+                          _showSnack('Không thể cập nhật hồ sơ: $e');
                         }
                       },
                       icon: const Icon(Icons.save_outlined),
-                      label: const Text('Save changes'),
+                      label: const Text(
+                        'Lưu thay đổi',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                      ),
                     ),
                   ),
                 ],
@@ -247,7 +287,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     nameController.dispose();
 
     if (saved == true && mounted) {
-      _showSnack('Profile updated.');
+      _showSnack('Hồ sơ đã được cập nhật.');
       setState(() {});
     }
   }
@@ -264,7 +304,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final path = file.path;
     final bytes = file.bytes;
     if ((path == null || path.isEmpty) && (bytes == null || bytes.isEmpty)) {
-      throw Exception('Could not read selected image.');
+      throw Exception('Không thể đọc hình ảnh đã chọn.');
     }
 
     final request = http.MultipartRequest(
@@ -299,7 +339,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     final rawUrl = payload['url']?.toString();
     if (rawUrl == null || rawUrl.isEmpty) {
-      throw Exception('Upload response did not include an image URL.');
+      throw Exception('Phản hồi tải lên không bao gồm URL hình ảnh.');
     }
 
     final absoluteUrl =
@@ -311,22 +351,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete account?'),
+        backgroundColor: SNJ.bgMid,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: SNJ.border, width: 1.0),
+        ),
+        title: const Text(
+          'Xóa tài khoản?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
         content: const Text(
-          'This removes your Firebase account from this device session. You may need to sign in again recently before Firebase allows deletion.',
+          'Hành động này sẽ xóa tài khoản Firebase của bạn khỏi thiết bị này. Bạn có thể cần đăng nhập lại gần đây trước khi Firebase cho phép xóa.',
+          style: TextStyle(color: SNJ.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Hủy', style: TextStyle(color: SNJ.textSecondary)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.errorRed,
+              backgroundColor: const Color(0xFFEF4444),
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Delete'),
+            child: const Text('Xóa'),
           ),
         ],
       ),
@@ -339,7 +388,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } on FirebaseAuthException catch (e) {
       _showSnack(AuthService.getVietnameseError(e));
     } catch (e) {
-      _showSnack('Could not delete account: $e');
+      _showSnack('Không thể xóa tài khoản: $e');
     }
   }
 
@@ -347,20 +396,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final shouldSignOut = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Sign out?'),
-        content: const Text('You will return to the login screen.'),
+        backgroundColor: SNJ.bgMid,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: const BorderSide(color: SNJ.border, width: 1.0),
+        ),
+        title: const Text(
+          'Đăng xuất?',
+          style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+        ),
+        content: const Text(
+          'Bạn sẽ quay trở lại màn hình đăng nhập.',
+          style: TextStyle(color: SNJ.textSecondary),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: const Text('Hủy', style: TextStyle(color: SNJ.textSecondary)),
           ),
           FilledButton(
             style: FilledButton.styleFrom(
-              backgroundColor: AppColors.toriiRed,
+              backgroundColor: SNJ.sakura,
               foregroundColor: Colors.white,
             ),
             onPressed: () => Navigator.of(context).pop(true),
-            child: const Text('Sign out'),
+            child: const Text('Đăng xuất'),
           ),
         ],
       ),
@@ -579,118 +639,143 @@ class _ProfileHeader extends StatelessWidget {
     final email = user?.email ?? 'No email';
     final photoUrl = user?.photoURL;
 
-    return Column(
-      children: [
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.bottomCenter,
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.surface(context),
-                borderRadius: BorderRadius.circular(28),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.shadow(context, opacity: 0.08),
-                    blurRadius: 24,
-                    offset: const Offset(0, 12),
-                  ),
-                ],
-              ),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(22),
-                child: _Avatar(photoUrl: photoUrl, displayName: displayName),
-              ),
-            ),
-            Positioned(
-              bottom: -8,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-                decoration: BoxDecoration(
-                  color: user?.emailVerified == true
-                      ? AppColors.progressTeal
-                      : AppColors.warningYellow,
-                  borderRadius: BorderRadius.circular(999),
-                ),
-                child: Text(
-                  user?.emailVerified == true ? 'VERIFIED' : 'UNVERIFIED',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 9,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 18),
-        Text(
-          displayName,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppColors.primaryText(context),
-            fontSize: 26,
-            fontWeight: FontWeight.w900,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.school_outlined,
-                color: AppColors.toriiRed, size: 14),
-            const SizedBox(width: 5),
-            Text(
-              'JLPT $targetLevel Aspirant',
-              style: const TextStyle(
-                color: AppColors.toriiRed,
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-          decoration: BoxDecoration(
-            color: AppColors.surface(context),
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.border(context)),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
+    return GlassCard(
+      neonBorder: true,
+      child: Column(
+        children: [
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
             children: [
-              const Icon(Icons.local_fire_department_rounded,
-                  color: AppColors.warningYellow, size: 16),
-              const SizedBox(width: 6),
-              Text(
-                isLoading ? 'Loading...' : '$streakDays day streak',
-                style: TextStyle(
-                  color: AppColors.primaryText(context),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w800,
+              Container(
+                width: 100,
+                height: 100,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  gradient: SNJ.sakuraGradient,
+                  boxShadow: [
+                    BoxShadow(
+                      color: SNJ.sakura.withOpacity(0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: SNJ.bgMid,
+                    shape: BoxShape.circle,
+                  ),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(99),
+                    child: _Avatar(photoUrl: photoUrl, displayName: displayName),
+                  ),
+                ),
+              ),
+              Positioned(
+                bottom: -6,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: user?.emailVerified == true
+                        ? const Color(0xFF10B981)
+                        : const Color(0xFFF59E0B),
+                    borderRadius: BorderRadius.circular(999),
+                    boxShadow: [
+                      BoxShadow(
+                        color: (user?.emailVerified == true
+                                ? const Color(0xFF10B981)
+                                : const Color(0xFFF59E0B))
+                            .withOpacity(0.3),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Text(
+                    user?.emailVerified == true ? 'ĐÃ XÁC MINH' : 'CHƯA XÁC MINH',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
                 ),
               ),
             ],
           ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          email,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            color: AppColors.tertiaryText(context),
-            fontSize: 12,
+          const SizedBox(height: 20),
+          Text(
+            displayName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
+            ),
           ),
-        ),
-      ],
+          const SizedBox(height: 6),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.school_rounded, color: SNJ.sakura, size: 16),
+              const SizedBox(width: 6),
+              Text(
+                'Mục tiêu JLPT $targetLevel',
+                style: const TextStyle(
+                  color: SNJ.sakura,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: SNJ.border, width: 0.8),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.local_fire_department_rounded,
+                        color: Color(0xFFF59E0B), size: 18),
+                    const SizedBox(width: 6),
+                    Text(
+                      isLoading ? 'Đang tải...' : 'Chuỗi: $streakDays ngày',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            email,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: SNJ.textMuted,
+              fontSize: 12,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -734,17 +819,13 @@ class _InitialsAvatar extends StatelessWidget {
 
     return DecoratedBox(
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [AppColors.lightPinkBackground, AppColors.lightTealGreen],
-        ),
+        gradient: SNJ.sakuraGradient,
       ),
       child: Center(
         child: Text(
           initials.isEmpty ? 'U' : initials,
           style: const TextStyle(
-            color: AppColors.toriiRed,
+            color: Colors.white,
             fontSize: 28,
             fontWeight: FontWeight.w900,
           ),
@@ -761,73 +842,69 @@ class _ExperienceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow(context, opacity: 0.06),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(26),
-        child: Row(
-          children: [
-            Container(width: 4, height: 96, color: AppColors.toriiRed),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(22),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'TOTAL EXPERIENCE',
-                            style: TextStyle(
-                              color: AppColors.tertiaryText(context),
-                              fontSize: 10,
-                              fontWeight: FontWeight.w900,
-                              letterSpacing: 0.9,
-                            ),
-                          ),
-                          const SizedBox(height: 7),
-                          Text(
-                            '${stats.totalXp} XP',
-                            style: TextStyle(
-                              color: AppColors.primaryText(context),
-                              fontSize: 24,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    Container(
-                      width: 58,
-                      height: 58,
-                      decoration: const BoxDecoration(
-                        color: AppColors.lightPinkBackground,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.military_tech_rounded,
-                        color: AppColors.toriiRed,
-                        size: 28,
-                      ),
-                    ),
-                  ],
-                ),
+    return GlassCard(
+      padding: EdgeInsets.zero,
+      child: Stack(
+        children: [
+          Positioned(
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: 4,
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: SNJ.sakuraGradient,
               ),
             ),
-          ],
-        ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(22),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'TỔNG ĐIỂM KINH NGHIỆM',
+                        style: TextStyle(
+                          color: SNJ.textSecondary,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1.0,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${stats.totalXp} XP',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 26,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: SNJ.sakuraSoft,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: SNJ.borderNeon, width: 1.2),
+                  ),
+                  child: const Icon(
+                    Icons.military_tech_rounded,
+                    color: SNJ.sakura,
+                    size: 26,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -844,43 +921,43 @@ class _StatsGrid extends StatelessWidget {
       crossAxisCount: 2,
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.6,
+      childAspectRatio: 1.42,
       physics: const NeverScrollableScrollPhysics(),
       shrinkWrap: true,
       children: [
         _StatTile(
-          icon: Icons.style_outlined,
-          label: 'FLASHCARDS DONE',
+          icon: Icons.style_rounded,
+          label: 'THẺ TỪ ĐÃ THUỘC',
           value: '${stats.flashcardsDone}',
-          accent: AppColors.toriiRed,
+          accent: SNJ.sakura,
         ),
         _StatTile(
           icon: Icons.schedule_rounded,
-          label: 'STUDY TIME',
+          label: 'THỜI GIAN HỌC',
           value: _formatStudyTime(stats.studyMinutes),
-          accent: AppColors.matcha,
+          accent: const Color(0xFF10B981),
         ),
         _StatTile(
           icon: Icons.check_circle_outline_rounded,
-          label: 'LESSONS DONE',
+          label: 'BÀI HỌC HOÀN THÀNH',
           value: '${stats.lessonsDone}',
-          accent: AppColors.goldAccent,
+          accent: const Color(0xFFF59E0B),
         ),
         _StatTile(
           icon: Icons.trending_up_rounded,
-          label: 'ACCURACY',
+          label: 'ĐỘ CHÍNH XÁC',
           value: '${stats.averageAccuracy}%',
-          accent: AppColors.progressTeal,
+          accent: const Color(0xFF6366F1),
         ),
       ],
     );
   }
 
   static String _formatStudyTime(int minutes) {
-    if (minutes < 60) return '${minutes}m';
+    if (minutes < 60) return '${minutes}phút';
     final hours = minutes ~/ 60;
     final remain = minutes % 60;
-    return remain == 0 ? '${hours}h' : '${hours}h ${remain}m';
+    return remain == 0 ? '${hours}giờ' : '${hours}g ${remain}p';
   }
 }
 
@@ -900,16 +977,16 @@ class _StatTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.surface(context),
+        color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: AppColors.border(context)),
+        border: Border.all(color: accent.withOpacity(0.2), width: 1.0),
         boxShadow: [
           BoxShadow(
-            color: AppColors.shadow(context, opacity: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            color: accent.withOpacity(0.04),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
@@ -917,23 +994,31 @@ class _StatTile extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, color: accent, size: 20),
-          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(5),
+            decoration: BoxDecoration(
+              color: accent.withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: accent, size: 16),
+          ),
+          const SizedBox(height: 8),
           Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              color: AppColors.tertiaryText(context),
+            style: const TextStyle(
+              color: SNJ.textSecondary,
               fontSize: 9,
               fontWeight: FontWeight.w900,
+              letterSpacing: 0.5,
             ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           Text(
             value,
-            style: TextStyle(
-              color: AppColors.primaryText(context),
+            style: const TextStyle(
+              color: Colors.white,
               fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
@@ -953,21 +1038,7 @@ class _ActivityHistoryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final totalWeekXp = stats.xpLast7Days.fold<int>(0, (a, b) => a + b);
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(26),
-        border: Border.all(color: AppColors.border(context)),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadow(context, opacity: 0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -977,54 +1048,54 @@ class _ActivityHistoryCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      'Activity History',
+                    const Text(
+                      'Lịch sử hoạt động',
                       style: TextStyle(
-                        color: AppColors.primaryText(context),
+                        color: Colors.white,
                         fontSize: 18,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-                    const SizedBox(height: 3),
-                    Text(
-                      'XP gain over the last 7 days',
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Số điểm XP nhận được trong 7 ngày qua',
                       style: TextStyle(
-                        color: AppColors.tertiaryText(context),
+                        color: SNJ.textSecondary,
                         fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                   ],
                 ),
               ),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.lightPinkBackground,
+                  color: SNJ.sakuraSoft,
                   borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: SNJ.borderNeon, width: 0.8),
                 ),
                 child: Text(
-                  '$totalWeekXp XP',
+                  '+$totalWeekXp XP',
                   style: const TextStyle(
-                    color: AppColors.toriiRed,
-                    fontSize: 10,
+                    color: SNJ.sakura,
+                    fontSize: 11,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 24),
           SizedBox(
             height: 170,
             child: CustomPaint(
               painter: _ActivityChartPainter(
                 values: stats.xpLast7Days,
-                barColor: AppColors.toriiRed,
-                mutedColor: AppColors.lightPinkBackground,
-                gridColor: AppColors.divider(context),
-                textColor: AppColors.tertiaryText(context),
+                barColor: SNJ.sakura,
+                mutedColor: SNJ.sakuraSoft,
+                gridColor: Colors.white.withOpacity(0.06),
+                textColor: SNJ.textSecondary,
               ),
               child: const SizedBox.expand(),
             ),
@@ -1057,7 +1128,7 @@ class _ActivityChartPainter extends CustomPainter {
     final today = DateTime.now();
     final days = List.generate(7, (index) {
       final day = today.subtract(Duration(days: 6 - index));
-      const names = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+      const names = ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
       return names[day.weekday - 1];
     });
     const bottomLabelHeight = 24.0;
@@ -1103,7 +1174,7 @@ class _ActivityChartPainter extends CustomPainter {
           text: days[i],
           style: TextStyle(
             color: isPeak ? barColor : textColor,
-            fontSize: 9,
+            fontSize: 10,
             fontWeight: isPeak ? FontWeight.w900 : FontWeight.w700,
           ),
         ),
@@ -1145,32 +1216,27 @@ class _AccountActions extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GlassCard(
       padding: const EdgeInsets.symmetric(vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface(context),
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: AppColors.border(context)),
-      ),
       child: Column(
         children: [
           _ActionRow(
             icon: Icons.edit_outlined,
-            label: 'Edit profile',
+            label: 'Chỉnh sửa thông tin cá nhân',
             onTap: onEditProfile,
           ),
-          Divider(height: 1, color: AppColors.divider(context)),
+          Divider(height: 1, color: Colors.white.withOpacity(0.06)),
           _ActionRow(
-            icon: Icons.delete_outline,
-            label: 'Delete account',
-            color: AppColors.errorRed,
+            icon: Icons.delete_outline_rounded,
+            label: 'Xóa tài khoản',
+            color: const Color(0xFFEF4444),
             onTap: onDeleteAccount,
           ),
-          Divider(height: 1, color: AppColors.divider(context)),
+          Divider(height: 1, color: Colors.white.withOpacity(0.06)),
           _ActionRow(
             icon: Icons.logout_rounded,
-            label: 'Sign out',
-            color: AppColors.toriiRed,
+            label: 'Đăng xuất',
+            color: SNJ.sakura,
             onTap: onSignOut,
           ),
         ],
@@ -1194,7 +1260,7 @@ class _ActionRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectiveColor = color ?? AppColors.primaryText(context);
+    final effectiveColor = color ?? Colors.white;
 
     return InkWell(
       onTap: onTap,
@@ -1203,21 +1269,28 @@ class _ActionRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 15),
         child: Row(
           children: [
-            Icon(icon, color: effectiveColor, size: 22),
-            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: effectiveColor.withOpacity(0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: effectiveColor, size: 20),
+            ),
+            const SizedBox(width: 14),
             Expanded(
               child: Text(
                 label,
                 style: TextStyle(
                   color: effectiveColor,
                   fontSize: 15,
-                  fontWeight: FontWeight.w800,
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ),
             Icon(
               Icons.chevron_right_rounded,
-              color: AppColors.tertiaryText(context),
+              color: Colors.white.withOpacity(0.3),
             ),
           ],
         ),
@@ -1241,14 +1314,20 @@ class _ProfileTextField extends StatelessWidget {
   Widget build(BuildContext context) {
     return TextField(
       controller: controller,
+      style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon),
+        labelStyle: const TextStyle(color: SNJ.textSecondary),
+        prefixIcon: Icon(icon, color: SNJ.sakura),
         filled: true,
-        fillColor: AppColors.inputFill(context),
-        border: OutlineInputBorder(
+        fillColor: Colors.white.withOpacity(0.04),
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
-          borderSide: BorderSide(color: AppColors.border(context)),
+          borderSide: const BorderSide(color: SNJ.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: SNJ.sakura),
         ),
       ),
     );
@@ -1270,46 +1349,46 @@ class _ReadOnlyProfileInfoTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.inputFill(context),
+        color: Colors.white.withOpacity(0.02),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.border(context)),
+        border: Border.all(color: SNJ.border, width: 0.8),
       ),
       child: Row(
         children: [
-          Icon(icon, color: AppColors.tertiaryText(context)),
-          const SizedBox(width: 12),
+          Icon(icon, color: SNJ.textMuted),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   label,
-                  style: TextStyle(
-                    color: AppColors.tertiaryText(context),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w700,
+                  style: const TextStyle(
+                    color: SNJ.textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
-                const SizedBox(height: 3),
+                const SizedBox(height: 4),
                 Text(
                   value,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.primaryText(context),
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontSize: 15,
-                    fontWeight: FontWeight.w800,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(
+          const Icon(
             Icons.lock_outline_rounded,
-            color: AppColors.tertiaryText(context),
-            size: 18,
+            color: SNJ.textMuted,
+            size: 16,
           ),
         ],
       ),
@@ -1341,9 +1420,9 @@ class _AvatarPicker extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.inputFill(context),
+        color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: AppColors.border(context)),
+        border: Border.all(color: SNJ.border, width: 0.8),
       ),
       child: Row(
         children: [
@@ -1366,21 +1445,21 @@ class _AvatarPicker extends StatelessWidget {
               children: [
                 Text(
                   fileName ??
-                      (hasPhoto ? 'Current avatar' : 'No avatar selected'),
+                      (hasPhoto ? 'Ảnh đại diện hiện tại' : 'Chưa chọn ảnh'),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    color: AppColors.primaryText(context),
-                    fontWeight: FontWeight.w800,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 3),
-                Text(
-                  'JPG, PNG, or WebP',
+                const Text(
+                  'JPG, PNG, hoặc WebP',
                   style: TextStyle(
-                    color: AppColors.tertiaryText(context),
+                    color: SNJ.textMuted,
                     fontSize: 12,
-                    fontWeight: FontWeight.w600,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],
@@ -1391,19 +1470,19 @@ class _AvatarPicker extends StatelessWidget {
             const SizedBox(
               width: 24,
               height: 24,
-              child: CircularProgressIndicator(strokeWidth: 2.4),
+              child: CircularProgressIndicator(strokeWidth: 2.4, color: SNJ.sakura),
             )
           else ...[
             IconButton(
-              tooltip: 'Choose image',
+              tooltip: 'Chọn ảnh',
               onPressed: onPick,
-              icon: const Icon(Icons.photo_library_outlined),
+              icon: const Icon(Icons.photo_library_outlined, color: SNJ.sakura),
             ),
             if (hasPhoto)
               IconButton(
-                tooltip: 'Remove avatar',
+                tooltip: 'Xóa ảnh',
                 onPressed: onRemove,
-                icon: const Icon(Icons.close_rounded),
+                icon: const Icon(Icons.close_rounded, color: Colors.white),
               ),
           ],
         ],
@@ -1420,7 +1499,7 @@ class _SheetHandle extends StatelessWidget {
         width: 44,
         height: 5,
         decoration: BoxDecoration(
-          color: AppColors.divider(context),
+          color: Colors.white.withOpacity(0.08),
           borderRadius: BorderRadius.circular(999),
         ),
       ),

@@ -1,7 +1,6 @@
-﻿import 'dart:ui';
-
+import 'dart:ui';
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/core/theme/app_colors.dart';
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
 class MainBottomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -14,51 +13,49 @@ class MainBottomNavBar extends StatelessWidget {
   });
 
   static const _items = [
-    _NavItemData(Icons.home_outlined, Icons.home_rounded, 'Trang chủ'),
-    _NavItemData(Icons.menu_book_outlined, Icons.menu_book_rounded, 'Lộ trình'),
-    _NavItemData(Icons.record_voice_over_outlined,
-        Icons.record_voice_over_rounded, 'Shadowing'),
-    _NavItemData(
-        Icons.chat_bubble_outline_rounded, Icons.chat_bubble_rounded, 'Chat'),
-    _NavItemData(Icons.person_outline_rounded, Icons.person_rounded, 'Hồ sơ'),
+    _NavItemData(Icons.home_outlined,             Icons.home_rounded,               'Trang chủ'),
+    _NavItemData(Icons.menu_book_outlined,         Icons.menu_book_rounded,          'Lộ trình'),
+    _NavItemData(Icons.record_voice_over_outlined, Icons.record_voice_over_rounded,  'Shadowing'),
+    _NavItemData(Icons.chat_bubble_outline_rounded,Icons.chat_bubble_rounded,        'Chat'),
+    _NavItemData(Icons.person_outline_rounded,     Icons.person_rounded,             'Hồ sơ'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark = AppColors.isDark(context);
-
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 0, 12, 8),
+      padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(32),
         child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 18, sigmaY: 18),
-          child: DecoratedBox(
+          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+          child: Container(
             decoration: BoxDecoration(
-              color: AppColors.surface(context).withValues(
-                alpha: isDark ? 0.92 : 0.98,
-              ),
+              // Dark glass — nền tím đêm bán trong suốt
+              color: const Color(0xD4100825),
               borderRadius: BorderRadius.circular(32),
-              border: Border.all(
-                color: AppColors.border(context).withValues(alpha: 0.65),
-              ),
+              border: Border.all(color: SNJ.border, width: 0.8),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.shadow(context, opacity: 0.10),
-                  blurRadius: 26,
-                  offset: const Offset(0, -8),
+                  color: Colors.black.withOpacity(0.45),
+                  blurRadius: 28,
+                  offset: const Offset(0, -6),
+                ),
+                BoxShadow(
+                  color: SNJ.sakuraGlow,
+                  blurRadius: 20,
+                  offset: const Offset(0, -2),
                 ),
               ],
             ),
             child: SafeArea(
               top: false,
               child: SizedBox(
-                height: 82,
+                height: 80,
                 child: Row(
                   children: [
                     for (var i = 0; i < _items.length; i++)
                       Expanded(
-                        child: _BottomNavItem(
+                        child: _NavItem(
                           data: _items[i],
                           isSelected: currentIndex == i,
                           showBadge: i == 3,
@@ -76,13 +73,13 @@ class MainBottomNavBar extends StatelessWidget {
   }
 }
 
-class _BottomNavItem extends StatelessWidget {
+class _NavItem extends StatelessWidget {
   final _NavItemData data;
   final bool isSelected;
   final bool showBadge;
   final VoidCallback onTap;
 
-  const _BottomNavItem({
+  const _NavItem({
     required this.data,
     required this.isSelected,
     required this.showBadge,
@@ -93,18 +90,16 @@ class _BottomNavItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return TweenAnimationBuilder<double>(
       tween: Tween<double>(end: isSelected ? 1 : 0),
-      duration: const Duration(milliseconds: 280),
+      duration: const Duration(milliseconds: 260),
       curve: Curves.easeOutCubic,
       builder: (context, value, child) {
-        final inactiveColor =
-            AppColors.isDark(context) ? AppColors.slate400 : AppColors.slate400;
-        final iconColor = Color.lerp(inactiveColor, Colors.white, value)!;
-        final labelColor =
-            Color.lerp(inactiveColor, AppColors.toriiRed, value)!;
-        final iconSize = lerpDouble(23, 28, value)!;
-        final bubbleSize = lerpDouble(36, 54, value)!;
-        final top = lerpDouble(10, 0, value)!;
-        final labelBottom = lerpDouble(10, 7, value)!;
+        final inactiveColor = SNJ.textMuted;
+        final iconColor   = Color.lerp(inactiveColor, Colors.white, value)!;
+        final labelColor  = Color.lerp(inactiveColor, SNJ.sakura, value)!;
+        final iconSize    = lerpDouble(22, 26, value)!;
+        final bubbleSize  = lerpDouble(34, 50, value)!;
+        final top         = lerpDouble(10, 2, value)!;
+        final labelBottom = lerpDouble(10, 6, value)!;
 
         return Material(
           color: Colors.transparent,
@@ -112,7 +107,7 @@ class _BottomNavItem extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(28),
             child: SizedBox(
-              height: 82,
+              height: 80,
               child: Stack(
                 clipBehavior: Clip.hardEdge,
                 alignment: Alignment.center,
@@ -141,6 +136,7 @@ class _BottomNavItem extends StatelessWidget {
                         color: labelColor,
                         fontSize: 9,
                         fontWeight: FontWeight.w900,
+                        letterSpacing: 0.3,
                       ),
                     ),
                   ),
@@ -173,11 +169,8 @@ class _IconBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final background = Color.lerp(
-      Colors.transparent,
-      AppColors.toriiRed,
-      selectedProgress,
-    )!;
+    // Bubble: Gradient sakura khi active, transparent khi inactive
+    final bgColor = Color.lerp(Colors.transparent, SNJ.sakura, selectedProgress)!;
 
     return Stack(
       clipBehavior: Clip.none,
@@ -186,17 +179,15 @@ class _IconBubble extends StatelessWidget {
           width: size,
           height: size,
           decoration: BoxDecoration(
-            color: background,
+            color: bgColor,
             shape: BoxShape.circle,
             boxShadow: selectedProgress > 0.05
                 ? [
                     BoxShadow(
-                      color: AppColors.toriiRed.withValues(
-                        alpha: 0.28 * selectedProgress,
-                      ),
-                      blurRadius: 22 * selectedProgress,
+                      color: SNJ.sakura.withOpacity(0.45 * selectedProgress),
+                      blurRadius: 18 * selectedProgress,
                       spreadRadius: 2 * selectedProgress,
-                      offset: Offset(0, 9 * selectedProgress),
+                      offset: Offset(0, 6 * selectedProgress),
                     ),
                   ]
                 : null,
@@ -205,18 +196,15 @@ class _IconBubble extends StatelessWidget {
         ),
         if (showBadge)
           Positioned(
-            right: 5,
-            top: 4,
+            right: 4,
+            top: 3,
             child: Container(
               width: 8,
               height: 8,
               decoration: BoxDecoration(
-                color: AppColors.toriiRed,
+                color: SNJ.sakura,
                 shape: BoxShape.circle,
-                border: Border.all(
-                  color: AppColors.surface(context),
-                  width: 1.5,
-                ),
+                border: Border.all(color: const Color(0xFF100825), width: 1.5),
               ),
             ),
           ),
@@ -229,6 +217,5 @@ class _NavItemData {
   final IconData icon;
   final IconData selectedIcon;
   final String label;
-
   const _NavItemData(this.icon, this.selectedIcon, this.label);
 }

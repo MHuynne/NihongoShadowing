@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:math' as math;
+import 'package:flutter_application_1/core/theme/sakura_theme.dart';
 
-const _kRed    = Color(0xFFFF4D6D);
-const _kGold   = Color(0xFFFFB800);
-const _kGreen  = Color(0xFF16A34A);
-const _kBg     = Color(0xFFF8F9FE);
-const _kDark   = Color(0xFF1E293B);
-const _kGray   = Color(0xFF94A3B8);
-
+const _kRed = SNJ.sakura;
+const _kGold = Color(0xFFFFB800);
+const _kGreen = Color(0xFF10B981);
+const _kDarkText = Colors.white;
+const _kGrayText = Color(0xFFCCB8D8);
 
 class SentenceResult {
   final String kanji;
@@ -24,7 +23,6 @@ class SentenceResult {
     required this.passed,
   });
 }
-
 
 class ShadowingSummaryScreen extends StatefulWidget {
   final List<SentenceResult> results;
@@ -49,13 +47,22 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
   late Animation<double> _countAnim;
 
   int get _passedCount => widget.results.where((r) => r.passed).length;
-  int get _totalCount  => widget.results.length;
+  int get _totalCount => widget.results.length;
   double get _overallAccuracy =>
-      widget.results.isEmpty ? 0 : widget.results.map((r) => r.accuracy).reduce((a, b) => a + b) / widget.results.length;
+      widget.results.isEmpty
+          ? 0
+          : widget.results.map((r) => r.accuracy).reduce((a, b) => a + b) /
+              widget.results.length;
   double get _overallFluency =>
-      widget.results.isEmpty ? 0 : widget.results.map((r) => r.fluency).reduce((a, b) => a + b) / widget.results.length;
+      widget.results.isEmpty
+          ? 0
+          : widget.results.map((r) => r.fluency).reduce((a, b) => a + b) /
+              widget.results.length;
   double get _overallProsody =>
-      widget.results.isEmpty ? 0 : widget.results.map((r) => r.prosody).reduce((a, b) => a + b) / widget.results.length;
+      widget.results.isEmpty
+          ? 0
+          : widget.results.map((r) => r.prosody).reduce((a, b) => a + b) /
+              widget.results.length;
 
   int get _xpGained {
     final avg = _overallAccuracy;
@@ -66,10 +73,16 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
   @override
   void initState() {
     super.initState();
-    _mainCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1000));
-    _countCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 1500));
-    _scaleAnim = CurvedAnimation(parent: _mainCtrl, curve: const Interval(0.0, 0.6, curve: Curves.elasticOut));
-    _fadeAnim  = CurvedAnimation(parent: _mainCtrl, curve: const Interval(0.4, 1.0, curve: Curves.easeIn));
+    _mainCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1000));
+    _countCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1500));
+    _scaleAnim = CurvedAnimation(
+        parent: _mainCtrl,
+        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut));
+    _fadeAnim = CurvedAnimation(
+        parent: _mainCtrl,
+        curve: const Interval(0.4, 1.0, curve: Curves.easeIn));
     _countAnim = CurvedAnimation(parent: _countCtrl, curve: Curves.easeOut);
     _mainCtrl.forward();
     Future.delayed(const Duration(milliseconds: 400), () {
@@ -89,15 +102,8 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
     final bool isPerfect = _passedCount == _totalCount;
 
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.white, Color(0xFFF5E8E9), Color(0xFFEEDFE1), Colors.white],
-            stops: [0.0, 0.3, 0.7, 1.0],
-          ),
-        ),
+      backgroundColor: Colors.transparent,
+      body: SakuraNightBackground(
         child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -108,24 +114,35 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
                 Align(
                   alignment: Alignment.centerLeft,
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
-                      color: _kRed.withValues(alpha: 0.1),
+                      color: Colors.white.withOpacity(0.05),
                       borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.08),
+                        width: 1.0,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
-                      children: [
+                      children: const [
                         Icon(Icons.flag_rounded, color: _kRed, size: 14),
-                        const SizedBox(width: 6),
-                        const Text('TỔNG KẾT SHADOWING', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: _kRed, letterSpacing: 1.5)),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'TỔNG KẾT SHADOWING',
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w900,
+                            color: _kRed,
+                            letterSpacing: 1.5,
+                          ),
+                        ),
                       ],
                     ),
                   ),
                 ),
 
                 const SizedBox(height: 24),
-
 
                 ScaleTransition(
                   scale: _scaleAnim,
@@ -135,9 +152,19 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
                       Container(
                         padding: const EdgeInsets.all(28),
                         decoration: BoxDecoration(
-                          color: Colors.white,
+                          color: Colors.white.withOpacity(0.05),
                           shape: BoxShape.circle,
-                          boxShadow: [BoxShadow(color: (isPerfect ? _kGold : _kRed).withValues(alpha: 0.25), blurRadius: 40, spreadRadius: 10)],
+                          border: Border.all(
+                            color: isPerfect ? _kGold.withOpacity(0.4) : _kRed.withOpacity(0.4),
+                            width: 1.5,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isPerfect ? _kGold : _kRed).withOpacity(0.15),
+                              blurRadius: 40,
+                              spreadRadius: 6,
+                            )
+                          ],
                         ),
                         child: Icon(
                           isPerfect ? Icons.emoji_events_rounded : Icons.star_rounded,
@@ -146,36 +173,30 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
                         ),
                       ),
                       Positioned(
-                        bottom: 0, right: 0,
+                        bottom: 0,
+                        right: 0,
                         child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                           decoration: BoxDecoration(
-                            color: _kRed,
+                            gradient: SNJ.sakuraGradient,
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.white, width: 2),
+                            boxShadow: [
+                              BoxShadow(
+                                color: SNJ.sakura.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              )
+                            ],
                           ),
-                          child: Text('+$_xpGained XP', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: Colors.white)),
+                          child: Text(
+                            '+$_xpGained XP',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
+                              color: Colors.white,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-
-                const SizedBox(height: 16),
-
-
-                FadeTransition(
-                  opacity: _fadeAnim,
-                  child: Column(
-                    children: [
-                      Text(
-                        isPerfect ? 'Hoàn Hảo! 🎌' : 'Rất Tốt! 🌸',
-                        style: TextStyle(fontSize: 30, fontWeight: FontWeight.w900, color: isPerfect ? _kGold : _kRed),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        widget.topicTitle,
-                        style: const TextStyle(fontSize: 14, color: _kGray, fontWeight: FontWeight.w600),
                       ),
                     ],
                   ),
@@ -183,22 +204,68 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 24),
 
+                FadeTransition(
+                  opacity: _fadeAnim,
+                  child: Column(
+                    children: [
+                      Text(
+                        isPerfect ? 'Hoàn Hảo! 🎌' : 'Rất Tốt! 🌸',
+                        style: TextStyle(
+                          fontSize: 30,
+                          fontWeight: FontWeight.w900,
+                          color: isPerfect ? _kGold : _kRed,
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        widget.topicTitle,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: _kGrayText,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 24),
 
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Row(
                     children: [
-                      Expanded(child: _buildStatCard(Icons.mic_rounded,      'Phát âm',  _overallAccuracy.round(), _kRed)),
+                      Expanded(
+                        child: _buildStatCard(
+                          Icons.mic_rounded,
+                          'Phát âm',
+                          _overallAccuracy.round(),
+                          _kRed,
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: _buildStatCard(Icons.volume_up_rounded, 'Ngắt nghỉ', _overallFluency.round(),  Colors.orange)),
+                      Expanded(
+                        child: _buildStatCard(
+                          Icons.volume_up_rounded,
+                          'Ngắt nghỉ',
+                          _overallFluency.round(),
+                          Colors.orange,
+                        ),
+                      ),
                       const SizedBox(width: 10),
-                      Expanded(child: _buildStatCard(Icons.music_note_rounded,'Ngữ điệu', _overallProsody.round(), Colors.purple)),
+                      Expanded(
+                        child: _buildStatCard(
+                          Icons.music_note_rounded,
+                          'Ngữ điệu',
+                          _overallProsody.round(),
+                          const Color(0xFFA78BFA),
+                        ),
+                      ),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 20),
-
 
                 FadeTransition(
                   opacity: _fadeAnim,
@@ -206,13 +273,9 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
                     animation: _countAnim,
                     builder: (_, __) {
                       final displayPassed = (_countAnim.value * _passedCount).round();
-                      return Container(
+                      return GlassCard(
+                        neonBorder: true,
                         padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 24),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.circular(20),
-                          boxShadow: [BoxShadow(color: _kRed.withValues(alpha: 0.08), blurRadius: 20, offset: const Offset(0, 8))],
-                        ),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
@@ -228,35 +291,64 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
                 const SizedBox(height: 24),
 
-
                 FadeTransition(
                   opacity: _fadeAnim,
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Chi tiết từng câu', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w800, color: _kDark)),
+                      const Text(
+                        'Chi tiết từng câu',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: _kDarkText,
+                        ),
+                      ),
                       const SizedBox(height: 12),
-                      ...List.generate(widget.results.length, (i) => _buildSentenceRow(i, widget.results[i])),
+                      ...List.generate(
+                        widget.results.length,
+                        (i) => _buildSentenceRow(i, widget.results[i]),
+                      ),
                     ],
                   ),
                 ),
 
                 const SizedBox(height: 32),
 
-
                 FadeTransition(
                   opacity: _fadeAnim,
-                  child: ElevatedButton(
-                    onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _kRed,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 58),
-                      elevation: 6,
-                      shadowColor: _kRed.withValues(alpha: 0.35),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: SNJ.sakuraGradient,
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                          color: SNJ.sakura.withOpacity(0.35),
+                          blurRadius: 16,
+                          offset: const Offset(0, 4),
+                        )
+                      ],
                     ),
-                    child: const Text('VỀ TRANG CHỦ', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w900, letterSpacing: 1)),
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.popUntil(context, (r) => r.isFirst),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.transparent,
+                        shadowColor: Colors.transparent,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 58),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: const Text(
+                        'VỀ TRANG CHỦ',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 1,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
 
@@ -273,21 +365,48 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: color.withValues(alpha: 0.1), blurRadius: 16, offset: const Offset(0, 6))],
+        border: Border.all(
+          color: Colors.white.withOpacity(0.08),
+          width: 1.0,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.05),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          )
+        ],
       ),
       child: Column(
         children: [
           Container(
             padding: const EdgeInsets.all(9),
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(height: 8),
-          Text('$value', style: TextStyle(fontSize: 22, fontWeight: FontWeight.w900, color: color)),
+          Text(
+            '$value',
+            style: TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w900,
+              color: Colors.white,
+            ),
+          ),
           const SizedBox(height: 3),
-          Text(label, style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: _kGray)),
+          Text(
+            label,
+            style: const TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w900,
+              color: _kGrayText,
+            ),
+          ),
         ],
       ),
     );
@@ -296,52 +415,87 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
   Widget _buildCountBadge(int count, String label, Color color) {
     return Column(
       children: [
-        Text('$count', style: TextStyle(fontSize: 40, fontWeight: FontWeight.w900, color: color)),
+        Text(
+          '$count',
+          style: TextStyle(
+            fontSize: 40,
+            fontWeight: FontWeight.w900,
+            color: color,
+          ),
+        ),
         const SizedBox(height: 2),
-        Text(label, style: TextStyle(fontSize: 10, fontWeight: FontWeight.w800, color: color, letterSpacing: 1)),
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w900,
+            color: color,
+            letterSpacing: 1,
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildSentenceRow(int index, SentenceResult r) {
     final color = r.passed ? _kGreen : _kRed;
-    final icon  = r.passed ? Icons.check_circle_rounded : Icons.cancel_rounded;
+    final icon = r.passed ? Icons.check_circle_rounded : Icons.cancel_rounded;
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: Colors.white.withOpacity(0.04),
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
-        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.04), blurRadius: 8, offset: const Offset(0, 3))],
+        border: Border.all(color: color.withOpacity(0.2)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.12),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
+          )
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 28, height: 28,
+            width: 28,
+            height: 28,
             alignment: Alignment.center,
-            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
-            child: Text('${index + 1}', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w900, color: color)),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.12),
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '${index + 1}',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+                color: color,
+              ),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
               r.kanji.isEmpty ? '(câu ${index + 1})' : r.kanji,
-              style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: _kDark),
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           const SizedBox(width: 8),
-
           Row(
             children: [
-              _miniScore('${r.accuracy}', Colors.blue),
+              _miniScore('${r.accuracy}', const Color(0xFF60A5FA)),
               const SizedBox(width: 6),
-              _miniScore('${r.prosody}', Colors.purple),
+              _miniScore('${r.prosody}', const Color(0xFFC084FC)),
             ],
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 10),
           Icon(icon, color: color, size: 22),
         ],
       ),
@@ -350,9 +504,19 @@ class _ShadowingSummaryScreenState extends State<ShadowingSummaryScreen>
 
   Widget _miniScore(String val, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
-      child: Text(val, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w700, color: color)),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.12),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        val,
+        style: TextStyle(
+          fontSize: 11,
+          fontWeight: FontWeight.w900,
+          color: color,
+        ),
+      ),
     );
   }
-}
+}
